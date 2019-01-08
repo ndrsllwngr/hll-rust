@@ -1,7 +1,10 @@
 [package]
 name = "hll-rust"
 version = "0.1.0"
-authors = ["Timo Erdelt <ti.erdelt@gmail.com>"]
+authors = [
+    "Timo Erdelt <ti.erdelt@gmail.com>",
+    "Andreas Ellwanger <andreas.ellwanger@campus.lmu.de>",
+    "Andreas Griesbeck <andy.griesbeck@gmail.com"]
 edition = "2018"
 
 [dependencies]
