@@ -1,16 +1,16 @@
 use std::net::IpAddr;
-use std::str::Bytes;
 
 use super::finger::FingerTable;
 use super::storage::Storage;
 
-pub struct Config<'a> {
-    pub id: Bytes<'a>,
+#[derive(Clone)]
+pub struct Config {
+    pub id: Vec<u8>,
     pub ip_addr: IpAddr
 }
 
 pub struct Node<'a> {
-    pub config: Config<'a>,
+    pub config: Config,
     //pub predecessor: &'a Node<'a>,
     // pub finger_table: FingerTable<'a>,
     pub storage: Storage<'a>
