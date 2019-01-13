@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 
-pub struct Storage<'a> {
-    data: HashMap<&'a str, &'a str>
+pub struct Storage {
+    data: HashMap<String,  String>
 }
 
 impl Storage {
@@ -10,15 +10,15 @@ impl Storage {
         return Storage { data: HashMap::new() };
     }
 
-    fn put(key: str, value: str) {
-        data.insert(key, value);
+    fn put(&mut self, key: String, value: String) {
+        self.data.insert(key, value);
     }
 
-    fn get(key: str) -> Option<&str> {
-        return data.get(key);
+    fn get(&mut self, key: String) -> Option<&String> {
+        return self.data.get(&key);
     }
 
-    fn delete(key: str){
-        remove(key);
+    fn delete(&mut self, key: String){
+        self.data.remove(&key);
     }
 }

@@ -5,7 +5,6 @@ use num_bigint::BigInt;
 
 pub fn create_hash(string: &str) -> String {
 
-
 // create a Sha1 object
     let mut hasher = Sha1::new();
 
@@ -20,7 +19,7 @@ pub fn create_hash(string: &str) -> String {
 /**
 * Testing if key ∈ (n, successor]
 */
-pub fn isInHalfRange(key: BigInt, n: BigInt, successor: BigInt) -> Bool {
+pub fn isInHalfRange(key: BigInt, n: BigInt, successor: BigInt) -> bool {
     if n < successor {
         return (key > n && key <= successor) || (n == successor);
     } else {
@@ -32,7 +31,7 @@ pub fn isInHalfRange(key: BigInt, n: BigInt, successor: BigInt) -> Bool {
 * Testing if key ∈ (left, right)
 */
 //TODO check if left & right naming is reasonable
-pub fn isInRange(key: BigInt, left: BigInt, right: BigInt) -> Bool {
+pub fn isInRange(key: BigInt, left: BigInt, right: BigInt) -> bool {
     if left < right {
         return (key > left && key < right) || (left == right && key != left);
     } else {

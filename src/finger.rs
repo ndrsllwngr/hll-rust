@@ -1,25 +1,34 @@
 use num::bigint::{BigInt, Sign, ToBigInt};
 use num::traits::{pow};
 
-use super::node::Node;
-use super::util::create_hash;
+use super::node::OtherNode;
 
 
 // Represents a single finger table entry
-pub struct FingerEntry<'a> {
+pub struct FingerEntry {
     pub id: Vec<u8>, // ID hash of (n + 2^i) mod (2^m)
-    pub node: &'a Node<'a>
+    pub node: OtherNode
 }
 
 
 
-fn new_finger_entry<'a>(id: Vec<u8>, node: &'a Node) -> FingerEntry<'a> {
+fn new_finger_entry(id: Vec<u8>, node: OtherNode) -> FingerEntry {
     return FingerEntry{id, node};
 }
 
 
-pub type FingerTable<'a> = Vec<FingerEntry<'a>>;
+pub type FingerTable = Vec<FingerEntry>;
 
+/* this is bullshit, we need a creation of fingertable dont now how yet
+
+impl<'a> FingerTable<'a>{
+    pub fn new() -> FingerTable<'a>{
+        let mut ft: Vec<FingerEntry> = Vec::new();
+        //TODO implement creation
+        return ft;
+    }
+}
+*/
 
 
 fn finger_id<'a>(n: &Vec<u8>, i: usize, m: usize) -> Vec<u8>  {
@@ -27,7 +36,6 @@ fn finger_id<'a>(n: &Vec<u8>, i: usize, m: usize) -> Vec<u8>  {
     let id_int  = BigInt::from_bytes_be(Sign::NoSign, n);
 
     // Get the offset
-    let test = vec![2];
     let two : BigInt= 2.to_bigint().unwrap();
     let offset : BigInt = pow(two.clone(), i);
 
@@ -43,8 +51,9 @@ fn finger_id<'a>(n: &Vec<u8>, i: usize, m: usize) -> Vec<u8>  {
     return modulo.to_bytes_be().1;
 }
 
+/*
 // m = size of finger table
-pub fn new_finger_table<'a>(node: &'a Node, m: usize) -> FingerTable<'a>  {
+pub fn new_finger_table<'a>(node: &'a OtherNode, m: usize) -> FingerTable<'a>  {
     let mut ft: Vec<FingerEntry> = Vec::new();
     for i in 0..m {
         let id = finger_id(&node.config.id, i as usize, m).clone();
@@ -52,3 +61,4 @@ pub fn new_finger_table<'a>(node: &'a Node, m: usize) -> FingerTable<'a>  {
     }
     return ft;
 }
+*/
