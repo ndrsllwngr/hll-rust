@@ -5,6 +5,12 @@ use super::storage::Storage;
 use super::util::create_hash;
 use num_bigint::{BigInt, Sign};
 
+const NOTIFY_PREDECESSOR: i32 = 0;
+const NOTIFY_SUCCESSOR: i32 = 1;
+const NOTIFY_JOIN: i32 = 2;
+const FIND_SUCCESSOR: i32 = 3;
+const FOUND_SUCCESSOR: i32 = 4;
+const MESSAGE: i32 = 5;
 
 pub struct OtherNode {
     id: BigInt,
@@ -58,19 +64,36 @@ fn create_node_id(ip: IpAddr) -> BigInt {
     let byte_vec = hash.as_bytes().to_vec();
     return BigInt::from_bytes_be(Sign::Plus, &byte_vec);
 
-  
-fn dispatch (_from: i32, _message: i32) {
-
+pub fn dispatch(_from: i32, _message: i32) {
     let from = _from;
     let message = _message;
 
     match message {
-        CHORD_STATES_NOTIFY_PREDECESSOR => println!("0"),
-        CHORD_STATES_NOTIFY_SUCCESSOR => println!("1"),
-        CHORD_STATES_NOTIFY_JOIN => println!("2"),
-        CHORD_STATES_FIND_SUCCESSOR => println!("3"),
-        CHORD_STATES_FOUND_SUCCESSOR => println!("4"),
-        CHORD_STATES_MESSAGE => println!("5"),
-        _ => println!("NO MATCH!"),
+        // Node notifies successor about predessor
+        NOTIFY_PREDECESSOR =>
+        /*
+         *  predecessor is nil or n'∈(predecessor, n)
+         */
+        {
+            println!("0-NOTIFY_PREDECESSOR")
+        }
+
+        // Stabilize
+        NOTIFY_SUCCESSOR =>
+        /*
+         *  n.stabilize()
+         *    x = successor.predecessor;
+         *    if (x∈(n, successor))
+         *      successor = x;
+         *    successor.notify(n);
+         */
+        {
+            println!("1-NOTIFY_SUCCESSOR")
+        }
+        //
+        FIND_SUCCESSOR => println!("3-FIND_SUCCESSOR"),
+        FOUND_SUCCESSOR => println!("4-FOUND_SUCCESSOR"),
+        MESSAGE => println!("5-MESSAGE"),
+        _ => println!("Unknown Chord message: {}", message),
     }
 }

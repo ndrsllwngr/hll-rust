@@ -38,6 +38,8 @@ fn main() {
     test_modulo_bigint();
     test_compare_bigint();
 
+    node::dispatch(1, 3);
+    network::start_server();
 }
 
 fn test_endian(str: &str) {
