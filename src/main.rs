@@ -2,6 +2,10 @@ extern crate crypto;
 extern crate num_bigint;
 extern crate num;
 
+#[macro_use]
+extern crate log;
+extern crate log4rs;
+
 use std::net::{IpAddr, Ipv4Addr};
 use std::collections::HashMap;
 use num_bigint::{BigInt, Sign, ToBigInt};
@@ -15,7 +19,8 @@ mod util;
 mod network;
 
 fn main() {
-    println!("Hello, world!");
+    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
+    info!("booting up");
 
     //let id = "node_id".bytes();
     //let ip_addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
@@ -53,7 +58,7 @@ fn test_endian(str: &str) {
     let big_int_minus_b = BigInt::from_bytes_be(Sign::Minus, &byte_vec);
     let big_int_minus_l = BigInt::from_bytes_le(Sign::Minus, &byte_vec);
 
-    println!("{}",big_int_plus_b);
+    info!("{}",big_int_plus_b);
 
 
     let byte_vec_no_b = big_int_no_b.to_bytes_be();
@@ -83,7 +88,7 @@ fn test_modulo_bigint(){
 
 
     let should_be_two = BigInt::modpow(&12.to_bigint().unwrap(),&1.to_bigint().unwrap(), &10.to_bigint().unwrap());
-    println!("{}",should_be_two)
+    info!("{}",should_be_two)
 }
 
 fn test_compare_bigint(){
@@ -92,15 +97,15 @@ fn test_compare_bigint(){
     let two_again = &2.to_bigint().unwrap();
     let three = &3.to_bigint().unwrap();
 
-    println!("{}",two == two_again);
-    println!("{}",two < three);
-    println!("{}",two > one);
+    info!("{}",two == two_again);
+    info!("{}",two < three);
+    info!("{}",two > one);
 }
 
 fn print(result: Result<&str, std::str::Utf8Error>) {
     match result {
-        Ok(n)  => println!("{}", n),
-        Err(e) => println!("Error: {}", e),
+        Ok(n)  => info!("{}", n),
+        Err(e) => info!("Error: {}", e),
     }
 }
 

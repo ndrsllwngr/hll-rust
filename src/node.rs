@@ -5,12 +5,12 @@ use super::storage::Storage;
 use super::util::create_hash;
 use num_bigint::{BigInt, Sign};
 
-const NOTIFY_PREDECESSOR: i32 = 0;
-const NOTIFY_SUCCESSOR: i32 = 1;
-const NOTIFY_JOIN: i32 = 2;
-const FIND_SUCCESSOR: i32 = 3;
-const FOUND_SUCCESSOR: i32 = 4;
-const MESSAGE: i32 = 5;
+const NOTIFY_PREDECESSOR: u8 = 0;
+const NOTIFY_SUCCESSOR: u8 = 1;
+const NOTIFY_JOIN: u8 = 2;
+const FIND_SUCCESSOR: u8 = 3;
+const FOUND_SUCCESSOR: u8 = 4;
+const MESSAGE: u8 = 5;
 
 pub struct OtherNode {
     id: BigInt,
@@ -64,36 +64,40 @@ fn create_node_id(ip: IpAddr) -> BigInt {
     return BigInt::from_bytes_be(Sign::Plus, &byte_vec);
 }
 
-pub fn dispatch(_from: i32, _message: i32) {
-        let from = _from;
-        let message = _message;
+pub fn dispatch(_from: i32, _message: u8) {
+    let from = _from;
+    let message = _message;
 
-        match message {
-            // Node notifies successor about predessor
-            NOTIFY_PREDECESSOR =>
-            /*
-             *  predecessor is nil or n'∈(predecessor, n)
-             */
-            {
-                println!("0-NOTIFY_PREDECESSOR")
-            }
-
-            // Stabilize
-            NOTIFY_SUCCESSOR =>
-            /*
-             *  n.stabilize()
-             *    x = successor.predecessor;
-             *    if (x∈(n, successor))
-             *      successor = x;
-             *    successor.notify(n);
-             */
-            {
-                println!("1-NOTIFY_SUCCESSOR")
-            }
-            //
-            FIND_SUCCESSOR => println!("3-FIND_SUCCESSOR"),
-            FOUND_SUCCESSOR => println!("4-FOUND_SUCCESSOR"),
-            MESSAGE => println!("5-MESSAGE"),
-            _ => println!("Unknown Chord message: {}", message),
+    match message {
+        // Node notifies successor about predessor
+        NOTIFY_PREDECESSOR =>
+        /*
+         *  predecessor is nil or n'∈(predecessor, n)
+         */
+        {
+            info!("0-NOTIFY_PREDECESSOR")
         }
+
+        // Stabilize
+        NOTIFY_SUCCESSOR =>
+        /*
+         *  n.stabilize()
+         *    x = successor.predecessor;
+         *    if (x∈(n, successor))
+         *      successor = x;
+         *    successor.notify(n);
+         */
+        {
+            info!("1-NOTIFY_SUCCESSOR")
+        }
+        NOTIFY_JOIN => info!("Node joined: {}", from),
+        FIND_SUCCESSOR => info!("3-FIND_SUCCESSOR"),
+        FOUND_SUCCESSOR => 
+        {
+            // TODO this.send(this.successor, message, from);
+            info!("4-FOUND_SUCCESSOR")
+        }
+        MESSAGE => info!("5-MESSAGE"),
+        _ => info!("Unknown chord message: {}", message),
     }
+}
