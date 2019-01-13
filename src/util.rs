@@ -1,5 +1,3 @@
-
-
 use super::crypto::digest::Digest;
 use super::crypto::sha1::Sha1;
 
@@ -14,5 +12,5 @@ pub fn create_hash(string: &str) -> String {
 
 // read hash digest
     let hex = hasher.result_str();
-    return hex
+    return hex;
 }
