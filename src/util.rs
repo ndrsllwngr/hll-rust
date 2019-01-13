@@ -19,7 +19,7 @@ pub fn create_hash(string: &str) -> String {
 /**
 * Testing if key ∈ (n, successor]
 */
-pub fn isInHalfRange(key: BigInt, n: BigInt, successor: BigInt) -> bool {
+pub fn is_in_half_range(key: BigInt, n: BigInt, successor: BigInt) -> bool {
     if n < successor {
         return (key > n && key <= successor) || (n == successor);
     } else {
@@ -31,7 +31,7 @@ pub fn isInHalfRange(key: BigInt, n: BigInt, successor: BigInt) -> bool {
 * Testing if key ∈ (left, right)
 */
 //TODO check if left & right naming is reasonable
-pub fn isInRange(key: BigInt, left: BigInt, right: BigInt) -> bool {
+pub fn is_in_range(key: BigInt, left: BigInt, right: BigInt) -> bool {
     if left < right {
         return (key > left && key < right) || (left == right && key != left);
     } else {

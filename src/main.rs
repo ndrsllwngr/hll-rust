@@ -14,7 +14,6 @@ use std::str;
 mod node;
 mod storage;
 mod finger;
-mod constants;
 mod util;
 mod network;
 
