@@ -36,6 +36,7 @@ fn main() {
     */
 
     test_endian("test");
+    node::dispatch(1, 3);
     network::start_server();
     
 }
