@@ -46,7 +46,7 @@ impl Node {
             id,
             ip_addr: ip,
             predecessor: None,
-            successor: successor,
+            successor,
             finger_table,
             storage,
         };
