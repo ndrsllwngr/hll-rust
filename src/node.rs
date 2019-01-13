@@ -28,12 +28,11 @@ pub struct Node {
     ip_addr: IpAddr,
     //TODO check if better possibilities available
     predecessor: Option<OtherNode>,
-    successor:  OtherNode,
+    successor: OtherNode,
     //TODO can be found out by finger table
     finger_table: FingerTable,
     storage: Storage,
 }
-
 
 impl Node {
     //Constructor for initialisation of new Chord Ring, call new_existing_network if joining existing network
@@ -63,37 +62,38 @@ fn create_node_id(ip: IpAddr) -> BigInt {
     let hash = create_hash(&ip.to_string());
     let byte_vec = hash.as_bytes().to_vec();
     return BigInt::from_bytes_be(Sign::Plus, &byte_vec);
+}
 
 pub fn dispatch(_from: i32, _message: i32) {
-    let from = _from;
-    let message = _message;
+        let from = _from;
+        let message = _message;
 
-    match message {
-        // Node notifies successor about predessor
-        NOTIFY_PREDECESSOR =>
-        /*
-         *  predecessor is nil or n'∈(predecessor, n)
-         */
-        {
-            println!("0-NOTIFY_PREDECESSOR")
-        }
+        match message {
+            // Node notifies successor about predessor
+            NOTIFY_PREDECESSOR =>
+            /*
+             *  predecessor is nil or n'∈(predecessor, n)
+             */
+            {
+                println!("0-NOTIFY_PREDECESSOR")
+            }
 
-        // Stabilize
-        NOTIFY_SUCCESSOR =>
-        /*
-         *  n.stabilize()
-         *    x = successor.predecessor;
-         *    if (x∈(n, successor))
-         *      successor = x;
-         *    successor.notify(n);
-         */
-        {
-            println!("1-NOTIFY_SUCCESSOR")
+            // Stabilize
+            NOTIFY_SUCCESSOR =>
+            /*
+             *  n.stabilize()
+             *    x = successor.predecessor;
+             *    if (x∈(n, successor))
+             *      successor = x;
+             *    successor.notify(n);
+             */
+            {
+                println!("1-NOTIFY_SUCCESSOR")
+            }
+            //
+            FIND_SUCCESSOR => println!("3-FIND_SUCCESSOR"),
+            FOUND_SUCCESSOR => println!("4-FOUND_SUCCESSOR"),
+            MESSAGE => println!("5-MESSAGE"),
+            _ => println!("Unknown Chord message: {}", message),
         }
-        //
-        FIND_SUCCESSOR => println!("3-FIND_SUCCESSOR"),
-        FOUND_SUCCESSOR => println!("4-FOUND_SUCCESSOR"),
-        MESSAGE => println!("5-MESSAGE"),
-        _ => println!("Unknown Chord message: {}", message),
     }
-}
