@@ -1,10 +1,9 @@
+use crypto::digest::Digest;
+use crypto::sha1::Sha1;
+use num_bigint::BigInt;
 
-
-use super::crypto::digest::Digest;
-use super::crypto::sha1::Sha1;
 
 pub fn create_hash(string: &str) -> String {
-
 
 // create a Sha1 object
     let mut hasher = Sha1::new();
@@ -14,5 +13,28 @@ pub fn create_hash(string: &str) -> String {
 
 // read hash digest
     let hex = hasher.result_str();
-    return hex
+    return hex;
+}
+
+/**
+* Testing if key ∈ (n, successor]
+*/
+pub fn isInHalfRange(key: BigInt, n: BigInt, successor: BigInt) -> bool {
+    if n < successor {
+        return (key > n && key <= successor) || (n == successor);
+    } else {
+        return (key > successor && key <= n) || (n == successor);
+    }
+}
+
+/**
+* Testing if key ∈ (left, right)
+*/
+//TODO check if left & right naming is reasonable
+pub fn isInRange(key: BigInt, left: BigInt, right: BigInt) -> bool {
+    if left < right {
+        return (key > left && key < right) || (left == right && key != left);
+    } else {
+        return (key > right && key < left) || (left == right && key != left);
+    }
 }

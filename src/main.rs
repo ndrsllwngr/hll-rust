@@ -1,12 +1,10 @@
 extern crate crypto;
 extern crate num_bigint;
 extern crate num;
-extern crate tokio;
 
-use std::str::Bytes;
 use std::net::{IpAddr, Ipv4Addr};
 use std::collections::HashMap;
-use num_bigint::{BigInt, Sign};
+use num_bigint::{BigInt, Sign, ToBigInt};
 use std::str;
 
 mod node;
@@ -19,8 +17,8 @@ mod network;
 fn main() {
     println!("Hello, world!");
 
-    let id = "node_id".bytes();
-    let ip_addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+    //let id = "node_id".bytes();
+    //let ip_addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
     let mut data = HashMap::new();
     data.insert("key", "value");
     /* let config = node::Config{id , ip_addr};
@@ -35,9 +33,11 @@ fn main() {
     assert_eq!(Some(b'n'), bytes.next());
     */
 
-    test_endian("test");
-    network::start_server();
-    
+
+    test_endian("a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
+    test_modulo_bigint();
+    test_compare_bigint();
+
 }
 
 fn test_endian(str: &str) {
@@ -51,6 +51,7 @@ fn test_endian(str: &str) {
     let big_int_minus_b = BigInt::from_bytes_be(Sign::Minus, &byte_vec);
     let big_int_minus_l = BigInt::from_bytes_le(Sign::Minus, &byte_vec);
 
+    println!("{}",big_int_plus_b);
 
 
     let byte_vec_no_b = big_int_no_b.to_bytes_be();
@@ -74,6 +75,24 @@ fn test_endian(str: &str) {
     print(str_byte_vec_plus_l);
     print(str_byte_vec_minus_b);
     print(str_byte_vec_minus_l);
+}
+
+fn test_modulo_bigint(){
+
+
+    let should_be_two = BigInt::modpow(&12.to_bigint().unwrap(),&1.to_bigint().unwrap(), &10.to_bigint().unwrap());
+    println!("{}",should_be_two)
+}
+
+fn test_compare_bigint(){
+    let one = &1.to_bigint().unwrap();
+    let two = &2.to_bigint().unwrap();
+    let two_again = &2.to_bigint().unwrap();
+    let three = &3.to_bigint().unwrap();
+
+    println!("{}",two == two_again);
+    println!("{}",two < three);
+    println!("{}",two > one);
 }
 
 fn print(result: Result<&str, std::str::Utf8Error>) {
