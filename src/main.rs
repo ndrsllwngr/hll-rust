@@ -7,13 +7,12 @@ use std::collections::HashMap;
 use num_bigint::{BigInt, Sign, ToBigInt};
 use std::str;
 
-
-
 mod node;
 mod storage;
 mod finger;
 mod constants;
 mod util;
+mod network;
 
 fn main() {
     println!("Hello, world!");
@@ -34,9 +33,11 @@ fn main() {
     assert_eq!(Some(b'n'), bytes.next());
     */
 
+
     test_endian("a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
     test_modulo_bigint();
     test_compare_bigint();
+
 }
 
 fn test_endian(str: &str) {

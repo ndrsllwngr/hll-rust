@@ -3,7 +3,6 @@ use std::net::IpAddr;
 use super::finger::FingerTable;
 use super::storage::Storage;
 use super::util::create_hash;
-
 use num_bigint::{BigInt, Sign};
 
 
@@ -58,4 +57,20 @@ fn create_node_id(ip: IpAddr) -> BigInt {
     let hash = create_hash(&ip.to_string());
     let byte_vec = hash.as_bytes().to_vec();
     return BigInt::from_bytes_be(Sign::Plus, &byte_vec);
+
+  
+fn dispatch (_from: i32, _message: i32) {
+
+    let from = _from;
+    let message = _message;
+
+    match message {
+        CHORD_STATES_NOTIFY_PREDECESSOR => println!("0"),
+        CHORD_STATES_NOTIFY_SUCCESSOR => println!("1"),
+        CHORD_STATES_NOTIFY_JOIN => println!("2"),
+        CHORD_STATES_FIND_SUCCESSOR => println!("3"),
+        CHORD_STATES_FOUND_SUCCESSOR => println!("4"),
+        CHORD_STATES_MESSAGE => println!("5"),
+        _ => println!("NO MATCH!"),
+    }
 }
