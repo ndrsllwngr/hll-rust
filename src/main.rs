@@ -6,10 +6,10 @@ extern crate num;
 extern crate log;
 extern crate log4rs;
 
-use std::net::{IpAddr, Ipv4Addr};
 use std::collections::HashMap;
 use num_bigint::{BigInt, Sign, ToBigInt};
 use std::str;
+use std::net::SocketAddr;
 
 mod node;
 mod storage;
@@ -44,6 +44,8 @@ fn main() {
 
     node::dispatch(1, 3);
     network::start_server();
+
+    ip_address_to_string_test();
 }
 
 fn test_endian(str: &str) {
@@ -106,6 +108,12 @@ fn custom_print(result: Result<&str, std::str::Utf8Error>) {
         Ok(n)  => info!("{}", n),
         Err(e) => error!("Error: {}", e),
     }
+}
+
+fn ip_address_to_string_test(){
+    let addr = "127.0.0.1:34254".parse::<SocketAddr>().unwrap();
+    info!("{}",addr.to_string());
+    info!("{}","blöasdsa");
 }
 
 

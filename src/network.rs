@@ -1,6 +1,22 @@
 use tokio::io::copy;
 use tokio::net::TcpListener;
 use tokio::prelude::*;
+use std::net::SocketAddr;
+
+pub struct Network {
+    //TODO to be implemented
+}
+
+impl Network {
+    pub fn new(port: i32) -> Network {
+        //TODO implement correctly
+        return Network {};
+    }
+
+    pub fn send(&self, msg: String, to: SocketAddr) {
+        //TODO implement
+    }
+}
 
 pub fn start_server() {
     info!("Bind the server socket.");
