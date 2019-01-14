@@ -5,8 +5,8 @@ use std::net::SocketAddr;
 
 
 //TODO discuss if this is better placed here or in node.rs
-pub fn create_node_id(ip: SocketAddr) -> BigInt {
-    let hash = create_hash(&ip.to_string());
+pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
+    let hash = create_hash(&ip_addr.to_string());
     let byte_vec = hash.as_bytes().to_vec();
     return BigInt::from_bytes_be(Sign::Plus, &byte_vec);
 }

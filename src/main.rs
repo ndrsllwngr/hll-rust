@@ -17,6 +17,7 @@ mod finger;
 mod util;
 mod network;
 
+
 fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     info!("booting up");
@@ -42,8 +43,11 @@ fn main() {
     test_modulo_bigint();
     test_compare_bigint();
 
-    node::dispatch(1, 3);
-    network::start_server();
+
+
+    let test_node = node::Node::new("127.0.0.1:34254".parse().unwrap());
+    &test_node.process_received_msg(1, 3);
+    &test_node.start_network();
 
     ip_address_to_string_test();
 }
