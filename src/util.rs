@@ -1,7 +1,15 @@
 use crypto::digest::Digest;
 use crypto::sha1::Sha1;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, Sign};
+use std::net::SocketAddr;
 
+
+//TODO discuss if this is better placed here or in node.rs
+pub fn create_node_id(ip: SocketAddr) -> BigInt {
+    let hash = create_hash(&ip.to_string());
+    let byte_vec = hash.as_bytes().to_vec();
+    return BigInt::from_bytes_be(Sign::Plus, &byte_vec);
+}
 
 pub fn create_hash(string: &str) -> String {
 
