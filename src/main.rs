@@ -75,12 +75,12 @@ fn test_endian(str: &str) {
     let str_byte_vec_minus_b = std::str::from_utf8(&byte_vec_minus_b.1);
     let str_byte_vec_minus_l = std::str::from_utf8(&byte_vec_minus_l.1);
 
-    print(str_byte_vec_no_b);
-    print(str_byte_vec_no_l);
-    print(str_byte_vec_plus_b);
-    print(str_byte_vec_plus_l);
-    print(str_byte_vec_minus_b);
-    print(str_byte_vec_minus_l);
+    custom_print(str_byte_vec_no_b);
+    custom_print(str_byte_vec_no_l);
+    custom_print(str_byte_vec_plus_b);
+    custom_print(str_byte_vec_plus_l);
+    custom_print(str_byte_vec_minus_b);
+    custom_print(str_byte_vec_minus_l);
 }
 
 fn test_modulo_bigint(){
@@ -101,7 +101,7 @@ fn test_compare_bigint(){
     info!("{}",two > one);
 }
 
-fn print(result: Result<&str, std::str::Utf8Error>) {
+fn custom_print(result: Result<&str, std::str::Utf8Error>) {
     match result {
         Ok(n)  => info!("{}", n),
         Err(e) => error!("Error: {}", e),
