@@ -104,7 +104,7 @@ fn test_compare_bigint(){
 fn print(result: Result<&str, std::str::Utf8Error>) {
     match result {
         Ok(n)  => info!("{}", n),
-        Err(e) => info!("Error: {}", e),
+        Err(e) => error!("Error: {}", e),
     }
 }
 
