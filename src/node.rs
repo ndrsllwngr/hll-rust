@@ -7,6 +7,7 @@ use super::storage::Storage;
 use super::util::*;
 use num_bigint::BigInt;
 
+#[derive(Clone)]
 pub struct OtherNode {
     id: BigInt,
     ip_addr: SocketAddr,
@@ -19,6 +20,10 @@ impl OtherNode {
 
     pub fn print(&self, desc: &str) {
         info!("{}: id: {}, ip_addr: {}", desc, self.id, self.ip_addr);
+    }
+
+    pub fn get_ip_addr(&self) -> SocketAddr {
+        self.ip_addr
     }
 }
 
@@ -70,10 +75,22 @@ impl Node {
         };
     }
 
-    pub fn send_msg(self, _from: OtherNode, _to: OtherNode, _message: String) {
+    pub fn send_msg(self, _from: OtherNode, _to: Option<OtherNode>, _message: Message) {
+        let from = _from;
+
+        let to = match _to {
+            Some(to) => to,
+            None => from
+        };
+
+        let mut message = _message;
+        if message.get_id().is_none() {
+            message.set_id(Some(self.id))
+        }
+
         //TODO build JSON Object, and send it as message
 
-        self.network.send(_message, _to.ip_addr);
+        self.network.send(message, to);
     }
 
     //TODO find better name
@@ -85,8 +102,8 @@ impl Node {
         let from = _from;
         let message = _message;
 
-        match message.get_state() {
-            // Node notifies successor about predessor
+        match message.get_message_type() {
+            // Node notifies successor about predecessor
             NOTIFY_PREDECESSOR =>
             /*
              *  predecessor is nil or n'∈(predecessor, n)
