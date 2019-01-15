@@ -106,6 +106,19 @@ impl Node {
         }
     }
 
+    //TODO implement concurennt stabalize and fix_fingers
+    pub fn start_update_fingers(&self) {
+        // let fix_fingers; 
+    }
+
+    pub fn join(&mut self, remote: OtherNode) -> bool {
+        let message = Message::new(NOTIFY_JOIN, None, None);
+        self.predecessor = None;
+        remote.print("Try to join");
+        self.send_msg(remote, None, message);
+        true
+    }
+
     pub fn send_msg(&self, _from: OtherNode, _to: Option<OtherNode>, _message: Message) {
         let from = _from;
 
