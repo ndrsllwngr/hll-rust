@@ -1,8 +1,8 @@
 use crypto::digest::Digest;
 use crypto::sha1::Sha1;
-use num_bigint::{BigInt, Sign};
+use num::bigint::{BigInt, Sign, ToBigInt};
+use num::traits::pow;
 use std::net::SocketAddr;
-
 
 //TODO discuss if this is better placed here or in node.rs
 //TODO write test for this function to verify correctness
@@ -14,14 +14,13 @@ pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
 
 //TODO write test for this function to verify correctness
 pub fn create_hash(string: &str) -> String {
-
-// create a Sha1 object
+    // create a Sha1 object
     let mut hasher = Sha1::new();
 
-// write input message
+    // write input message
     hasher.input_str(string);
 
-// read hash digest
+    // read hash digest
     let hex = hasher.result_str();
     return hex;
 }
@@ -49,4 +48,13 @@ pub fn is_in_range(key: &BigInt, left: &BigInt, right: &BigInt) -> bool {
     } else {
         return (key > right && key < left) || (left == right && key != left);
     }
+}
+
+pub fn get_fix_finger_id(key: &BigInt, exponent: usize) -> BigInt {
+    // Get the offset
+    let two: BigInt = 2.to_bigint().unwrap();
+    let offset: BigInt = pow(two.clone(), exponent);
+
+    // Sum
+    key + offset
 }

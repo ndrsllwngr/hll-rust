@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::{thread, time};
 
 use super::finger::FingerTable;
 use super::network::Network;
@@ -51,7 +52,7 @@ impl Node {
         let finger_table = FingerTable::new();
         let storage = Storage::new();
         /*  TODO fix when new is implemented
-            TODO In addition to that we need to check how network cann call methods on node, particularly: process_received_msg
+             TODO In addition to that we need to check how network can call methods on node, particularly: process_received_msg
         */
         let network = Network::new(ip_addr);
         let next_finger = 0;
@@ -107,8 +108,29 @@ impl Node {
     }
 
     //TODO implement concurennt stabalize and fix_fingers
-    pub fn start_update_fingers(&self) {
-        // let fix_fingers; 
+    pub fn start_update_fingers(&mut self) {
+        loop {
+            self.fix_fingers();
+            let message = Message::new(NOTIFY_PREDECESSOR, None, None);
+            self.send_msg(self.successor.clone(), None, message);
+            info!("start_update_fingers");
+            thread::sleep(time::Duration::from_millis(2000));
+        }
+    }
+
+    fn fix_fingers(&mut self) {
+        let fix_finger_id: BigInt;
+        let mut next = self.next_finger;
+        if next >= self.finger_table.length() {
+            next = 0;
+        }
+        fix_finger_id = get_fix_finger_id(&self.id, next);
+        self.next_finger = next + 1;
+        // n.fix_fingers()
+        let message = Message::new(FIND_SUCCESSOR, Some(next), Some(fix_finger_id));
+        self.send_msg(self.to_other_node(), None, message);
+        //TODO print table
+
     }
 
     pub fn join(&mut self, remote: OtherNode) -> bool {
@@ -207,7 +229,8 @@ impl Node {
                         self.send_msg(self.successor.clone(), Some(from), message);
                     } else {
                         let node_0 = self.closet_finger_preceding(id);
-                        self.successor.print("FIND_SUCCESSOR = closet_finger_preceding");
+                        self.successor
+                            .print("FIND_SUCCESSOR = closet_finger_preceding");
                         message.set_message_type(FOUND_SUCCESSOR);
                         self.send_msg(node_0, Some(from), message);
                     }
