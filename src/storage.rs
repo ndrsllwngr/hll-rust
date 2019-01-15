@@ -10,15 +10,15 @@ impl Storage {
         return Storage { data: HashMap::new() };
     }
 
-    fn put(&mut self, key: String, value: String) {
+    pub fn put(&mut self, key: String, value: String) {
         self.data.insert(key, value);
     }
 
-    fn get(&mut self, key: String) -> Option<&String> {
+    pub fn get(&mut self, key: String) -> Option<&String> {
         return self.data.get(&key);
     }
 
-    fn delete(&mut self, key: String){
+    pub fn delete(&mut self, key: String){
         self.data.remove(&key);
     }
 }

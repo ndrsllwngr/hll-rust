@@ -1,22 +1,22 @@
 extern crate crypto;
-extern crate num_bigint;
 extern crate num;
+extern crate num_bigint;
 
 #[macro_use]
 extern crate log;
 extern crate log4rs;
 
-use std::collections::HashMap;
 use num_bigint::{BigInt, Sign, ToBigInt};
-use std::str;
+use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::str;
 
-mod node;
-mod storage;
 mod finger;
-mod util;
 mod network;
-
+mod node;
+mod protocols;
+mod storage;
+mod util;
 
 fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
@@ -38,15 +38,53 @@ fn main() {
     assert_eq!(Some(b'n'), bytes.next());
     */
 
-
     test_endian("a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
     test_modulo_bigint();
     test_compare_bigint();
 
-
-
-    let test_node = node::Node::new("127.0.0.1:34254".parse().unwrap());
-    &test_node.process_received_msg(1, 3);
+    let mut test_node = node::Node::new("127.0.0.1:34254".parse().unwrap());
+    &test_node.process_received_msg(
+        node::OtherNode::new(
+            BigInt::new(Sign::Minus, vec![1]),
+            "127.0.0.1:34254".parse().unwrap(),
+        ),
+        protocols::Message::new(0, Some(0), None),
+    );
+    &test_node.process_received_msg(
+        node::OtherNode::new(
+            BigInt::new(Sign::Minus, vec![1]),
+            "127.0.0.1:34254".parse().unwrap(),
+        ),
+        protocols::Message::new(1, Some(0), None),
+    );
+    &test_node.process_received_msg(
+        node::OtherNode::new(
+            BigInt::new(Sign::Minus, vec![1]),
+            "127.0.0.1:34254".parse().unwrap(),
+        ),
+        protocols::Message::new(2, Some(0), None),
+    );
+    &test_node.process_received_msg(
+        node::OtherNode::new(
+            BigInt::new(Sign::Minus, vec![1]),
+            "127.0.0.1:34254".parse().unwrap(),
+        ),
+        protocols::Message::new(3, Some(0), None),
+    );
+    &test_node.process_received_msg(
+        node::OtherNode::new(
+            BigInt::new(Sign::Minus, vec![1]),
+            "127.0.0.1:34254".parse().unwrap(),
+        ),
+        protocols::Message::new(4, Some(0), None),
+    );
+    &test_node.process_received_msg(
+        node::OtherNode::new(
+            BigInt::new(Sign::Minus, vec![1]),
+            "127.0.0.1:34254".parse().unwrap(),
+        ),
+        protocols::Message::new(5, Some(0), None),
+    );
     &test_node.start_network();
 
     ip_address_to_string_test();
@@ -63,8 +101,7 @@ fn test_endian(str: &str) {
     let big_int_minus_b = BigInt::from_bytes_be(Sign::Minus, &byte_vec);
     let big_int_minus_l = BigInt::from_bytes_le(Sign::Minus, &byte_vec);
 
-    info!("{}",big_int_plus_b);
-
+    info!("{}", big_int_plus_b);
 
     let byte_vec_no_b = big_int_no_b.to_bytes_be();
     let byte_vec_no_l = big_int_no_l.to_bytes_be();
@@ -72,7 +109,6 @@ fn test_endian(str: &str) {
     let byte_vec_plus_l = big_int_plus_l.to_bytes_le();
     let byte_vec_minus_b = big_int_minus_b.to_bytes_be();
     let byte_vec_minus_l = big_int_minus_l.to_bytes_le();
-
 
     let str_byte_vec_no_b = std::str::from_utf8(&byte_vec_no_b.1);
     let str_byte_vec_no_l = std::str::from_utf8(&byte_vec_no_l.1);
@@ -89,37 +125,35 @@ fn test_endian(str: &str) {
     custom_print(str_byte_vec_minus_l);
 }
 
-fn test_modulo_bigint(){
-
-
-    let should_be_two = BigInt::modpow(&12.to_bigint().unwrap(),&1.to_bigint().unwrap(), &10.to_bigint().unwrap());
-    info!("{}",should_be_two)
+fn test_modulo_bigint() {
+    let should_be_two = BigInt::modpow(
+        &12.to_bigint().unwrap(),
+        &1.to_bigint().unwrap(),
+        &10.to_bigint().unwrap(),
+    );
+    info!("{}", should_be_two)
 }
 
-fn test_compare_bigint(){
+fn test_compare_bigint() {
     let one = &1.to_bigint().unwrap();
     let two = &2.to_bigint().unwrap();
     let two_again = &2.to_bigint().unwrap();
     let three = &3.to_bigint().unwrap();
 
-    info!("{}",two == two_again);
-    info!("{}",two < three);
-    info!("{}",two > one);
+    info!("{}", two == two_again);
+    info!("{}", two < three);
+    info!("{}", two > one);
 }
 
 fn custom_print(result: Result<&str, std::str::Utf8Error>) {
     match result {
-        Ok(n)  => info!("{}", n),
+        Ok(n) => info!("{}", n),
         Err(e) => error!("Error: {}", e),
     }
 }
 
-fn ip_address_to_string_test(){
+fn ip_address_to_string_test() {
     let addr = "127.0.0.1:34254".parse::<SocketAddr>().unwrap();
-    info!("{}",addr.to_string());
-    info!("{}","blöasdsa");
+    info!("{}", addr.to_string());
+    info!("{}", "blöasdsa");
 }
-
-
-
-

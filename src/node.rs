@@ -1,17 +1,11 @@
 use std::net::SocketAddr;
 
 use super::finger::FingerTable;
-use super::storage::Storage;
 use super::network::Network;
-use super::util::create_node_id;
+use super::protocols::*;
+use super::storage::Storage;
+use super::util::*;
 use num_bigint::BigInt;
-
-const NOTIFY_PREDECESSOR: u8 = 0;
-const NOTIFY_SUCCESSOR: u8 = 1;
-const NOTIFY_JOIN: u8 = 2;
-const FIND_SUCCESSOR: u8 = 3;
-const FOUND_SUCCESSOR: u8 = 4;
-const MESSAGE: u8 = 5;
 
 pub struct OtherNode {
     id: BigInt,
@@ -22,18 +16,22 @@ impl OtherNode {
     pub fn new(id: BigInt, ip: SocketAddr) -> OtherNode {
         return OtherNode { id, ip_addr: ip };
     }
+
+    pub fn print(&self, desc: &str) {
+        info!("{}: id: {}, ip_addr: {}", desc, self.id, self.ip_addr);
+    }
 }
 
 pub struct Node {
     id: BigInt,
     ip_addr: SocketAddr,
+    network: Network,
     //TODO check if better possibilities available
     predecessor: Option<OtherNode>,
-    successor: OtherNode,
-    //TODO can be found out by finger table
-    finger_table: FingerTable,
+    successor: OtherNode,      //TODO can be found out by finger table
+    finger_table: FingerTable, //TODO do we need finger_entries (e.g. 32 or 8)
     storage: Storage,
-    network: Network,
+    next_finger: usize,
 }
 
 impl Node {
@@ -47,6 +45,10 @@ impl Node {
             TODO In addition to that we need to check how network cann call methods on node, particularly: process_received_msg
         */
         let network = Network::new(ip_addr);
+        let next_finger = 0;
+
+        info!("Node: id: {}, ip_addr: {}", id, ip_addr);
+        successor.print("Successor");
 
         return Node {
             id,
@@ -56,6 +58,7 @@ impl Node {
             finger_table,
             storage,
             network,
+            next_finger,
         };
     }
 
@@ -74,25 +77,38 @@ impl Node {
     }
 
     //TODO find better name
-    pub fn start_network(self){
+    pub fn start_network(self) {
         self.network.start_listening_on_socket();
     }
 
-    // @andreasellw das is deine dispatch methode, ich glaub das macht hier und mit dem namen mehr sinn,
-    // vll hab ich sie aber auch falsch verstanden ;)
-    pub fn process_received_msg(&self, _from: i32, _message: u8) {
+    pub fn process_received_msg(&mut self, _from: OtherNode, _message: Message) {
         let from = _from;
         let message = _message;
 
-        match message {
+        match message.get_state() {
             // Node notifies successor about predessor
             NOTIFY_PREDECESSOR =>
             /*
              *  predecessor is nil or n'∈(predecessor, n)
              */
-                {
-                    info!("0-NOTIFY_PREDECESSOR")
+            {
+                info!("0-NOTIFY_PREDECESSOR");
+                message.print();
+                match &self.predecessor {
+                    Some(predecessor) => {
+                        if is_in_range(from.id.clone(), predecessor.id.clone(), self.id.clone()) {
+                            from.print("New predecessor ist now");
+                            self.predecessor = Some(from);
+                        }
+                    }
+                    None => {
+                        from.print("New predecessor ist now");
+                        self.predecessor = Some(from);
+                    }
                 }
+
+                //TODO this.send(this.predecessor, message, from); missing
+            }
 
             // Stabilize
             NOTIFY_SUCCESSOR =>
@@ -103,19 +119,45 @@ impl Node {
              *      successor = x;
              *    successor.notify(n);
              */
-                {
-                    info!("1-NOTIFY_SUCCESSOR")
+            {
+                info!("1-NOTIFY_SUCCESSOR");
+                message.print();
+
+                if is_in_range(from.id.clone(), self.id.clone(), self.successor.id.clone()) {
+                    self.successor = from;
+                    self.successor.print("New succesor is now");
                 }
-            NOTIFY_JOIN => info!("Node joined: {}", from),
-            FIND_SUCCESSOR => info!("3-FIND_SUCCESSOR"),
-            FOUND_SUCCESSOR =>
-                {
-                    // TODO this.send(this.successor, message, from);
-                    info!("4-FOUND_SUCCESSOR")
+            }
+            NOTIFY_JOIN => {
+                info!("2-NOTIFY_JOIN");
+                message.print();
+                from.print("Node joined");
+            }
+            FIND_SUCCESSOR => {
+                info!("3-FIND_SUCCESSOR");
+                message.print();
+            }
+            FOUND_SUCCESSOR => {
+                // TODO this.send(this.successor, message, from);
+                info!("4-FOUND_SUCCESSOR");
+                message.print();
+
+                match (message.get_next_finger(), message.get_id()) {
+                    (Some(next_finger), Some(id)) => {
+                        self.finger_table.put(next_finger, id, from);
+                        info!("FingerTable fixed");
+                    }
+                    _ => {
+                        self.successor = from;
+                        self.successor.print("New successor is now");
+                    }
                 }
+            }
             MESSAGE => info!("5-MESSAGE"),
-            _ => info!("Unknown chord message: {}", message),
+            _ => {
+                warn!("Unknown chord message!");
+                message.print();
+            }
         }
     }
 }
-
