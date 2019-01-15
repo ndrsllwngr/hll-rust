@@ -5,12 +5,14 @@ use std::net::SocketAddr;
 
 
 //TODO discuss if this is better placed here or in node.rs
+//TODO write test for this function to verify correctness
 pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
     let hash = create_hash(&ip_addr.to_string());
     let byte_vec = hash.as_bytes().to_vec();
     return BigInt::from_bytes_be(Sign::Plus, &byte_vec);
 }
 
+//TODO write test for this function to verify correctness
 pub fn create_hash(string: &str) -> String {
 
 // create a Sha1 object
@@ -27,6 +29,7 @@ pub fn create_hash(string: &str) -> String {
 /**
 * Testing if key ∈ (n, successor]
 */
+//TODO write test for this function to verify correctness
 pub fn is_in_half_range(key: BigInt, n: BigInt, successor: BigInt) -> bool {
     if n < successor {
         return (key > n && key <= successor) || (n == successor);
@@ -39,6 +42,7 @@ pub fn is_in_half_range(key: BigInt, n: BigInt, successor: BigInt) -> bool {
 * Testing if key ∈ (left, right)
 */
 //TODO check if left & right naming is reasonable
+//TODO write test for this function to verify correctness
 pub fn is_in_range(key: BigInt, left: BigInt, right: BigInt) -> bool {
     if left < right {
         return (key > left && key < right) || (left == right && key != left);

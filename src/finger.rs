@@ -1,52 +1,59 @@
 use num::bigint::{BigInt, Sign, ToBigInt};
-use num::traits::{pow};
+use num::traits::pow;
+use std::collections::HashMap;
 
 use super::node::OtherNode;
 
-
 // Represents a single finger table entry
 pub struct FingerEntry {
-    pub id: Vec<u8>, // ID hash of (n + 2^i) mod (2^m)
-    pub node: OtherNode
+    pub id: BigInt, // ID hash of (n + 2^i) mod (2^m)
+    pub node: OtherNode,
 }
 
-
-
-fn new_finger_entry(id: Vec<u8>, node: OtherNode) -> FingerEntry {
-    return FingerEntry{id, node};
+pub struct FingerTable {
+    entries: Vec<FingerEntry>,
 }
 
+impl FingerTable {
+    pub fn new() -> FingerTable {
+        return FingerTable {
+            entries: Vec::new(),
+        };
+    }
 
-pub type FingerTable = Vec<FingerEntry>;
+    pub fn put(&mut self, index: usize, id: BigInt, node: OtherNode) {
+        let entry = FingerEntry { id, node };
+        self.entries[index] = entry;
+    }
 
-/* this is bullshit, we need a creation of fingertable dont now how yet
+    pub fn get(&mut self, index: usize) -> Option<&FingerEntry> {
+        if self.entries.len() < index {
+            Some(&self.entries[index])
+        } else {
+            None
+        }
+    }
 
-impl<'a> FingerTable<'a>{
-    pub fn new() -> FingerTable<'a>{
-        let mut ft: Vec<FingerEntry> = Vec::new();
-        //TODO implement creation
-        return ft;
+    pub fn length(&mut self) -> usize {
+        self.entries.len()
     }
 }
-*/
 
-
-fn finger_id<'a>(n: &Vec<u8>, i: usize, m: usize) -> Vec<u8>  {
-
-    let id_int  = BigInt::from_bytes_be(Sign::NoSign, n);
+fn finger_id<'a>(n: &Vec<u8>, i: usize, m: usize) -> Vec<u8> {
+    let id_int = BigInt::from_bytes_be(Sign::NoSign, n);
 
     // Get the offset
-    let two : BigInt= 2.to_bigint().unwrap();
-    let offset : BigInt = pow(two.clone(), i);
+    let two: BigInt = 2.to_bigint().unwrap();
+    let offset: BigInt = pow(two.clone(), i);
 
     // Sum
     let sum = id_int + offset;
 
     // Get the ceiling
-    let ceil : BigInt = pow(two.clone(), m);
+    let ceil: BigInt = pow(two.clone(), m);
 
     // Modulo
-    let modulo = BigInt::modpow(&sum,&1.to_bigint().unwrap(), &ceil);
+    let modulo = BigInt::modpow(&sum, &1.to_bigint().unwrap(), &ceil);
 
     return modulo.to_bytes_be().1;
 }
