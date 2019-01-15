@@ -39,6 +39,10 @@ impl Message {
         self.id = id
     }
 
+    pub fn set_message_type(&mut self, message_type: u8) {
+        self.message_type = message_type
+    }
+
     pub fn print(&self) {
         match (self.next_finger.clone(), self.id.clone()) {
             (Some(next_finger), Some(id)) => info!(

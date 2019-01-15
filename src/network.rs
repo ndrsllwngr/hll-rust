@@ -18,7 +18,7 @@ impl Network {
         };
     }
 
-    pub fn send(&self, _msg: Message, _to: OtherNode) {
+    pub fn send(&self, _from: OtherNode, _to: OtherNode, _msg: Message) {
         //TODO implement
     }
 
