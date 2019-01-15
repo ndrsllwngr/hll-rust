@@ -1,10 +1,10 @@
 use num::bigint::{BigInt, Sign, ToBigInt};
 use num::traits::pow;
-use std::collections::HashMap;
 
 use super::node::OtherNode;
 
 // Represents a single finger table entry
+#[derive(Clone)]
 pub struct FingerEntry {
     pub id: BigInt, // ID hash of (n + 2^i) mod (2^m)
     pub node: OtherNode,
@@ -26,15 +26,15 @@ impl FingerTable {
         self.entries[index] = entry;
     }
 
-    pub fn get(&mut self, index: usize) -> Option<&FingerEntry> {
-        if self.entries.len() < index {
+    pub fn get(&self, index: usize) -> Option<&FingerEntry> {
+        if self.length() < index {
             Some(&self.entries[index])
         } else {
             None
         }
     }
 
-    pub fn length(&mut self) -> usize {
+    pub fn length(&self) -> usize {
         self.entries.len()
     }
 }

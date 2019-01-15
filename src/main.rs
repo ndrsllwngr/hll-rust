@@ -69,7 +69,7 @@ fn main() {
             BigInt::new(Sign::Minus, vec![1]),
             "127.0.0.1:34254".parse().unwrap(),
         ),
-        protocols::Message::new(3, Some(0), None),
+        protocols::Message::new(3, Some(0), Some(BigInt::new(Sign::Plus, vec![2]))),
     );
     &test_node.process_received_msg(
         node::OtherNode::new(
