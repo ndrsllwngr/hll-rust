@@ -22,12 +22,12 @@ impl OtherNode {
         info!("{}: id: {}, ip_addr: {}", desc, self.id, self.ip_addr);
     }
 
-    pub fn get_id(&self) -> BigInt {
-        self.id.clone()
+    pub fn get_id(&self) -> &BigInt {
+        &self.id
     }
 
-    pub fn get_ip_addr(&self) -> SocketAddr {
-        self.ip_addr.clone()
+    pub fn get_ip_addr(&self) -> &SocketAddr {
+        &self.ip_addr
     }
 }
 
@@ -89,9 +89,9 @@ impl Node {
          */
         for x in self.finger_table.length()..0 {
             let finger_entry = self.finger_table.get(x);
-            match &finger_entry {
+            match finger_entry {
                 Some(finger_entry) => {
-                    if is_in_range(finger_entry.node.get_id().clone(), self.id.clone(), find_id.clone()) {
+                    if is_in_range(finger_entry.node.get_id(), &self.id, &find_id) {
                         return finger_entry.node.clone();
                     }
                 }
@@ -99,7 +99,7 @@ impl Node {
             }
         }
 
-        if is_in_range(self.successor.id.clone(), self.id.clone(), find_id) {
+        if is_in_range(&self.successor.id, &self.id, &find_id) {
             return self.successor.clone();
         } else {
             return self.to_other_node();
@@ -144,7 +144,7 @@ impl Node {
                 message.print();
                 let pre_to_send = match self.predecessor.clone() {
                     Some(predecessor) => {
-                        if is_in_range(from.id.clone(), predecessor.id.clone(), self.id.clone()) {
+                        if is_in_range(&from.id, &predecessor.id, &self.id) {
                             from.print("New predecessor ist now");
                             self.predecessor = Some(from.clone());
                             from.clone()
@@ -174,7 +174,7 @@ impl Node {
                 info!("1-NOTIFY_SUCCESSOR");
                 message.print();
 
-                if is_in_range(from.id.clone(), self.id.clone(), self.successor.id.clone()) {
+                if is_in_range(&from.id, &self.id, &self.successor.id) {
                     self.successor = from;
                     self.successor.print("New succesor is now");
                 }
@@ -188,7 +188,7 @@ impl Node {
                 info!("3-FIND_SUCCESSOR");
                 message.print();
                 message.get_id().map(|id| {
-                    if is_in_half_range(id.clone(), self.id.clone(), self.successor.id.clone()) {
+                    if is_in_half_range(&id, &self.id, &self.successor.id) {
                         self.successor.print("FIND_SUCCESSOR");
                         message.set_message_type(FOUND_SUCCESSOR);
                         self.send_msg(self.successor.clone(), Some(from), message);

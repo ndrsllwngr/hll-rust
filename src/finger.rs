@@ -1,6 +1,5 @@
 use num::bigint::{BigInt, Sign, ToBigInt};
 use num::traits::pow;
-use std::collections::HashMap;
 
 use super::node::OtherNode;
 
@@ -27,9 +26,9 @@ impl FingerTable {
         self.entries[index] = entry;
     }
 
-    pub fn get(&self, index: usize) -> Option<FingerEntry> {
+    pub fn get(&self, index: usize) -> Option<&FingerEntry> {
         if self.length() < index {
-            Some(self.entries[index].clone())
+            Some(&self.entries[index])
         } else {
             None
         }

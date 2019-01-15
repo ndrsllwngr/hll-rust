@@ -1,4 +1,4 @@
-use num_bigint::{BigInt, Sign};
+use num_bigint::BigInt;
 
 // Protocol states
 pub const NOTIFY_PREDECESSOR: u8 = 0;
