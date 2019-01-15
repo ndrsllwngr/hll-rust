@@ -4,7 +4,7 @@ use super::finger::FingerTable;
 use super::storage::Storage;
 use super::network::Network;
 use super::util::create_node_id;
-use num_bigint::{BigInt, Sign};
+use num_bigint::BigInt;
 
 const NOTIFY_PREDECESSOR: u8 = 0;
 const NOTIFY_SUCCESSOR: u8 = 1;
@@ -38,19 +38,19 @@ pub struct Node {
 
 impl Node {
     //Constructor for initialisation of new Chord Ring, call new_existing_network if joining existing network
-    pub fn new(ip: SocketAddr) -> Node {
-        let id = create_node_id(ip);
-        let successor = OtherNode::new(id.clone(), ip);
+    pub fn new(ip_addr: SocketAddr) -> Node {
+        let id = create_node_id(ip_addr);
+        let successor = OtherNode::new(id.clone(), ip_addr);
         let finger_table = FingerTable::new();
         let storage = Storage::new();
         /*  TODO fix when new is implemented
             TODO In addition to that we need to check how network cann call methods on node, particularly: process_received_msg
         */
-        let network = Network::new(1234);
+        let network = Network::new(ip_addr);
 
         return Node {
             id,
-            ip_addr: ip,
+            ip_addr: ip_addr,
             predecessor: None,
             successor,
             finger_table,
@@ -67,15 +67,20 @@ impl Node {
         };
     }
 
-    pub fn send_msg(self, from: OtherNode, to: OtherNode, message: String) {
+    pub fn send_msg(self, _from: OtherNode, _to: OtherNode, _message: String) {
         //TODO build JSON Object, and send it as message
 
-        self.network.send(message, to.ip_addr);
+        self.network.send(_message, _to.ip_addr);
+    }
+
+    //TODO find better name
+    pub fn start_network(self){
+        self.network.start_listening_on_socket();
     }
 
     // @andreasellw das is deine dispatch methode, ich glaub das macht hier und mit dem namen mehr sinn,
     // vll hab ich sie aber auch falsch verstanden ;)
-    pub fn process_received_msg(_from: i32, _message: u8) {
+    pub fn process_received_msg(&self, _from: i32, _message: u8) {
         let from = _from;
         let message = _message;
 
