@@ -85,7 +85,8 @@ fn main() {
         ),
         protocols::Message::new(5, Some(0), None),
     );
-    &test_node.start_network();
+    // &test_node.start_network();
+    &test_node.start_update_fingers();
 
     ip_address_to_string_test();
 }
