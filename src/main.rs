@@ -6,6 +6,12 @@ extern crate num_bigint;
 extern crate log;
 extern crate log4rs;
 
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+extern crate serde_json;
+
 use num_bigint::{BigInt, Sign, ToBigInt};
 use std::collections::HashMap;
 use std::net::SocketAddr;
