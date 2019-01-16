@@ -1,4 +1,6 @@
 use num_bigint::BigInt;
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
 
 // Protocol states
 pub const NOTIFY_PREDECESSOR: u8 = 0;
@@ -8,6 +10,7 @@ pub const FIND_SUCCESSOR: u8 = 3;
 pub const FOUND_SUCCESSOR: u8 = 4;
 pub const MESSAGE: u8 = 5;
 
+#[derive(Serialize, Deserialize)]
 pub struct Message {
     message_type: u8,
     next_finger: Option<usize>,

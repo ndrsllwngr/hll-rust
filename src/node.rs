@@ -1,14 +1,16 @@
 use std::net::SocketAddr;
 use std::{thread, time};
+use num_bigint::BigInt;
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
 
 use super::finger::FingerTable;
 use super::network::Network;
 use super::protocols::*;
 use super::storage::Storage;
 use super::util::*;
-use num_bigint::BigInt;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct OtherNode {
     id: BigInt,
     ip_addr: SocketAddr,
@@ -150,7 +152,10 @@ impl Node {
             message.set_id(Some(self.id.clone()))
         }
 
-        //TODO build JSON Object, and send it as message
+        let json_string = serde_json::to_string(&message).unwrap();
+        // let json_string_other_node = serde_json::to_string(&from).unwrap();
+        // let parsed_node: OtherNode = serde_json::from_str(&json_string_other_node).unwrap();
+        // let parsed_message: Message = serde_json::from_str(custom_json).unwrap();
 
         self.network.send(&from, &to, &message);
     }
