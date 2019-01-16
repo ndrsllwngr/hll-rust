@@ -195,6 +195,7 @@ impl Node {
                     }
                 };
                 self.send_msg(pre_to_send, Some(from), message);
+                self.finger_table.print()
             }
 
             // Stabilize
@@ -260,6 +261,8 @@ impl Node {
                 warn!("Unknown chord message!");
                 message.print();
             }
+
+
         }
     }
 }
