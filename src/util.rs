@@ -9,7 +9,7 @@ use std::net::SocketAddr;
 pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
     let hash = create_hash(&ip_addr.to_string());
     let byte_vec = hash.as_bytes().to_vec();
-    return BigInt::from_bytes_be(Sign::Plus, &byte_vec);
+    BigInt::from_bytes_be(Sign::Plus, &byte_vec)
 }
 
 //TODO write test for this function to verify correctness
@@ -21,8 +21,7 @@ pub fn create_hash(string: &str) -> String {
     hasher.input_str(string);
 
     // read hash digest
-    let hex = hasher.result_str();
-    return hex;
+    hasher.result_str()
 }
 
 /**
@@ -31,9 +30,9 @@ pub fn create_hash(string: &str) -> String {
 //TODO write test for this function to verify correctness
 pub fn is_in_half_range(key: &BigInt, n: &BigInt, successor: &BigInt) -> bool {
     if n < successor {
-        return (key > n && key <= successor) || (n == successor);
+        (key > n && key <= successor) || (n == successor)
     } else {
-        return (key > successor && key <= n) || (n == successor);
+        (key > successor && key <= n) || (n == successor)
     }
 }
 
@@ -44,9 +43,9 @@ pub fn is_in_half_range(key: &BigInt, n: &BigInt, successor: &BigInt) -> bool {
 //TODO write test for this function to verify correctness
 pub fn is_in_range(key: &BigInt, left: &BigInt, right: &BigInt) -> bool {
     if left < right {
-        return (key > left && key < right) || (left == right && key != left);
+        (key > left && key < right) || (left == right && key != left)
     } else {
-        return (key > right && key < left) || (left == right && key != left);
+        (key > right && key < left) || (left == right && key != left)
     }
 }
 

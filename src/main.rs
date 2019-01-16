@@ -43,42 +43,42 @@ fn main() {
     test_compare_bigint();
 
     let mut test_node = node::Node::new("127.0.0.1:34254".parse().unwrap());
-    &test_node.process_received_msg(
+    test_node.process_received_msg(
         node::OtherNode::new(
             BigInt::new(Sign::Minus, vec![1]),
             "127.0.0.1:34254".parse().unwrap(),
         ),
         protocols::Message::new(0, Some(0), None),
     );
-    &test_node.process_received_msg(
+    test_node.process_received_msg(
         node::OtherNode::new(
             BigInt::new(Sign::Minus, vec![1]),
             "127.0.0.1:34254".parse().unwrap(),
         ),
         protocols::Message::new(1, Some(0), None),
     );
-    &test_node.process_received_msg(
+    test_node.process_received_msg(
         node::OtherNode::new(
             BigInt::new(Sign::Minus, vec![1]),
             "127.0.0.1:34254".parse().unwrap(),
         ),
         protocols::Message::new(2, Some(0), None),
     );
-    &test_node.process_received_msg(
+    test_node.process_received_msg(
         node::OtherNode::new(
             BigInt::new(Sign::Minus, vec![1]),
             "127.0.0.1:34254".parse().unwrap(),
         ),
         protocols::Message::new(3, Some(0), Some(BigInt::new(Sign::Plus, vec![2]))),
     );
-    &test_node.process_received_msg(
+    test_node.process_received_msg(
         node::OtherNode::new(
             BigInt::new(Sign::Minus, vec![1]),
             "127.0.0.1:34254".parse().unwrap(),
         ),
         protocols::Message::new(4, Some(0), None),
     );
-    &test_node.process_received_msg(
+    test_node.process_received_msg(
         node::OtherNode::new(
             BigInt::new(Sign::Minus, vec![1]),
             "127.0.0.1:34254".parse().unwrap(),
@@ -86,7 +86,7 @@ fn main() {
         protocols::Message::new(5, Some(0), None),
     );
     // &test_node.start_network();
-    &test_node.start_update_fingers();
+    test_node.start_update_fingers();
 
     ip_address_to_string_test();
 }
