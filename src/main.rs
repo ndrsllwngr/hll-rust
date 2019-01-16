@@ -96,6 +96,7 @@ fn main() {
 
     ip_address_to_string_test();*/
 
+    //TODO probable the listening needs to be done in its own thread
     let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
     network1.start_listening_on_socket();
 
