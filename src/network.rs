@@ -1,10 +1,11 @@
 use super::node::OtherNode;
 use super::protocols::Message;
-use std::net::SocketAddr;
-use tokio::io::copy;
-use tokio::net::TcpListener;
-use tokio::prelude::*;
+use std::net::{TcpListener, TcpStream, SocketAddr};
+use std::thread;
+use std::io::{BufReader, BufRead, Write};
 
+//TODO find out if copy & clone is the right solution for the error happening when removing this
+#[derive(Copy, Clone)]
 pub struct Network {
     //TODO to be implemented
     addr: SocketAddr,
@@ -20,35 +21,59 @@ impl Network {
         //TODO implement
     }
 
+
+    fn handle_request(self, mut stream: TcpStream, client_addr: SocketAddr) {
+        let mut reader = BufReader::new(stream);
+
+        loop {
+            let mut buffer = String::new();
+            let _ = reader.read_line(&mut buffer);
+            info!("New message from {}: {}",client_addr.to_string(), buffer);
+            // TODO parse message and handle it in Node
+        }
+    }
+
+    // HINT: this can be tested by connecting via bash terminal (preinstalled on Mac/Linux) by executing:
+    // nc 127.0.0.1 34254
+    // afterwards every message will be echoed in the console by handle_request
     pub fn start_listening_on_socket(self) {
-        //TODO improve & check if working
-        info!("Bind the server socket.");
-        let listener = TcpListener::bind(&self.addr).expect("unable to bind TCP listener");
+        let listener = TcpListener::bind(self.addr).unwrap();
+        info!("Started listening on {}", self.addr.to_string());
 
-        // Pull out a stream of sockets for incoming connections
-        let server = listener
-            .incoming()
-            .map_err(|e| error!("accept failed = {:?}", e))
-            .for_each(|sock| {
-                // Split up the reading and writing parts of the
-                // socket.
-                let (reader, writer) = sock.split();
+        loop {
+            match listener.accept() {
+                Ok((stream, addr)) => {
+                    info!("Connection by {}", addr.to_string());
+                    thread::spawn(move || {
+                        self.handle_request(stream, addr);
+                    })
+                }
+                Err(e) => {
+                    thread::spawn(move || {
+                        error!("Connection failed: {:?}", e)
+                    })
+                }
+            };
+        };
+    }
 
-                // A future that echos the data and returns how
-                // many bytes were copied...
-                let bytes_copied = copy(reader, writer);
+    //TODO this works partially with netcat, but netcat stops listening after it recieves the message
+    //TODO investigate
+    pub fn send_string_to_socket(self, addr:SocketAddr, msg:String){
+        //TODO aparently streams dont have to be closed, but check again
+        info!("About to send string to socket");
+        match TcpStream::connect(addr) {
+            Ok(mut stream) => {
+                info!("Successfully connected to: {}",addr.to_string());
 
-                // ... after which we'll print what happened.
-                let handle_conn = bytes_copied
-                    .map(|amt| info!("wrote {:?} bytes", amt))
-                    .map_err(|err| error!("IO error {:?}", err));
+                stream.write(msg.as_bytes()).unwrap();
+                info!("Sent msg: {}", msg);
 
-                // Spawn the future as a concurrent task.
-                tokio::spawn(handle_conn)
-            });
-
-        // Start the Tokio runtime
-        info!("Server is running.");
-        tokio::run(server);
+            },
+            Err(e) => {
+                error!("Failed to connect: {}", e);
+            }
+        }
+        info!("Terminated.");
     }
 }

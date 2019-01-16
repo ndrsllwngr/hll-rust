@@ -27,12 +27,12 @@ mod util;
 fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     info!("booting up");
-
+    /*
     //let id = "node_id".bytes();
     //let ip_addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
     let mut data = HashMap::new();
     data.insert("key", "value");
-    /* let config = node::Config{id , ip_addr};
+    let config = node::Config{id , ip_addr};
     let storage = storage::Storage{data};
     let node = node::Node{config, storage};
 
@@ -42,7 +42,7 @@ fn main() {
     assert_eq!(Some(b'f'), bytes.next());
     assert_eq!(Some(b'i'), bytes.next());
     assert_eq!(Some(b'n'), bytes.next());
-    */
+
 
     test_endian("a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
     test_modulo_bigint();
@@ -94,7 +94,15 @@ fn main() {
     // &test_node.start_network();
     test_node.start_update_fingers();
 
-    ip_address_to_string_test();
+    ip_address_to_string_test();*/
+
+    let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
+    network1.start_listening_on_socket();
+
+    //let network2 = network::Network::new("127.0.0.1:34255".parse::<SocketAddr>().unwrap());
+    //network2.start_listening_on_socket();
+    //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bla".to_owned());
+    //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bli".to_owned());
 }
 
 fn test_endian(str: &str) {
