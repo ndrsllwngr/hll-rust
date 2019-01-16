@@ -1,24 +1,22 @@
+use super::node::OtherNode;
+use super::protocols::Message;
+use std::net::SocketAddr;
 use tokio::io::copy;
 use tokio::net::TcpListener;
 use tokio::prelude::*;
-use std::net::SocketAddr;
-use super::protocols::Message;
-use super::node::OtherNode;
 
 pub struct Network {
     //TODO to be implemented
-    addr:SocketAddr,
+    addr: SocketAddr,
 }
 
 impl Network {
     pub fn new(addr: SocketAddr) -> Network {
         //TODO implement correctly
-        return Network {
-            addr,
-        };
+        Network { addr }
     }
 
-    pub fn send(&self, _from: OtherNode, _to: OtherNode, _msg: Message) {
+    pub fn send(&self, _from: &OtherNode, _to: &OtherNode, _msg: &Message) {
         //TODO implement
     }
 

@@ -16,11 +16,11 @@ pub struct Message {
 
 impl Message {
     pub fn new(message_type: u8, next_finger: Option<usize>, id: Option<BigInt>) -> Message {
-        return Message {
+        Message {
             message_type,
             next_finger,
             id,
-        };
+        }
     }
 
     pub fn get_message_type(&self) -> u8 {
@@ -44,7 +44,7 @@ impl Message {
     }
 
     pub fn print(&self) {
-        match (self.next_finger.clone(), self.id.clone()) {
+        match (self.next_finger, self.id.clone()) {
             (Some(next_finger), Some(id)) => info!(
                 "Message: state: {}, next_finger: {}, id: {}",
                 self.message_type, next_finger, id

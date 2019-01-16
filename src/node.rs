@@ -16,7 +16,7 @@ pub struct OtherNode {
 
 impl OtherNode {
     pub fn new(id: BigInt, ip: SocketAddr) -> OtherNode {
-        return OtherNode { id, ip_addr: ip };
+        OtherNode { id, ip_addr: ip }
     }
 
     pub fn print(&self, desc: &str) {
@@ -60,27 +60,27 @@ impl Node {
         info!("Node: id: {}, ip_addr: {}", id, ip_addr);
         successor.print("Successor");
 
-        return Node {
+        Node {
             id,
-            ip_addr: ip_addr,
+            ip_addr,
             predecessor: None,
             successor,
             finger_table,
             storage,
             network,
             next_finger,
-        };
+        }
     }
 
     //TODO check if needs to be pulic method, assumption: No ;)
     pub fn to_other_node(&self) -> OtherNode {
-        return OtherNode {
+        OtherNode {
             id: self.id.clone(),
-            ip_addr: self.ip_addr.clone(),
-        };
+            ip_addr: self.ip_addr,
+        }
     }
 
-    pub fn closet_finger_preceding(&self, find_id: BigInt) -> OtherNode {
+    pub fn closet_finger_preceding(&self, find_id: &BigInt) -> OtherNode {
         /*
          * n.closest_preceding_node(id)
          *   for i = m downto 1
@@ -90,20 +90,17 @@ impl Node {
          */
         for x in self.finger_table.length()..0 {
             let finger_entry = self.finger_table.get(x);
-            match finger_entry {
-                Some(finger_entry) => {
-                    if is_in_range(finger_entry.node.get_id(), &self.id, &find_id) {
-                        return finger_entry.node.clone();
-                    }
+            if let Some(finger_entry) = finger_entry {
+                if is_in_range(finger_entry.node.get_id(), &self.id, &find_id) {
+                    return finger_entry.node.clone();
                 }
-                _ => {}
             }
         }
 
         if is_in_range(&self.successor.id, &self.id, &find_id) {
-            return self.successor.clone();
+            self.successor.clone()
         } else {
-            return self.to_other_node();
+            self.to_other_node()
         }
     }
 
@@ -130,7 +127,6 @@ impl Node {
         let message = Message::new(FIND_SUCCESSOR, Some(next), Some(fix_finger_id));
         self.send_msg(self.to_other_node(), None, message);
         //TODO print table
-
     }
 
     pub fn join(&mut self, remote: OtherNode) -> bool {
@@ -156,7 +152,7 @@ impl Node {
 
         //TODO build JSON Object, and send it as message
 
-        self.network.send(from, to, message);
+        self.network.send(&from, &to, &message);
     }
 
     //TODO find better name
@@ -222,19 +218,19 @@ impl Node {
             FIND_SUCCESSOR => {
                 info!("3-FIND_SUCCESSOR");
                 message.print();
-                message.get_id().map(|id| {
+                if let Some(id) = message.get_id() {
                     if is_in_half_range(&id, &self.id, &self.successor.id) {
                         self.successor.print("FIND_SUCCESSOR");
                         message.set_message_type(FOUND_SUCCESSOR);
                         self.send_msg(self.successor.clone(), Some(from), message);
                     } else {
-                        let node_0 = self.closet_finger_preceding(id);
+                        let node_0 = self.closet_finger_preceding(&id);
                         self.successor
                             .print("FIND_SUCCESSOR = closet_finger_preceding");
                         message.set_message_type(FOUND_SUCCESSOR);
                         self.send_msg(node_0, Some(from), message);
                     }
-                });
+                };
             }
             FOUND_SUCCESSOR => {
                 info!("4-FOUND_SUCCESSOR");

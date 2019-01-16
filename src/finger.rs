@@ -16,9 +16,9 @@ pub struct FingerTable {
 
 impl FingerTable {
     pub fn new() -> FingerTable {
-        return FingerTable {
+        FingerTable {
             entries: Vec::new(),
-        };
+        }
     }
 
     pub fn put(&mut self, index: usize, id: BigInt, node: OtherNode) {
@@ -39,7 +39,7 @@ impl FingerTable {
     }
 }
 
-fn finger_id<'a>(n: &Vec<u8>, i: usize, m: usize) -> Vec<u8> {
+fn finger_id(n: &[u8], i: usize, m: usize) -> Vec<u8> {
     let id_int = BigInt::from_bytes_be(Sign::NoSign, n);
 
     // Get the offset
@@ -55,7 +55,7 @@ fn finger_id<'a>(n: &Vec<u8>, i: usize, m: usize) -> Vec<u8> {
     // Modulo
     let modulo = BigInt::modpow(&sum, &1.to_bigint().unwrap(), &ceil);
 
-    return modulo.to_bytes_be().1;
+    modulo.to_bytes_be().1
 }
 
 /*
