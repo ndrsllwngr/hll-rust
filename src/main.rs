@@ -26,7 +26,7 @@ mod util;
 
 fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-    info!("booting up");
+    debug!("Booting...");
     /*
     //let id = "node_id".bytes();
     //let ip_addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
