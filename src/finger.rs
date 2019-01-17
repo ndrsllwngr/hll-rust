@@ -39,12 +39,14 @@ impl FingerTable {
     }
 
     pub fn print(&self) {
-        info!(
-            "{0: <2} | {1: <97} | {2: <16}",
-            "i", "id", "node"
-        );
+        info!("{0: <2} | {1: <97} | {2: <16}", "i", "id", "node");
         for i in 0..self.entries.len() {
-            info!("{0: <2} | {1: <10} | {2: <10}", i,  self.entries[i].id, self.entries[i].node.get_ip_addr() )
+            info!(
+                "{0: <2} | {1: <10} | {2: <10}",
+                i,
+                self.entries[i].id,
+                self.entries[i].node.get_ip_addr()
+            )
         }
     }
 }

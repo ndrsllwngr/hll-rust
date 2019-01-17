@@ -1,8 +1,8 @@
-use std::net::SocketAddr;
-use std::{thread, time};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
+use std::net::SocketAddr;
+use std::{thread, time};
 
 use super::finger::FingerTable;
 use super::network::Network;
@@ -261,8 +261,6 @@ impl Node {
                 warn!("Unknown chord message!");
                 message.print();
             }
-
-
         }
     }
 }

@@ -15,6 +15,6 @@ num-bigint = {version = "0.2.2", features = ["serde"]}
 rust-crypto = "0.2.36"
 serde = "1.0.84"
 serde_derive = "1.0.84"
-serde_json = "1.0.35"
+serde_json = "1.0.36"
 # check if we even need tokio
 # tokio = "0.1.14"
