@@ -22,6 +22,7 @@ mod network;
 mod node;
 mod protocols;
 mod storage;
+mod thread_pool;
 mod util;
 
 fn main() {
