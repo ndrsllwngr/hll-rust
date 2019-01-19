@@ -5,13 +5,13 @@ appenders:
   console:
     kind: console
     encoder:
-      pattern: "{d(%+)(local)} [{t}] {h({l})} {M}: {m}{n}"
+      pattern: "{d(%+)(local)} {h({l})} [{t}] {h({f}:{L})} - {m}{n}"
   error:
     kind: rolling_file
     path: "log/error.log"
     append: true
     encoder:
-      pattern: "{d} [{t}] {l} {M}: {m}{n}"
+      pattern: "{d(%+)(local)} [{t}] {l} {M}: {m}{n}"
     policy:
       kind: compound
       trigger:
@@ -21,7 +21,7 @@ appenders:
         kind: delete
 
 root:
-  level: info
+  level: debug
   appenders:
     - console
     - error

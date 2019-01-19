@@ -1,8 +1,11 @@
-use super::node::OtherNode;
-use super::protocols::Message;
 use std::net::{TcpListener, TcpStream, SocketAddr};
 use std::io::{BufReader, BufRead, BufWriter, Write};
-use std::{thread, time};
+use std::thread;
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
+
+use super::node::OtherNode;
+use super::protocols::Message;
 
 //TODO find out if copy & clone is the right solution for the error happening when removing this
 pub struct Network {
@@ -34,7 +37,10 @@ impl Network {
                         break;
                     } else {
                         info!("New message from {}: {}", client_addr.to_string(), buffer);
+                        let parsed_message: Message = serde_json::from_str(&buffer).unwrap();
+                        parsed_message.print()
                         // TODO parse message and handle it in Node
+
                     }
                 }
                 Err(e) => {

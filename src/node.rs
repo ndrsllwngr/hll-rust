@@ -1,8 +1,8 @@
-use std::net::SocketAddr;
-use std::{thread, time};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
+use std::net::SocketAddr;
+use std::{thread, time};
 
 use super::finger::FingerTable;
 use super::network::Network;
@@ -10,6 +10,7 @@ use super::protocols::*;
 use super::storage::Storage;
 use super::util::*;
 
+/// Simple representation of an external node in the network
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OtherNode {
     id: BigInt,
@@ -21,10 +22,6 @@ impl OtherNode {
         OtherNode { id, ip_addr: ip }
     }
 
-    pub fn print(&self, desc: &str) {
-        info!("{}: id: {}, ip_addr: {}", desc, self.id, self.ip_addr);
-    }
-
     pub fn get_id(&self) -> &BigInt {
         &self.id
     }
@@ -32,64 +29,82 @@ impl OtherNode {
     pub fn get_ip_addr(&self) -> &SocketAddr {
         &self.ip_addr
     }
+
+    pub fn print(&self, desc: &str) {
+        info!("{}: id: {}, ip_addr: {}", desc, self.id, self.ip_addr);
+    }
 }
 
+/// Complete representation of internal node
+///
+/// * `id`           - Identifier of node: Currently SHA1 hashed IP address
+/// * `ip_addr`      - Ip address and port of the node
+/// * `network`      - The network parameters of the node. Each node stores it's own network
+/// * `finger_table` - Finger table of the node, which stores up to n other nodes
+/// * `next_finger`  - Used to point on the entry of the finger table, we are currently processing
+/// * `successor`    - Successor of the node //TODO can be found out by finger table, //TODO do we need var finger_entries (e.g. 32 or 8)
+/// * `predecessor`  - [Optional] Predecessor of the node
+/// * `storage`      - DHT storage inside the node
 pub struct Node {
     id: BigInt,
     ip_addr: SocketAddr,
-    network: Network,
-    //TODO check if better possibilities available
-    predecessor: Option<OtherNode>,
-    successor: OtherNode,      //TODO can be found out by finger table
-    finger_table: FingerTable, //TODO do we need finger_entries (e.g. 32 or 8)
-    storage: Storage,
+    pub network: Network,
+    finger_table: FingerTable,
     next_finger: usize,
+    successor: OtherNode,
+    predecessor: Option<OtherNode>,
+    storage: Storage,
 }
 
+/// `Nodè` implementation
 impl Node {
-    //Constructor for initialisation of new Chord Ring, call new_existing_network if joining existing network
-    pub fn new(ip_addr: SocketAddr) -> Node {
+    /// Creates new Node
+    /// if `predecessor` is None, the node will initialize a new chord ring
+    /// if `predecessor` is Some(), the node will join an existing network and `predecessor` as its own predecessor
+    ///
+    /// * `ip_addr`     - Ip address and port of the node
+    /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
+    // TODO implement predecessor: Option<SocketAddr>
+    pub fn new(ip_addr: SocketAddr, predecessor: Option<SocketAddr>) -> Node {
         let id = create_node_id(ip_addr);
-        let successor = OtherNode::new(id.clone(), ip_addr);
-        let finger_table = FingerTable::new();
-        let storage = Storage::new();
-        /*  TODO fix when new is implemented
-             TODO In addition to that we need to check how network can call methods on node, particularly: process_received_msg
-        */
         let network = Network::new(ip_addr);
+        let finger_table = FingerTable::new();
+        /// Always start at first entry of finger_table
         let next_finger = 0;
+        let successor = OtherNode::new(id.clone(), ip_addr);
 
-        info!("Node: id: {}, ip_addr: {}", id, ip_addr);
-        successor.print("Successor");
-
+        let storage = Storage::new();
+        // TODO In addition to that we need to check how network can call methods on node, particularly: process_received_msg
+        // Solution: pass reference of node to network
         Node {
             id,
             ip_addr,
-            predecessor: None,
-            successor,
-            finger_table,
-            storage,
             network,
+            finger_table,
             next_finger,
+            successor,
+            predecessor: None,
+            storage,
         }
     }
 
-    //TODO check if needs to be pulic method, assumption: No ;)
-    pub fn to_other_node(&self) -> OtherNode {
+    /// Converts internal representation of node to the simpler representation OtherNode
+    fn to_other_node(&self) -> OtherNode {
         OtherNode {
             id: self.id.clone(),
             ip_addr: self.ip_addr,
         }
     }
 
+    /// Gets closet preceding
     pub fn closet_finger_preceding(&self, find_id: &BigInt) -> OtherNode {
-        /*
-         * n.closest_preceding_node(id)
-         *   for i = m downto 1
-         *     if (finger[i]∈(n,id))
-         *       return finger[i];
-         *   return n;
-         */
+        /// ```
+        /// n.closest_preceding_node(id)
+        ///   for i = m downto 1
+        ///     if (finger[i]∈(n,id))
+        ///       return finger[i];
+        ///   return n;
+        /// ```
         for x in self.finger_table.length()..0 {
             let finger_entry = self.finger_table.get(x);
             if let Some(finger_entry) = finger_entry {
@@ -106,7 +121,10 @@ impl Node {
         }
     }
 
-    //TODO implement concurennt stabalize and fix_fingers
+    /// Entry point after creation of node
+    /// Loops periodically to update fingertable
+    /// Calls fix_fingers
+    /// Notifies successor that I am his predecessor by sending NOTIFY_PREDECESSOR
     pub fn start_update_fingers(&mut self) {
         loop {
             self.fix_fingers();
@@ -117,6 +135,9 @@ impl Node {
         }
     }
 
+    /// Periodically find successor for all entries of our fingertable
+    /// Sending self a message which subsequently sends messages to others
+    /// by dispatching FIND_SUCCESSOR message to other nodes
     fn fix_fingers(&mut self) {
         let fix_finger_id: BigInt;
         let mut next = self.next_finger;
@@ -128,9 +149,10 @@ impl Node {
         // n.fix_fingers()
         let message = Message::new(FIND_SUCCESSOR, Some(next), Some(fix_finger_id));
         self.send_msg(self.to_other_node(), None, message);
-        //TODO print table
     }
 
+    /// TODO WTH
+    /// Trys to join existing chord network by notifing
     pub fn join(&mut self, remote: OtherNode) -> bool {
         let message = Message::new(NOTIFY_JOIN, None, None);
         self.predecessor = None;
@@ -170,7 +192,7 @@ impl Node {
         let mut message = _message;
 
         match message.get_message_type() {
-            // Node notifies successor about predecessor
+            // Notifies successor about myself that I am the predecessor
             NOTIFY_PREDECESSOR =>
             /*
              *  predecessor is nil or n'∈(predecessor, n)
@@ -178,14 +200,16 @@ impl Node {
             {
                 info!("0-NOTIFY_PREDECESSOR");
                 message.print();
-                let pre_to_send = match self.predecessor.clone() {
-                    Some(predecessor) => {
-                        if is_in_range(&from.id, &predecessor.id, &self.id) {
+
+                let current_node_predecessor = self.predecessor.clone();
+                let new_node_predecessor = match current_node_predecessor {
+                    Some(current_predecessor) => {
+                        if is_in_range(&from.id, &current_predecessor.id, &self.id) {
                             from.print("New predecessor ist now");
                             self.predecessor = Some(from.clone());
                             from.clone()
                         } else {
-                            predecessor
+                            current_predecessor
                         }
                     }
                     None => {
@@ -194,7 +218,9 @@ impl Node {
                         from.clone()
                     }
                 };
-                self.send_msg(pre_to_send, Some(from), message);
+                message.set_message_type(NOTIFY_SUCCESSOR);
+                self.send_msg(new_node_predecessor, Some(from), message);
+                self.finger_table.print()
             }
 
             // Stabilize
