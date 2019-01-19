@@ -16,13 +16,13 @@ use num_bigint::{BigInt, Sign, ToBigInt};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str;
+use std::thread;
 
 mod finger;
 mod network;
 mod node;
 mod protocols;
 mod storage;
-mod thread_pool;
 mod util;
 
 fn main() {
@@ -97,14 +97,22 @@ fn main() {
 
     ip_address_to_string_test();*/
 
-    //TODO probable the listening needs to be done in its own thread
-    let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
-    network1.start_listening_on_socket();
+    let thread = thread::spawn(move || {
+        let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
+        network1.start_listening_on_socket();
+    });
+    let thread2 = thread::spawn(move || {
+        let network1 = network::Network::new("127.0.0.1:34258".parse::<SocketAddr>().unwrap());
+        network1.start_listening_on_socket();
+    });
+    network::Network::send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"hi net1".to_owned());
+    network::Network::send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"adsdsa1".to_owned());
+    network::Network::send_string_to_socket("127.0.0.1:34258".parse::<SocketAddr>().unwrap(),"hello network2".to_owned());
+    network::Network::send_string_to_socket("127.0.0.1:34258".parse::<SocketAddr>().unwrap(),"wazzup2".to_owned());
 
-    //let network2 = network::Network::new("127.0.0.1:34255".parse::<SocketAddr>().unwrap());
-    //network2.start_listening_on_socket();
-    //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bla".to_owned());
-    //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bli".to_owned());
+
+    thread.join();
+    thread2.join();
 }
 
 fn test_endian(str: &str) {
