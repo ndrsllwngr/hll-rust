@@ -201,14 +201,15 @@ impl Node {
                 info!("0-NOTIFY_PREDECESSOR");
                 message.print();
 
-                let predecessor_to_notify = match self.predecessor.clone() {
-                    Some(predecessor) => {
-                        if is_in_range(&from.id, &predecessor.id, &self.id) {
+                let current_node_predecessor = self.predecessor.clone();
+                let new_node_predecessor = match current_node_predecessor {
+                    Some(current_predecessor) => {
+                        if is_in_range(&from.id, &current_predecessor.id, &self.id) {
                             from.print("New predecessor ist now");
                             self.predecessor = Some(from.clone());
                             from.clone()
                         } else {
-                            predecessor
+                            current_predecessor
                         }
                     }
                     None => {
@@ -217,7 +218,8 @@ impl Node {
                         from.clone()
                     }
                 };
-                self.send_msg(predecessor_to_notify, Some(from), message);
+                message.set_message_type(NOTIFY_SUCCESSOR);
+                self.send_msg(new_node_predecessor, Some(from), message);
                 self.finger_table.print()
             }
 
