@@ -1,9 +1,7 @@
 use num_bigint::BigInt;
-use serde::{Deserialize, Serialize};
-use serde_json::Result;
 use std::{thread, time};
 use std::net::{TcpListener, TcpStream, SocketAddr};
-use std::io::{BufReader, BufRead, BufWriter, Write};
+use std::io::{BufReader, BufRead};
 
 use super::finger::FingerTable;
 use super::network_util;
@@ -188,7 +186,7 @@ impl Node {
         network_util::send_string_to_socket(*to.get_ip_addr(),json_string);
     }
 
-    fn handle_request(&self, stream: TcpStream, client_addr: SocketAddr) {
+    fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {
         let mut reader = BufReader::new(stream);
 
         loop {
@@ -201,11 +199,9 @@ impl Node {
                     } else {
                         info!("New message from {}: {}", client_addr.to_string(), buffer);
                         let parsed_packet: Packet = serde_json::from_str(&buffer).unwrap();
-                        //let from = &parsed_packet.get_from();
-                        //let message = &parsed_packet.get_message();
-                        //message.print();
-
-                        // TODO parse message and handle it in Node
+                        let from = parsed_packet.get_from();
+                        let message = parsed_packet.get_message();
+                        self.process_received_msg(from.clone(),message.clone())
 
                     }
                 }
@@ -219,7 +215,7 @@ impl Node {
     // HINT: this can be tested by connecting via bash terminal (preinstalled on Mac/Linux) by executing:
     // nc 127.0.0.1 34254
     // afterwards every message will be echoed in the console by handle_request
-    pub fn start_listening_on_socket(self) {
+    pub fn start_listening_on_socket(&mut self) {
         let listener = TcpListener::bind(self.listening_addr).unwrap();
         info!("Started listening on {}", self.listening_addr.to_string());
         loop {

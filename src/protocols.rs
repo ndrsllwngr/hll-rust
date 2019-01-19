@@ -1,5 +1,4 @@
 use num_bigint::BigInt;
-use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
 use super::node::OtherNode;
@@ -11,7 +10,7 @@ pub const FIND_SUCCESSOR: u8 = 3;
 pub const FOUND_SUCCESSOR: u8 = 4;
 pub const MESSAGE: u8 = 5;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Message {
     message_type: u8,
     next_finger: Option<usize>,
@@ -32,12 +31,12 @@ impl Packet {
         }
     }
 
-    pub fn get_from(self) -> OtherNode {
-        self.from
+    pub fn get_from(&self) -> &OtherNode {
+        &self.from
     }
 
-    pub fn get_message(self) -> Message {
-        self.message
+    pub fn get_message(&self) -> &Message {
+        &self.message
     }
 
 

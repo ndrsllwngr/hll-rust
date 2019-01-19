@@ -17,8 +17,6 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str;
 use std::thread;
-use serde::{Deserialize, Serialize};
-use serde_json::Result;
 
 mod finger;
 mod network_util;
