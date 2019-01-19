@@ -95,9 +95,15 @@ fn main() {
     test_node.start_update_fingers();
 
     ip_address_to_string_test();*/
+    let node = node::Node::new("127.0.0.1:3000".parse::<SocketAddr>().unwrap());
+    //let node2 = node::Node::new("127.0.0.1:3001".parse::<SocketAddr>().unwrap());
+    //let node3 = node::Node::new("127.0.0.1:3002".parse::<SocketAddr>().unwrap());
 
-    let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
-    network1.start_listening_on_socket();
+    node.network.start_listening_on_socket();
+
+
+    //let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
+    //network1.start_listening_on_socket();
 
     //let network2 = network::Network::new("127.0.0.1:34255".parse::<SocketAddr>().unwrap());
     //network2.start_listening_on_socket();

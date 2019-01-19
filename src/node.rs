@@ -37,7 +37,7 @@ impl OtherNode {
 pub struct Node {
     id: BigInt,
     ip_addr: SocketAddr,
-    network: Network,
+    pub network: Network,
     //TODO check if better possibilities available
     predecessor: Option<OtherNode>,
     successor: OtherNode,      //TODO can be found out by finger table
@@ -106,7 +106,7 @@ impl Node {
         }
     }
 
-    //TODO implement concurennt stabalize and fix_fingers
+    //TODO implement concurrent stabilize and fix_fingers
     pub fn start_update_fingers(&mut self) {
         loop {
             self.fix_fingers();
@@ -178,7 +178,8 @@ impl Node {
             {
                 info!("0-NOTIFY_PREDECESSOR");
                 message.print();
-                let pre_to_send = match self.predecessor.clone() {
+
+                let predecessor_to_notify = match self.predecessor.clone() {
                     Some(predecessor) => {
                         if is_in_range(&from.id, &predecessor.id, &self.id) {
                             from.print("New predecessor ist now");
@@ -194,7 +195,7 @@ impl Node {
                         from.clone()
                     }
                 };
-                self.send_msg(pre_to_send, Some(from), message);
+                self.send_msg(predecessor_to_notify, Some(from), message);
                 self.finger_table.print()
             }
 
