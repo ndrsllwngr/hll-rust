@@ -37,14 +37,14 @@ impl OtherNode {
 
 /// Complete representation of internal node
 ///
-/// * 'id'           - Identifier of node: Currently SHA1 hashed IP address  
-/// * 'ip_addr'      - Ip address and port of the node
-/// * 'network'      - The network parameters of the node. Each node stores it's own network
-/// * 'finger_table' - Finger table of the node, which stores up to n other nodes
-/// * 'next_finger'  - Used to point on the entry of the finger table, we are currently processing
-/// * 'successor'    - Successor of the node //TODO can be found out by finger table, //TODO do we need var finger_entries (e.g. 32 or 8)
-/// * 'predecessor'  - [Optional] Predecessor of the node
-/// * 'storage'      - DHT storage inside the node
+/// * `id`           - Identifier of node: Currently SHA1 hashed IP address
+/// * `ip_addr`      - Ip address and port of the node
+/// * `network`      - The network parameters of the node. Each node stores it's own network
+/// * `finger_table` - Finger table of the node, which stores up to n other nodes
+/// * `next_finger`  - Used to point on the entry of the finger table, we are currently processing
+/// * `successor`    - Successor of the node //TODO can be found out by finger table, //TODO do we need var finger_entries (e.g. 32 or 8)
+/// * `predecessor`  - [Optional] Predecessor of the node
+/// * `storage`      - DHT storage inside the node
 pub struct Node {
     id: BigInt,
     ip_addr: SocketAddr,
