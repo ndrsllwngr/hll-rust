@@ -1,5 +1,4 @@
 use num_bigint::BigInt;
-use serde_json::Result;
 
 use super::node::OtherNode;
 // Protocol states
@@ -25,10 +24,7 @@ pub struct Packet {
 
 impl Packet {
     pub fn new(from: OtherNode, message: Message) -> Packet {
-        Packet {
-            from,
-            message,
-        }
+        Packet { from, message }
     }
 
     pub fn get_from(&self) -> &OtherNode {
@@ -38,8 +34,6 @@ impl Packet {
     pub fn get_message(&self) -> &Message {
         &self.message
     }
-
-
 }
 
 impl Message {
