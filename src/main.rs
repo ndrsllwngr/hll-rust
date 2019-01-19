@@ -16,6 +16,9 @@ use num_bigint::{BigInt, Sign, ToBigInt};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str;
+use std::thread;
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
 
 mod finger;
 mod network;
@@ -95,11 +98,31 @@ fn main() {
     test_node.start_update_fingers();
 
     ip_address_to_string_test();*/
-    let node = node::Node::new("127.0.0.1:3000".parse::<SocketAddr>().unwrap(), None);
+    //let node = node::Node::new("127.0.0.1:3000".parse::<SocketAddr>().unwrap(), None);
     //let node2 = node::Node::new("127.0.0.1:3001".parse::<SocketAddr>().unwrap());
     //let node3 = node::Node::new("127.0.0.1:3002".parse::<SocketAddr>().unwrap());
 
-    node.network.start_listening_on_socket();
+    let thread = thread::spawn(move || {
+        let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
+        network1.start_listening_on_socket();
+    });
+    let thread2 = thread::spawn(move || {
+        let network1 = network::Network::new("127.0.0.1:34258".parse::<SocketAddr>().unwrap());
+        network1.start_listening_on_socket();
+    });
+    let msg1 = protocols::Message::new(protocols::NOTIFY_PREDECESSOR, None, None);
+    let msg2 = protocols::Message::new(protocols::NOTIFY_SUCCESSOR, None, None);
+    let msg1_json = serde_json::to_string(&msg1).unwrap();
+    let msg2_json = serde_json::to_string(&msg2).unwrap();
+    // TODO add sleep
+    network::Network::send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),msg1_json.to_owned());
+    network::Network::send_string_to_socket("127.0.0.1:34258".parse::<SocketAddr>().unwrap(),msg2_json.to_owned());
+
+
+    thread.join();
+    thread2.join();
+
+   // node.network.start_listening_on_socket();
 
     //let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
     //network1.start_listening_on_socket();
@@ -108,6 +131,7 @@ fn main() {
     //network2.start_listening_on_socket();
     //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bla".to_owned());
     //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bli".to_owned());
+
 }
 
 fn test_endian(str: &str) {
@@ -165,7 +189,7 @@ fn test_compare_bigint() {
     info!("{}", two > one);
 }
 
-fn custom_print(result: Result<&str, std::str::Utf8Error>) {
+fn custom_print(result: core::result::Result<&str, std::str::Utf8Error>) {
     match result {
         Ok(n) => info!("{}", n),
         Err(e) => error!("Error: {}", e),
