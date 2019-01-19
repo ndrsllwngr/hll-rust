@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
 mod finger;
-mod network;
+mod network_util;
 mod node;
 mod protocols;
 mod storage;
@@ -103,24 +103,23 @@ fn main() {
     //let node3 = node::Node::new("127.0.0.1:3002".parse::<SocketAddr>().unwrap());
 
     let thread = thread::spawn(move || {
-        let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
-        network1.start_listening_on_socket();
+        let mut node = node::Node::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap(), 34254, None);
+        node.start_listening_on_socket();
     });
-    let thread2 = thread::spawn(move || {
-        let network1 = network::Network::new("127.0.0.1:34258".parse::<SocketAddr>().unwrap());
-        network1.start_listening_on_socket();
-    });
+
+
+
     let msg1 = protocols::Message::new(protocols::NOTIFY_PREDECESSOR, None, None);
     let msg2 = protocols::Message::new(protocols::NOTIFY_SUCCESSOR, None, None);
-    let msg1_json = serde_json::to_string(&msg1).unwrap();
+    let packet = protocols::Packet::new(node::OtherNode::new(-1000.to_bigint().unwrap(),
+                                                             "127.0.0.1:34254".parse().unwrap()), msg1);
+    let packet_json = serde_json::to_string(&packet).unwrap();
     let msg2_json = serde_json::to_string(&msg2).unwrap();
     // TODO add sleep
-    network::Network::send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),msg1_json.to_owned());
-    network::Network::send_string_to_socket("127.0.0.1:34258".parse::<SocketAddr>().unwrap(),msg2_json.to_owned());
-
+    network_util::send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(), packet_json.to_owned());
+    //network::send_string_to_socket("127.0.0.1:34258".parse::<SocketAddr>().unwrap(),msg2_json.to_owned());
 
     thread.join();
-    thread2.join();
 
    // node.network.start_listening_on_socket();
 
@@ -133,6 +132,15 @@ fn main() {
     //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bli".to_owned());
 
 }
+
+//TODO check if solution exists
+//fn start_node(addr: SocketAddr, predecessor: Option<SocketAddr>) {
+//    let thread = thread::spawn(move || {
+//        let node = node::Node::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap(), None);
+//        node.start_network();
+//    });
+//    thread.join();
+//}
 
 fn test_endian(str: &str) {
     let byte_vec = str.as_bytes().to_vec();

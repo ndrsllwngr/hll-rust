@@ -1,11 +1,12 @@
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
-use std::net::SocketAddr;
 use std::{thread, time};
+use std::net::{TcpListener, TcpStream, SocketAddr};
+use std::io::{BufReader, BufRead, BufWriter, Write};
 
 use super::finger::FingerTable;
-use super::network::Network;
+use super::network_util;
 use super::protocols::*;
 use super::storage::Storage;
 use super::util::*;
@@ -48,7 +49,7 @@ impl OtherNode {
 pub struct Node {
     id: BigInt,
     ip_addr: SocketAddr,
-    pub network: Network,
+    listening_addr: SocketAddr,
     finger_table: FingerTable,
     next_finger: usize,
     successor: OtherNode,
@@ -56,7 +57,7 @@ pub struct Node {
     storage: Storage,
 }
 
-/// `Nodè` implementation
+/// `Node` implementation
 impl Node {
     /// Creates new Node
     /// if `predecessor` is None, the node will initialize a new chord ring
@@ -65,27 +66,31 @@ impl Node {
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
     // TODO implement predecessor: Option<SocketAddr>
-    pub fn new(ip_addr: SocketAddr, predecessor: Option<SocketAddr>) -> Node {
+    pub fn new(ip_addr: SocketAddr, port: i32, predecessor: Option<SocketAddr>) -> Node {
+        // TODO set ip_addr correctly (outbound address)
+        // let ip_addr =
         let id = create_node_id(ip_addr);
-        let network = Network::new(ip_addr);
+        let listening_addr = format!("127.0.0.1:{}", port).parse::<SocketAddr>().unwrap();
         let finger_table = FingerTable::new();
         /// Always start at first entry of finger_table
         let next_finger = 0;
         let successor = OtherNode::new(id.clone(), ip_addr);
-
         let storage = Storage::new();
         // TODO In addition to that we need to check how network can call methods on node, particularly: process_received_msg
         // Solution: pass reference of node to network
+
+        //TODO ip_addr != listening addr
         Node {
             id,
             ip_addr,
-            network,
+            listening_addr,
             finger_table,
             next_finger,
             successor,
             predecessor: None,
             storage,
         }
+
     }
 
     /// Converts internal representation of node to the simpler representation OtherNode
@@ -178,14 +183,63 @@ impl Node {
         // let json_string_other_node = serde_json::to_string(&from).unwrap();
         // let parsed_node: OtherNode = serde_json::from_str(&json_string_other_node).unwrap();
         // let parsed_message: Message = serde_json::from_str(custom_json).unwrap();
-
-        self.network.send(&from, &to, &message);
+        let packet = Packet::new(from, message);
+        let json_string = serde_json::to_string(&packet).unwrap();
+        network_util::send_string_to_socket(*to.get_ip_addr(),json_string);
     }
 
-    //TODO find better name
-    pub fn start_network(self) {
-        self.network.start_listening_on_socket();
+    fn handle_request(&self, stream: TcpStream, client_addr: SocketAddr) {
+        let mut reader = BufReader::new(stream);
+
+        loop {
+            let mut buffer = String::new();
+            match reader.read_line(&mut buffer) {
+                Ok(len) => {
+                    // break when line is finished
+                    if len == 0 {
+                        break;
+                    } else {
+                        info!("New message from {}: {}", client_addr.to_string(), buffer);
+                        let parsed_packet: Packet = serde_json::from_str(&buffer).unwrap();
+                        //let from = &parsed_packet.get_from();
+                        //let message = &parsed_packet.get_message();
+                        //message.print();
+
+                        // TODO parse message and handle it in Node
+
+                    }
+                }
+                Err(e) => {
+                    error!("Error reading message from {}: {}",client_addr, e)
+                }
+            }
+        }
     }
+
+    // HINT: this can be tested by connecting via bash terminal (preinstalled on Mac/Linux) by executing:
+    // nc 127.0.0.1 34254
+    // afterwards every message will be echoed in the console by handle_request
+    pub fn start_listening_on_socket(self) {
+        let listener = TcpListener::bind(self.listening_addr).unwrap();
+        info!("Started listening on {}", self.listening_addr.to_string());
+        loop {
+            match listener.accept() {
+                Ok((stream, addr)) => {
+                    info!("Connection by {}", addr.to_string());
+
+                    self.handle_request(stream, addr);
+                }
+                Err(e) => {
+                    error!("Connection failed: {:?}", e)
+                }
+            };
+        };
+    }
+
+    //pub fn network(&self) -> &Network{
+    //    &self.network.unwrap()
+    //}
+
 
     pub fn process_received_msg(&mut self, _from: OtherNode, _message: Message) {
         let from = _from;

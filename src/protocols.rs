@@ -2,6 +2,7 @@ use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
+use super::node::OtherNode;
 // Protocol states
 pub const NOTIFY_PREDECESSOR: u8 = 0;
 pub const NOTIFY_SUCCESSOR: u8 = 1;
@@ -15,6 +16,31 @@ pub struct Message {
     message_type: u8,
     next_finger: Option<usize>,
     id: Option<BigInt>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Packet {
+    from: OtherNode,
+    message: Message,
+}
+
+impl Packet {
+    pub fn new(from: OtherNode, message: Message) -> Packet {
+        Packet {
+            from,
+            message,
+        }
+    }
+
+    pub fn get_from(self) -> OtherNode {
+        self.from
+    }
+
+    pub fn get_message(self) -> Message {
+        self.message
+    }
+
+
 }
 
 impl Message {
