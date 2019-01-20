@@ -72,11 +72,11 @@ impl Node {
         let finger_table = FingerTable::new();
         // Always start at first entry of finger_table
         let next_finger = 0;
-        let successor = OtherNode::new(id.clone(), ip_addr);
+        let successor = OtherNode::new(id.clone(), listening_addr);
         let storage = Storage::new();
         // TODO In addition to that we need to check how network can call methods on node, particularly: process_incoming_msg
         // Solution: pass reference of node to network
-        error!("New node {:?}", id);
+        info!("New node {:?}", id);
         //TODO ip_addr != listening addr
         Node {
             id,
@@ -94,7 +94,7 @@ impl Node {
     fn to_other_node(&self) -> OtherNode {
         OtherNode {
             id: self.id.clone(),
-            ip_addr: self.ip_addr.clone(),
+            ip_addr: self.listening_addr.clone(),
         }
     }
 

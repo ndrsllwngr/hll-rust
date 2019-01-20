@@ -99,28 +99,35 @@ fn main() {
     //let node = node::Node::new("127.0.0.1:3000".parse::<SocketAddr>().unwrap(), None);
     //let node2 = node::Node::new("127.0.0.1:3001".parse::<SocketAddr>().unwrap());
     //let node3 = node::Node::new("127.0.0.1:3002".parse::<SocketAddr>().unwrap());
+    let builder1 = thread::Builder::new().name("N1".to_string());
+    let handler1 = builder1
+        .spawn(|| {
+            let mut node = node::Node::new(
+                "127.0.0.1:22222".parse::<SocketAddr>().unwrap(),
+                11111,
+                None,
+            );
+            node.start_listening_on_socket();
+        })
+        .unwrap();
 
-    let thread = thread::spawn(move || {
-        let mut node = node::Node::new(
-            "127.0.0.1:22222".parse::<SocketAddr>().unwrap(),
-            11111,
-            None,
-        );
-        node.start_listening_on_socket();
-    });
-
-    let thread2 = thread::spawn(move || {
-        let mut node2 = node::Node::new(
-            "127.0.0.1:33333".parse::<SocketAddr>().unwrap(),
-            44444,
-            None,
-        );
-        node2.join(node::OtherNode::new(
-            -10000.to_bigint().unwrap(),
-            "127.0.0.1:11111".parse().unwrap(),
-        ));
-        node2.start_listening_on_socket();
-    });
+    let builder2 = thread::Builder::new().name("N2".to_string());
+    let handler2 = builder2
+        .spawn(|| {
+            let mut node2 = node::Node::new(
+                "127.0.0.1:33333".parse::<SocketAddr>().unwrap(),
+                44444,
+                None,
+            );
+            if node2.join(node::OtherNode::new(
+                -10000.to_bigint().unwrap(),
+                "127.0.0.1:11111".parse().unwrap(),
+            )) {
+                info!("Node2join");
+            }
+            node2.start_listening_on_socket();
+        })
+        .unwrap();
 
     // let msg1 = protocols::Message::new(protocols::NOTIFY_PREDECESSOR, None, None);
     // let msg2 = protocols::Message::new(protocols::NOTIFY_SUCCESSOR, None, None);
@@ -140,10 +147,10 @@ fn main() {
     // );
     //network::send_string_to_socket("127.0.0.1:34258".parse::<SocketAddr>().unwrap(),msg2_json.to_owned());
 
-    if let Err(e) = thread.join() {
+    if let Err(e) = handler1.join() {
         error!("{:?}", e)
     }
-    if let Err(e) = thread2.join() {
+    if let Err(e) = handler2.join() {
         error!("{:?}", e)
     }
 

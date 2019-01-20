@@ -5,7 +5,7 @@ appenders:
   console:
     kind: console
     encoder:
-      pattern: "{d(%+)(local)} {h({l})} [{t}] {h({f}:{L})} - {m}{n}"
+      pattern: "{d(%+)(local)} {h({l})} [{T}] {h({f}:{L})} - {m}{n}"
   error:
     kind: rolling_file
     path: "log/error.log"
