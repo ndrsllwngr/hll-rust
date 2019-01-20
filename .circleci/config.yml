@@ -17,7 +17,7 @@ jobs:
           command: cargo generate-lockfile
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "Cargo.lock }}
+          - v1-dependencies-{{ checksum "Cargo.lock" }}
           - v1-dependencies-
       - run:
           name: Build all targets
@@ -51,7 +51,7 @@ jobs:
           command: cargo generate-lockfile
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "Cargo.lock }}
+          - v1-dependencies-{{ checksum "Cargo.lock" }}
           - v1-dependencies-
       - run:
           name: Build all targets
@@ -79,7 +79,7 @@ jobs:
           command: cargo generate-lockfile
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "Cargo.lock }}
+          - v1-dependencies-{{ checksum "Cargo.lock" }}
           - v1-dependencies-
       - run:
           name: Build all targets
