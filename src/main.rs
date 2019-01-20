@@ -17,6 +17,7 @@ use std::net::SocketAddr;
 use std::str;
 use std::thread;
 
+mod chord;
 mod finger;
 mod network_util;
 mod node;
@@ -101,32 +102,48 @@ fn main() {
 
     let thread = thread::spawn(move || {
         let mut node = node::Node::new(
-            "127.0.0.1:34254".parse::<SocketAddr>().unwrap(),
-            34254,
+            "127.0.0.1:22222".parse::<SocketAddr>().unwrap(),
+            11111,
             None,
         );
         node.start_listening_on_socket();
     });
 
-    let msg1 = protocols::Message::new(protocols::NOTIFY_PREDECESSOR, None, None);
-    let msg2 = protocols::Message::new(protocols::NOTIFY_SUCCESSOR, None, None);
-    let packet = protocols::Packet::new(
-        node::OtherNode::new(
-            -1000.to_bigint().unwrap(),
-            "127.0.0.1:34254".parse().unwrap(),
-        ),
-        msg1,
-    );
-    let packet_json = serde_json::to_string(&packet).unwrap();
-    let msg2_json = serde_json::to_string(&msg2).unwrap();
-    // TODO add sleep
-    network_util::send_string_to_socket(
-        "127.0.0.1:34254".parse::<SocketAddr>().unwrap(),
-        packet_json.to_owned(),
-    );
+    let thread2 = thread::spawn(move || {
+        let mut node2 = node::Node::new(
+            "127.0.0.1:33333".parse::<SocketAddr>().unwrap(),
+            44444,
+            None,
+        );
+        node2.join(node::OtherNode::new(
+            -10000.to_bigint().unwrap(),
+            "127.0.0.1:11111".parse().unwrap(),
+        ));
+        node2.start_listening_on_socket();
+    });
+
+    // let msg1 = protocols::Message::new(protocols::NOTIFY_PREDECESSOR, None, None);
+    // let msg2 = protocols::Message::new(protocols::NOTIFY_SUCCESSOR, None, None);
+    // let packet = protocols::Packet::new(
+    //     node::OtherNode::new(
+    //         1000.to_bigint().unwrap(),
+    //         "127.0.0.1:33333".parse().unwrap(),
+    //     ),
+    //     msg1,
+    // );
+    // let packet_json = serde_json::to_string(&packet).unwrap();
+    // let msg2_json = serde_json::to_string(&msg2).unwrap();
+    // // TODO add sleep
+    // network_util::send_string_to_socket(
+    //     "127.0.0.1:33333".parse::<SocketAddr>().unwrap(),
+    //     packet_json.to_owned(),
+    // );
     //network::send_string_to_socket("127.0.0.1:34258".parse::<SocketAddr>().unwrap(),msg2_json.to_owned());
 
     if let Err(e) = thread.join() {
+        error!("{:?}", e)
+    }
+    if let Err(e) = thread2.join() {
         error!("{:?}", e)
     }
 

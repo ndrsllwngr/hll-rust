@@ -74,9 +74,9 @@ impl Node {
         let next_finger = 0;
         let successor = OtherNode::new(id.clone(), ip_addr);
         let storage = Storage::new();
-        // TODO In addition to that we need to check how network can call methods on node, particularly: process_received_msg
+        // TODO In addition to that we need to check how network can call methods on node, particularly: process_incoming_msg
         // Solution: pass reference of node to network
-
+        error!("New node {:?}", id);
         //TODO ip_addr != listening addr
         Node {
             id,
@@ -94,11 +94,11 @@ impl Node {
     fn to_other_node(&self) -> OtherNode {
         OtherNode {
             id: self.id.clone(),
-            ip_addr: self.ip_addr,
+            ip_addr: self.ip_addr.clone(),
         }
     }
 
-    /// Gets closet preceding
+    /// Gets closet preceding finger
     pub fn closet_finger_preceding(&self, find_id: &BigInt) -> OtherNode {
         // n.closest_preceding_node(id)
         //   for i = m downto 1
@@ -151,8 +151,7 @@ impl Node {
         self.send_msg(self.to_other_node(), None, message);
     }
 
-    /// TODO WTH
-    /// Trys to join existing chord network by notifing
+    /// Notifies other peer about joining the network
     pub fn join(&mut self, remote: OtherNode) -> bool {
         let message = Message::new(NOTIFY_JOIN, None, None);
         self.predecessor = None;
@@ -161,26 +160,28 @@ impl Node {
         true
     }
 
-    pub fn send_msg(&self, _from: OtherNode, _to: Option<OtherNode>, _message: Message) {
-        let from = _from;
-
-        let to = match _to {
+    pub fn send_msg(&self, mut label: OtherNode, to: Option<OtherNode>, mut msg: Message) {
+        // If no recipient is provided,
+        // the message is returned to the intial sender
+        // and labelled by `self` as `from`
+        let new_to = match to {
             Some(to) => to,
-            None => from.clone(),
+            None => {
+                let new_to = label.clone();
+                label = self.to_other_node();
+                new_to
+            }
         };
 
-        let mut message = _message;
-        if message.get_id().is_none() {
-            message.set_id(Some(self.id.clone()))
+        // If the message id is undefined, it is set to `self``s ID
+        if msg.get_id().is_none() {
+            msg.set_id(Some(self.id.clone()))
         }
 
-        let json_string = serde_json::to_string(&message).unwrap();
-        // let json_string_other_node = serde_json::to_string(&from).unwrap();
-        // let parsed_node: OtherNode = serde_json::from_str(&json_string_other_node).unwrap();
-        // let parsed_message: Message = serde_json::from_str(custom_json).unwrap();
-        let packet = Packet::new(from, message);
+        let packet = Packet::new(label, msg);
         let json_string = serde_json::to_string(&packet).unwrap();
-        network_util::send_string_to_socket(*to.get_ip_addr(), json_string);
+        // Send packet to recipient
+        network_util::send_string_to_socket(*new_to.get_ip_addr(), json_string);
     }
 
     fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {
@@ -198,7 +199,7 @@ impl Node {
                         let parsed_packet: Packet = serde_json::from_str(&buffer).unwrap();
                         let from = parsed_packet.get_from();
                         let message = parsed_packet.get_message();
-                        self.process_received_msg(from.clone(), message.clone())
+                        self.process_incoming_msg(from.clone(), message.clone());
                     }
                 }
                 Err(e) => error!("Error reading message from {}: {}", client_addr, e),
@@ -228,105 +229,132 @@ impl Node {
     //    &self.network.unwrap()
     //}
 
-    pub fn process_received_msg(&mut self, _from: OtherNode, _message: Message) {
-        let from = _from;
-        let mut message = _message;
-
-        match message.get_message_type() {
-            // Notifies successor about myself that I am the predecessor
-            NOTIFY_PREDECESSOR =>
-            /*
-             *  predecessor is nil or n'∈(predecessor, n)
-             */
-            {
-                info!("0-NOTIFY_PREDECESSOR");
-                message.print();
-
-                let current_node_predecessor = self.predecessor.clone();
-                let new_node_predecessor = match current_node_predecessor {
-                    Some(current_predecessor) => {
-                        if is_in_range(&from.id, &current_predecessor.id, &self.id) {
-                            from.print("New predecessor ist now");
-                            self.predecessor = Some(from.clone());
-                            from.clone()
-                        } else {
-                            current_predecessor
-                        }
-                    }
-                    None => {
-                        from.print("New predecessor ist now");
-                        self.predecessor = Some(from.clone());
-                        from.clone()
-                    }
-                };
-                message.set_message_type(NOTIFY_SUCCESSOR);
-                self.send_msg(new_node_predecessor, Some(from), message);
-                self.finger_table.print()
-            }
-
-            // Stabilize
-            NOTIFY_SUCCESSOR =>
-            /*
-             *  n.stabilize()
-             *    x = successor.predecessor;
-             *    if (x∈(n, successor))
-             *      successor = x;
-             *    successor.notify(n);
-             */
-            {
-                info!("1-NOTIFY_SUCCESSOR");
-                message.print();
-
-                if is_in_range(&from.id, &self.id, &self.successor.id) {
-                    self.successor = from;
-                    self.successor.print("New succesor is now");
-                }
-            }
-            NOTIFY_JOIN => {
-                info!("2-NOTIFY_JOIN");
-                message.print();
-                from.print("Node joined");
-            }
-            FIND_SUCCESSOR => {
-                info!("3-FIND_SUCCESSOR");
-                message.print();
-                if let Some(id) = message.get_id() {
-                    if is_in_half_range(&id, &self.id, &self.successor.id) {
-                        self.successor.print("FIND_SUCCESSOR");
-                        message.set_message_type(FOUND_SUCCESSOR);
-                        self.send_msg(self.successor.clone(), Some(from), message);
-                    } else {
-                        let node_0 = self.closet_finger_preceding(&id);
-                        self.successor
-                            .print("FIND_SUCCESSOR = closet_finger_preceding");
-                        message.set_message_type(FOUND_SUCCESSOR);
-                        self.send_msg(node_0, Some(from), message);
-                    }
-                };
-            }
-            FOUND_SUCCESSOR => {
-                info!("4-FOUND_SUCCESSOR");
-                message.print();
-
-                match (message.get_next_finger(), message.get_id()) {
-                    (Some(next_finger), Some(id)) => {
-                        self.finger_table.put(next_finger, id, from);
-                        info!("FingerTable fixed");
-                    }
-                    _ => {
-                        self.successor = from;
-                        self.successor.print("New successor is now");
-                    }
-                }
-            }
-            MESSAGE => {
-                info!("5-MESSAGE");
-                self.send_msg(self.successor.clone(), Some(from), message);
-            }
+    pub fn process_incoming_msg(&mut self, from: OtherNode, mut msg: Message) {
+        match msg.get_message_type() {
+            NOTIFY_PREDECESSOR => self.update_predecessor(from, msg),
+            NOTIFY_SUCCESSOR => self.update_successor(from, msg),
+            NOTIFY_JOIN => self.notify_join(from, msg),
+            FIND_SUCCESSOR => self.find_successor(from, msg),
+            FOUND_SUCCESSOR => self.found_successor(from, msg),
+            // MESSAGE => self.message(from, msg),
             _ => {
                 warn!("Unknown chord message!");
-                message.print();
+                msg.print();
             }
         }
+    }
+
+    /// A node `from` claims, that it is self's _new_ predecessor
+    /// ```rust
+    /// n.notify(n')
+    ///   if ( predecessor is nil or n' ∈ (predecessor, n) )
+    ///     predecessor = n';
+    /// ```
+    fn update_predecessor(&mut self, from: OtherNode, mut msg: Message) {
+        info!("MSG_TYPE_NOTIFY_PREDECESSOR = 0");
+
+        // Copy current self.predecessor value
+        let current_predecessor = self.predecessor.clone();
+        // Reassign self.predecessor
+        let new_predecessor = match current_predecessor {
+            // If `self.current_predecessor` is not empty verify
+            // if `from` is in range
+            // else keep `current_predecessor`
+            Some(self_predecessor) => {
+                if is_in_range(&from.id, &self_predecessor.id, &self.id) {
+                    from.print("Predecessor reassigned to");
+                    self.predecessor = Some(from.clone());
+                    from.clone()
+                } else {
+                    info!("Predecessor remains the same.");
+                    self_predecessor
+                }
+            }
+            // If `self.predecessor` is nil, assign `from` as new predecessor
+            None => {
+                from.print("Predecessor assigned to");
+                self.predecessor = Some(from.clone());
+                from.clone()
+            }
+        };
+        msg.set_message_type(NOTIFY_SUCCESSOR);
+        // TODO WTF why is this msg labeled by the new_predecessor?
+        self.send_msg(new_predecessor, Some(from), msg);
+        self.finger_table.print()
+    }
+
+    /// ```rust
+    /// n.stabilize()
+    ///   x = successor.predecessor;
+    ///   if( x ∈ (n, successor) )
+    ///     successor = x;
+    ///   successor.notify(n);
+    /// ```
+    fn update_successor(&mut self, from: OtherNode, mut msg: Message) {
+        info!("MSG_TYPE_NOTIFY_SUCCESSOR = 1");
+
+        // TODO maybe delete successor field in node struct
+        // TODO and instead use first finger entry in fingertable
+        if is_in_range(&from.id, &self.id, &self.successor.id) {
+            self.successor = from;
+            self.successor.print("Successor reassigned");
+        }
+    }
+
+    fn notify_join(&mut self, from: OtherNode, _msg: Message) {
+        info!("MSG_TYPE_NOTIFY_JOIN = 2");
+        from.print("Node joined");
+    }
+
+    /// ```rust
+    /// n.find_successor(id)
+    ///  if ( id ∈ (n, successor] )
+    ///    return successor;
+    ///  else
+    ///    return successor.find_successor(id);
+    /// ```
+    fn find_successor(&mut self, from: OtherNode, mut msg: Message) {
+        info!("MSG_TYPE_FIND_SUCCESSOR = 3");
+
+        if let Some(msg_id) = msg.get_id() {
+            if is_in_half_range(&msg_id, &self.id, &self.successor.id) {
+                self.successor.print("FIND_SUCCESSOR");
+                msg.set_message_type(FOUND_SUCCESSOR);
+                self.send_msg(self.successor.clone(), Some(from), msg);
+            } else {
+                // Fix fingertable and forward the query
+                let node_0 = self.closet_finger_preceding(&msg_id);
+                node_0.print("FIND_SUCCESSOR = closet_finger_preceding");
+                msg.set_message_type(FOUND_SUCCESSOR);
+                self.send_msg(node_0, Some(from), msg);
+            }
+        };
+    }
+
+    /// ```rust
+    /// n.fix_fingers()
+    ///   for i = 1 to m
+    ///     finger[i].Knoten = find_successor(finger[i].Start);
+    /// ```
+    fn found_successor(&mut self, from: OtherNode, msg: Message) {
+        info!("MSG_TYPE_FOUND_SUCCESSOR = 4");
+
+        match (msg.get_next_finger(), msg.get_id()) {
+            (Some(index), Some(id)) => {
+                self.finger_table.put(index, id, from);
+                info!("FingerTable fixed.");
+                self.finger_table.print();
+            }
+            _ => {
+                self.successor = from;
+                self.successor.print("New successor is now");
+            }
+        }
+    }
+
+    fn message(&mut self, from: OtherNode, msg: Message) {
+        info!("MSG_TYPE_MESSAGE = 5");
+
+        self.send_msg(self.successor.clone(), Some(from), msg);
     }
 }
