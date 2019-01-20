@@ -125,7 +125,7 @@ n.closest_preceding_finger(id)
   - until the first entry `i` is found whose node is **not** located between node `n` and key ID `k`
   - therefore finger entry `i+1` constitutes the closest predecessor of the `k` which node `n` is aware of
 - The search continues with the help of the in the `i+1` finger entry`s referenced node.
-- The search continues unitl the node is found whose `successor` is responsible for `k`.
+- The search continues until the node is found whose `successor` is responsible for `k`.
 
 #### Fingertable example
 
@@ -205,6 +205,8 @@ n.join(n')
 - [https://sarwiki.informatik.hu-berlin.de/Chord](https://sarwiki.informatik.hu-berlin.de/Chord)
 - [https://dl.acm.org/citation.cfm?doid=964723.383071](https://dl.acm.org/citation.cfm?doid=964723.383071)
 - [https://en.wikipedia.org/wiki/Chord_(peer-to-peer)](https://en.wikipedia.org/wiki/Chord_(peer-to-peer))
+- [http://nms.csail.mit.edu/papers/chord.pdf](http://nms.csail.mit.edu/papers/chord.pdf)
+- [https://pdos.csail.mit.edu/papers/ton:chord/paper-ton.pdf](https://pdos.csail.mit.edu/papers/ton:chord/paper-ton.pdf)
 
 ## Contributors
 

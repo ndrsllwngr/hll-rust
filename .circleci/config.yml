@@ -17,8 +17,7 @@ jobs:
           command: cargo generate-lockfile
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "Cargo.lock" }}
-          - v1-dependencies-
+            - v1-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
       - run:
           name: Build all targets
           command: cargo build --all --all-targets
@@ -28,7 +27,7 @@ jobs:
             - target/debug/.fingerprint
             - target/debug/build
             - target/debug/deps
-          key: v1-dependencies-{{ checksum "Cargo.lock" }}
+          key: v1-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
       # run tests!
       - run: 
           name: Run cargo clippy
@@ -51,8 +50,7 @@ jobs:
           command: cargo generate-lockfile
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "Cargo.lock" }}
-          - v1-dependencies-
+            - v1-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
       - run:
           name: Build all targets
           command: cargo build --all --all-targets
@@ -62,7 +60,7 @@ jobs:
             - target/debug/.fingerprint
             - target/debug/build
             - target/debug/deps
-          key: v1-dependencies-{{ checksum "Cargo.lock" }}
+          key: v1-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
       # TODO run develop
       
   deploy-master:
@@ -79,8 +77,7 @@ jobs:
           command: cargo generate-lockfile
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "Cargo.lock" }}
-          - v1-dependencies-
+            - v1-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
       - run:
           name: Build all targets
           command: cargo build --all --all-targets
@@ -90,7 +87,7 @@ jobs:
             - target/debug/.fingerprint
             - target/debug/build
             - target/debug/deps
-          key: v1-dependencies-{{ checksum "Cargo.lock" }}
+          key: v1-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
       # TODO run production
 
 workflows:
