@@ -2,7 +2,15 @@
 
 High level languages: Rust - Group project (2018/2019)
 
+##### CircleCI
+
+[![CircleCI](https://circleci.com/gh/andreasellw/hll-rust.svg?style=shield&circle-token=d3cb985f6b03b2e2a6ef47851da0e5e29fbbf296)](https://circleci.com/gh/andreasellw/hll-rust)
+
+## Table of Contents
+
 - [hll-rust](#hll-rust)
+        - [CircleCI](#circleci)
+  - [Table of Contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
   - [Usage](#usage)
