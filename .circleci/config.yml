@@ -10,6 +10,9 @@ jobs:
           name: Version information
           command: rustc --version; cargo --version; rustup --version
       - run:
+          name: Install cargo clippy
+          command: rustup component add clippy
+      - run:
           name: Calculate dependencies
           command: cargo generate-lockfile
       - restore_cache:
