@@ -1,9 +1,12 @@
 version: 2
 
 jobs:
+  build:
+    docker:
+      - image: circleci/rust:1.32
   test:
     docker:
-      - image: rust:1
+      - image: circleci/rust:1.32
     steps:
       - checkout
       - run:
