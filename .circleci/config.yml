@@ -1,8 +1,9 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
       - image: circleci/rust:1.32.0
+    working_directory: ~/repo
     steps:
       - checkout
       - run:
@@ -13,71 +14,97 @@ jobs:
           command: cargo generate-lockfile
       - restore_cache:
           keys:
-            - dependency-cache-{{ checksum "Cargo.lock" }} 
-      # - restore_cache:
-      #     key: dependency-cache-{{ checksum "package.json" }}
-      # - run:
-      #     name: Install npm wee
-      #     command: npm install
-      # - save_cache:
-      #     key: dependency-cache-{{ checksum "package.json" }}
-      #     paths:
-      #       - node_modules
-  test:
-    docker:
-      - image: circleci/rust:1.32.0
-    steps:
-      - checkout
+          - v1-dependencies-{{ checksum "Cargo.lock }}
+          - v1-dependencies-
+      - run:
+          name: Build all targets
+          command: cargo build --all --all-targets
+      - save_cache:
+          paths:
+            - /usr/local/cargo/registry
+            - target/debug/.fingerprint
+            - target/debug/build
+            - target/debug/deps
+          key: v1-dependencies-{{ checksum "Cargo.lock" }}
+      # run tests!
+      - run: 
+          name: Run cargo clippy
+          name: cargo clippy
       - run:
           name: Run all tests
           command: cargo test --all
+          
+  deploy-dev:
+    docker:
+      - image: circleci/rust:1.32.0
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Version information
+          command: rustc --version; cargo --version; rustup --version
+      - run:
+          name: Calculate dependencies
+          command: cargo generate-lockfile
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "Cargo.lock }}
+          - v1-dependencies-
+      - run:
+          name: Build all targets
+          command: cargo build --all --all-targets
+      - save_cache:
+          paths:
+            - /usr/local/cargo/registry
+            - target/debug/.fingerprint
+            - target/debug/build
+            - target/debug/deps
+          key: v1-dependencies-{{ checksum "Cargo.lock" }}
+      # TODO run develop
+      
+  deploy-master:
+    docker:
+      - image: circleci/rust:1.32.0
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Version information
+          command: rustc --version; cargo --version; rustup --version
+      - run:
+          name: Calculate dependencies
+          command: cargo generate-lockfile
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "Cargo.lock }}
+          - v1-dependencies-
+      - run:
+          name: Build all targets
+          command: cargo build --all --all-targets
+      - save_cache:
+          paths:
+            - /usr/local/cargo/registry
+            - target/debug/.fingerprint
+            - target/debug/build
+            - target/debug/deps
+          key: v1-dependencies-{{ checksum "Cargo.lock" }}
+      # TODO run production
 
 workflows:
-  version: 2
-  build_and_test:
-    jobs:
-      - build
-      - test:
-          requires:
-            - build
-          filters:
-            branches:
-              only: develop
+      version: 2
 
-# version: 2
-
-# executors:
-#   my-executor:
-#     docker:
-#       - image: circleci/rust:1.32.0
-
-# jobs:
-#   my-job:
-#     executor: my-executor
-#     steps:
-#       - checkout
-#       - run:
-#           name: Version information
-#           command: rustc --version; cargo --version; rustup --version
-#       - run:
-#           name: Calculate dependencies
-#           command: cargo generate-lockfile
-#       - restore_cache:
-#           keys:
-#             - v4-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
-#       - run:
-#           name: Build all targets
-#           command: cargo build --all --all-targets
-#       - save_cache:
-#           paths:
-#             - /usr/local/cargo/registry
-#             - target/debug/.fingerprint
-#             - target/debug/build
-#             - target/debug/deps
-#           key: v4-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
-#       - run:
-#           name: Run cargo clippy
-#           command: cargo clippy
-#       - run:
-#           name: Run all tests
-#           command: cargo test --all
+      -deploy:
+        jobs:
+          - test
+          - deploy-dev:
+              requires:
+                - test
+              filters:
+                branches:
+                  only: develop
+          - deploy-master:
+              requires:
+                - test
+              filters:
+                branches:
+                  only: master
