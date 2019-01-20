@@ -1,9 +1,13 @@
 version: 2
 
-jobs:
-  test:
+executors:
+  my-executor:
     docker:
       - image: circleci/rust:1.32.0
+
+jobs:
+  my-job:
+    executor: my-executor
     steps:
       - checkout
       - run:
@@ -25,6 +29,9 @@ jobs:
             - target/debug/build
             - target/debug/deps
           key: v4-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
+      - run:
+          name: Run cargo clippy
+          command: cargo clippy
       - run:
           name: Run all tests
           command: cargo test --all
