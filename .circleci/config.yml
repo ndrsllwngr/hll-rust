@@ -44,7 +44,7 @@ workflows:
             branches:
               only: develop
 
-version: 2
+# version: 2
 
 # executors:
 #   my-executor:
