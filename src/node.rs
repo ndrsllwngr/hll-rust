@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
+use std::io::{BufRead, BufReader};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::{thread, time};
-use std::net::{TcpListener, TcpStream, SocketAddr};
-use std::io::{BufReader, BufRead};
 
 use super::finger::FingerTable;
 use super::network_util;
@@ -70,7 +70,7 @@ impl Node {
         let id = create_node_id(ip_addr);
         let listening_addr = format!("127.0.0.1:{}", port).parse::<SocketAddr>().unwrap();
         let finger_table = FingerTable::new();
-        /// Always start at first entry of finger_table
+        // Always start at first entry of finger_table
         let next_finger = 0;
         let successor = OtherNode::new(id.clone(), ip_addr);
         let storage = Storage::new();
@@ -88,7 +88,6 @@ impl Node {
             predecessor: None,
             storage,
         }
-
     }
 
     /// Converts internal representation of node to the simpler representation OtherNode
@@ -101,13 +100,11 @@ impl Node {
 
     /// Gets closet preceding
     pub fn closet_finger_preceding(&self, find_id: &BigInt) -> OtherNode {
-        /// ```
-        /// n.closest_preceding_node(id)
-        ///   for i = m downto 1
-        ///     if (finger[i]∈(n,id))
-        ///       return finger[i];
-        ///   return n;
-        /// ```
+        // n.closest_preceding_node(id)
+        //   for i = m downto 1
+        //     if (finger[i]∈(n,id))
+        //       return finger[i];
+        //   return n;
         for x in self.finger_table.length()..0 {
             let finger_entry = self.finger_table.get(x);
             if let Some(finger_entry) = finger_entry {
@@ -183,7 +180,7 @@ impl Node {
         // let parsed_message: Message = serde_json::from_str(custom_json).unwrap();
         let packet = Packet::new(from, message);
         let json_string = serde_json::to_string(&packet).unwrap();
-        network_util::send_string_to_socket(*to.get_ip_addr(),json_string);
+        network_util::send_string_to_socket(*to.get_ip_addr(), json_string);
     }
 
     fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {
@@ -201,13 +198,10 @@ impl Node {
                         let parsed_packet: Packet = serde_json::from_str(&buffer).unwrap();
                         let from = parsed_packet.get_from();
                         let message = parsed_packet.get_message();
-                        self.process_received_msg(from.clone(),message.clone())
-
+                        self.process_received_msg(from.clone(), message.clone())
                     }
                 }
-                Err(e) => {
-                    error!("Error reading message from {}: {}",client_addr, e)
-                }
+                Err(e) => error!("Error reading message from {}: {}", client_addr, e),
             }
         }
     }
@@ -225,17 +219,14 @@ impl Node {
 
                     self.handle_request(stream, addr);
                 }
-                Err(e) => {
-                    error!("Connection failed: {:?}", e)
-                }
+                Err(e) => error!("Connection failed: {:?}", e),
             };
-        };
+        }
     }
 
     //pub fn network(&self) -> &Network{
     //    &self.network.unwrap()
     //}
-
 
     pub fn process_received_msg(&mut self, _from: OtherNode, _message: Message) {
         let from = _from;

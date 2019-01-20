@@ -13,7 +13,6 @@ extern crate serde;
 extern crate serde_json;
 
 use num_bigint::{BigInt, Sign, ToBigInt};
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str;
 use std::thread;
@@ -101,25 +100,37 @@ fn main() {
     //let node3 = node::Node::new("127.0.0.1:3002".parse::<SocketAddr>().unwrap());
 
     let thread = thread::spawn(move || {
-        let mut node = node::Node::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap(), 34254, None);
+        let mut node = node::Node::new(
+            "127.0.0.1:34254".parse::<SocketAddr>().unwrap(),
+            34254,
+            None,
+        );
         node.start_listening_on_socket();
     });
 
-
-
     let msg1 = protocols::Message::new(protocols::NOTIFY_PREDECESSOR, None, None);
     let msg2 = protocols::Message::new(protocols::NOTIFY_SUCCESSOR, None, None);
-    let packet = protocols::Packet::new(node::OtherNode::new(-1000.to_bigint().unwrap(),
-                                                             "127.0.0.1:34254".parse().unwrap()), msg1);
+    let packet = protocols::Packet::new(
+        node::OtherNode::new(
+            -1000.to_bigint().unwrap(),
+            "127.0.0.1:34254".parse().unwrap(),
+        ),
+        msg1,
+    );
     let packet_json = serde_json::to_string(&packet).unwrap();
     let msg2_json = serde_json::to_string(&msg2).unwrap();
     // TODO add sleep
-    network_util::send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(), packet_json.to_owned());
+    network_util::send_string_to_socket(
+        "127.0.0.1:34254".parse::<SocketAddr>().unwrap(),
+        packet_json.to_owned(),
+    );
     //network::send_string_to_socket("127.0.0.1:34258".parse::<SocketAddr>().unwrap(),msg2_json.to_owned());
 
-    thread.join();
+    if let Err(e) = thread.join() {
+        error!("{:?}", e)
+    }
 
-   // node.network.start_listening_on_socket();
+    // node.network.start_listening_on_socket();
 
     //let network1 = network::Network::new("127.0.0.1:34254".parse::<SocketAddr>().unwrap());
     //network1.start_listening_on_socket();
@@ -128,7 +139,6 @@ fn main() {
     //network2.start_listening_on_socket();
     //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bla".to_owned());
     //network2.send_string_to_socket("127.0.0.1:34254".parse::<SocketAddr>().unwrap(),"bli".to_owned());
-
 }
 
 //TODO check if solution exists
