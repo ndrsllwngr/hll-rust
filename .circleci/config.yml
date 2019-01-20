@@ -29,11 +29,11 @@ jobs:
       # run tests!
       - run: 
           name: Run cargo clippy
-          name: cargo clippy
+          command: cargo clippy
       - run:
           name: Run all tests
           command: cargo test --all
-          
+
   deploy-dev:
     docker:
       - image: circleci/rust:1.32.0
