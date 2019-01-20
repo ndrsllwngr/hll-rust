@@ -10,6 +10,7 @@ pub struct FingerEntry {
     pub node: OtherNode,
 }
 
+#[derive(Clone)]
 pub struct FingerTable {
     entries: Vec<FingerEntry>,
 }

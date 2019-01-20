@@ -44,6 +44,7 @@ impl OtherNode {
 /// * `successor`      - Successor of the node //TODO can be found out by finger table, //TODO do we need var finger_entries (e.g. 32 or 8)
 /// * `predecessor`    - [Optional] Predecessor of the node
 /// * `storage`        - DHT storage inside the node
+#[derive(Clone)]
 pub struct Node {
     id: BigInt,
     ip_addr: SocketAddr,
@@ -127,10 +128,10 @@ impl Node {
     /// Notifies successor that I am his predecessor by sending NOTIFY_PREDECESSOR
     pub fn start_update_fingers(&mut self) {
         loop {
+            error!("start_update_fingers");
             self.fix_fingers();
             let message = Message::new(NOTIFY_PREDECESSOR, None, None);
             self.send_msg(self.successor.clone(), None, message);
-            info!("start_update_fingers");
             thread::sleep(time::Duration::from_millis(2000));
         }
     }

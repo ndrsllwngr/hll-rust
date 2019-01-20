@@ -107,25 +107,61 @@ fn main() {
                 11111,
                 None,
             );
-            node.start_listening_on_socket();
+            let mut node_clone = node.clone();
+            let builder = thread::Builder::new().name("N1-Listen".to_string());
+            let handler = builder
+                .spawn(move || {
+                    node.start_listening_on_socket();
+                })
+                .unwrap();
+            let builder2 = thread::Builder::new().name("N1-Update".to_string());
+            let handler2 = builder2
+                .spawn(move || {
+                    node_clone.start_update_fingers();
+                })
+                .unwrap();
+            if let Err(e) = handler.join() {
+                error!("{:?}", e)
+            }
+            if let Err(e) = handler2.join() {
+                error!("{:?}", e)
+            }
         })
         .unwrap();
 
     let builder2 = thread::Builder::new().name("N2".to_string());
     let handler2 = builder2
         .spawn(|| {
-            let mut node2 = node::Node::new(
+            let mut node = node::Node::new(
                 "127.0.0.1:33333".parse::<SocketAddr>().unwrap(),
                 44444,
                 None,
             );
-            if node2.join(node::OtherNode::new(
+            if node.join(node::OtherNode::new(
                 -10000.to_bigint().unwrap(),
                 "127.0.0.1:11111".parse().unwrap(),
             )) {
                 info!("Node2join");
             }
-            node2.start_listening_on_socket();
+            let mut node_clone = node.clone();
+            let builder = thread::Builder::new().name("N2-Listen".to_string());
+            let handler = builder
+                .spawn(move || {
+                    node.start_listening_on_socket();
+                })
+                .unwrap();
+            let builder2 = thread::Builder::new().name("N2-Update".to_string());
+            let handler2 = builder2
+                .spawn(move || {
+                    node_clone.start_update_fingers();
+                })
+                .unwrap();
+            if let Err(e) = handler.join() {
+                error!("{:?}", e)
+            }
+            if let Err(e) = handler2.join() {
+                error!("{:?}", e)
+            }
         })
         .unwrap();
 
