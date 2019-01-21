@@ -11,7 +11,7 @@ appenders:
     path: "log/error.log"
     append: true
     encoder:
-      pattern: "{d(%+)(local)} [{t}] {l} {M}: {m}{n}"
+      pattern: "{d(%+)(local)} {h({l})} [{T}] {h({f}:{L})}: {m}{n}"
     policy:
       kind: compound
       trigger:
