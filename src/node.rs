@@ -75,10 +75,7 @@ impl Node {
         let next_finger = 0;
         let successor = OtherNode::new(id.clone(), listening_addr);
         let storage = Storage::new();
-        // TODO In addition to that we need to check how network can call methods on node, particularly: process_incoming_msg
-        // Solution: pass reference of node to network
-        info!("New node {:?}", id);
-        //TODO ip_addr != listening addr
+        debug!("New node {:?}", id);
         Node {
             id,
             ip_addr,
@@ -95,7 +92,7 @@ impl Node {
     fn to_other_node(&self) -> OtherNode {
         OtherNode {
             id: self.id.clone(),
-            ip_addr: self.listening_addr.clone(),
+            ip_addr: self.listening_addr,
         }
     }
 
@@ -128,11 +125,15 @@ impl Node {
     /// Notifies successor that I am his predecessor by sending NOTIFY_PREDECESSOR
     pub fn start_update_fingers(&mut self) {
         loop {
-            error!("start_update_fingers");
+            debug!("start_update_fingers()");
             self.fix_fingers();
             let message = Message::new(NOTIFY_PREDECESSOR, None, None);
             self.send_msg(self.successor.clone(), None, message);
-            thread::sleep(time::Duration::from_millis(2000));
+
+            let millis2000 = time::Duration::from_millis(2000);
+            let now = time::Instant::now();
+            thread::sleep(millis2000);
+            assert!(now.elapsed() >= millis2000);
         }
     }
 
@@ -230,14 +231,14 @@ impl Node {
     //    &self.network.unwrap()
     //}
 
-    pub fn process_incoming_msg(&mut self, from: OtherNode, mut msg: Message) {
+    pub fn process_incoming_msg(&mut self, from: OtherNode, msg: Message) {
         match msg.get_message_type() {
             NOTIFY_PREDECESSOR => self.update_predecessor(from, msg),
             NOTIFY_SUCCESSOR => self.update_successor(from, msg),
             NOTIFY_JOIN => self.notify_join(from, msg),
             FIND_SUCCESSOR => self.find_successor(from, msg),
             FOUND_SUCCESSOR => self.found_successor(from, msg),
-            // MESSAGE => self.message(from, msg),
+            MESSAGE => self.message(from, msg),
             _ => {
                 warn!("Unknown chord message!");
                 msg.print();
@@ -279,7 +280,7 @@ impl Node {
             }
         };
         msg.set_message_type(NOTIFY_SUCCESSOR);
-        // TODO WTF why is this msg labeled by the new_predecessor?
+        // TODO WHAT THE FUCK why is this msg labelled by the new_predecessor?
         self.send_msg(new_predecessor, Some(from), msg);
         self.finger_table.print()
     }
@@ -291,11 +292,12 @@ impl Node {
     ///     successor = x;
     ///   successor.notify(n);
     /// ```
-    fn update_successor(&mut self, from: OtherNode, mut msg: Message) {
+    fn update_successor(&mut self, from: OtherNode, _msg: Message) {
         info!("MSG_TYPE_NOTIFY_SUCCESSOR = 1");
 
         // TODO maybe delete successor field in node struct
         // TODO and instead use first finger entry in fingertable
+        // TODO but we have to verify if we don't produce any unforseen changes in the implementation
         if is_in_range(&from.id, &self.id, &self.successor.id) {
             self.successor = from;
             self.successor.print("Successor reassigned");
@@ -342,6 +344,9 @@ impl Node {
 
         match (msg.get_next_finger(), msg.get_id()) {
             (Some(index), Some(id)) => {
+                // TODO I believe that we get a
+                // TODO 'index out of bounds: the len is 0 but the index is 0'
+                // TODO in the following line
                 self.finger_table.put(index, id, from);
                 info!("FingerTable fixed.");
                 self.finger_table.print();

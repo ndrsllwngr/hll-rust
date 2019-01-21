@@ -1,7 +1,10 @@
 use num::bigint::{BigInt, Sign, ToBigInt};
 use num::traits::pow;
+use std::net::SocketAddr;
 
+use super::chord::FINGERTABLE_SIZE;
 use super::node::OtherNode;
+use super::util::create_node_id;
 
 // Represents a single finger table entry
 #[derive(Clone)]
@@ -17,8 +20,14 @@ pub struct FingerTable {
 
 impl FingerTable {
     pub fn new() -> FingerTable {
+        // TODO HAHA SO GEHT DAS NICHT, das ist ja ultra hacky, müssen uns überlegen wie das besser geht gn8
+        let id = create_node_id("127.0.0.1:22222".parse::<SocketAddr>().unwrap());
+        let node = OtherNode::new(
+            0.to_bigint().unwrap(),
+            "127.0.0.1:22222".parse::<SocketAddr>().unwrap(),
+        );
         FingerTable {
-            entries: Vec::new(),
+            entries: vec![FingerEntry { id, node }; FINGERTABLE_SIZE],
         }
     }
 
@@ -52,6 +61,7 @@ impl FingerTable {
     }
 }
 
+// TODO use this fn to generate indices of fingertable?
 fn finger_id(n: &[u8], i: usize, m: usize) -> Vec<u8> {
     let id_int = BigInt::from_bytes_be(Sign::NoSign, n);
 

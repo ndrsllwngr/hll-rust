@@ -11,7 +11,7 @@ pub const SUCCESSORLIST_SIZE: usize = CHORD_CIRCLE_BITS;
 /// At most a number of `2^m` nodes are allowed in the Chord Circle (Bit Shift left)
 pub const CHORD_CIRCLE_SIZE: usize = 1 << CHORD_CIRCLE_BITS;
 
-pub const CHORD_CHANGE_INTERVALL: usize = 5;
+// pub const CHORD_CHANGE_INTERVALL: usize = 5;
 
 // /// Error return type for failed requests
 // pub const MSG_TYPE_CHORD_ERR: i8 = -1;

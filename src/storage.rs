@@ -12,15 +12,15 @@ impl Storage {
         }
     }
 
-    pub fn put(&mut self, key: String, value: String) {
-        self.data.insert(key, value);
-    }
+    // pub fn put(&mut self, key: String, value: String) {
+    //     self.data.insert(key, value);
+    // }
 
-    pub fn get(&mut self, key: String) -> Option<&String> {
-        self.data.get(&key)
-    }
+    // pub fn get(&mut self, key: String) -> Option<&String> {
+    //     self.data.get(&key)
+    // }
 
-    pub fn delete(&mut self, key: String) {
-        self.data.remove(&key);
-    }
+    // pub fn delete(&mut self, key: String) {
+    //     self.data.remove(&key);
+    // }
 }
