@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
 use std::io::{BufRead, BufReader};
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::{thread, time};
 
 use super::finger::FingerTable;
@@ -65,7 +65,9 @@ impl Node {
     // TODO implement predecessor: Option<SocketAddr>
     pub fn new(public_ip: String, port: i32, predecessor: Option<SocketAddr>) -> Node {
         // TODO set ip_addr correctly (outbound address)
-        let ip_addr = format!("{}:{}", public_ip, port).parse::<SocketAddr>().unwrap();
+        let ip_addr = format!("{}:{}", public_ip, port)
+            .parse::<SocketAddr>()
+            .unwrap();
         let id = create_node_id(ip_addr);
         let finger_table = FingerTable::new();
         // Always start at first entry of finger_table
