@@ -54,7 +54,7 @@ fn main() {
         return;
     }
 
-    let ip_address_optional = matches.opt_str("ip");
+    let ip_address_optional = matches.opt_str("i");
     let node_number_optional = matches.opt_str("n");
     let join_ip_optional = matches.opt_str("j");
 
