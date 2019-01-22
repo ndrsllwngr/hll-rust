@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
 use std::io::{BufRead, BufReader};
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::{thread, time};
 
 use super::finger::FingerTable;
@@ -38,7 +38,6 @@ impl OtherNode {
 ///
 /// * `id`             - Identifier of node: Currently SHA1 hashed IP address
 /// * `ip_addr`        - Ip address and port of the node
-/// * `listening_addr` - Local ip_addr on which the node is listening for incoming TCP connections
 /// * `finger_table`   - Finger table of the node, which stores up to n other nodes
 /// * `next_finger`    - Used to point on the entry of the finger table, we are currently processing
 /// * `successor`      - Successor of the node //TODO can be found out by finger table, //TODO do we need var finger_entries (e.g. 32 or 8)
@@ -48,7 +47,6 @@ impl OtherNode {
 pub struct Node {
     id: BigInt,
     ip_addr: SocketAddr,
-    listening_addr: SocketAddr,
     finger_table: FingerTable,
     next_finger: usize,
     successor: OtherNode,
@@ -65,21 +63,19 @@ impl Node {
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
     // TODO implement predecessor: Option<SocketAddr>
-    pub fn new(ip_addr: SocketAddr, port: i32, predecessor: Option<SocketAddr>) -> Node {
+    pub fn new(public_ip: String, port: i32, predecessor: Option<SocketAddr>) -> Node {
         // TODO set ip_addr correctly (outbound address)
-        // let ip_addr =
+        let ip_addr = format!("{}:{}", public_ip, port).parse::<SocketAddr>().unwrap();
         let id = create_node_id(ip_addr);
-        let listening_addr = format!("127.0.0.1:{}", port).parse::<SocketAddr>().unwrap();
         let finger_table = FingerTable::new();
         // Always start at first entry of finger_table
         let next_finger = 0;
-        let successor = OtherNode::new(id.clone(), listening_addr);
+        let successor = OtherNode::new(id.clone(), ip_addr);
         let storage = Storage::new();
         debug!("New node {:?}", id);
         Node {
             id,
             ip_addr,
-            listening_addr,
             finger_table,
             next_finger,
             successor,
@@ -92,7 +88,7 @@ impl Node {
     fn to_other_node(&self) -> OtherNode {
         OtherNode {
             id: self.id.clone(),
-            ip_addr: self.listening_addr,
+            ip_addr: self.ip_addr,
         }
     }
 
@@ -213,8 +209,8 @@ impl Node {
     // nc 127.0.0.1 34254
     // afterwards every message will be echoed in the console by handle_request
     pub fn start_listening_on_socket(&mut self) {
-        let listener = TcpListener::bind(self.listening_addr).unwrap();
-        info!("Started listening on {}", self.listening_addr.to_string());
+        let listener = TcpListener::bind(self.ip_addr).unwrap();
+        info!("Started listening on {}", self.ip_addr.to_string());
         loop {
             match listener.accept() {
                 Ok((stream, addr)) => {
