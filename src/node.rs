@@ -63,16 +63,19 @@ impl Node {
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
     // TODO implement predecessor: Option<SocketAddr>
-    pub fn new(public_ip: String, port: i32, predecessor: Option<SocketAddr>) -> Node {
-        // TODO set ip_addr correctly (outbound address)
-        let ip_addr = format!("{}:{}", public_ip, port)
+    pub fn new(ip_addr: String, port: i32, successor: Option<SocketAddr>) -> Node {
+        let ip_addr = format!("{}:{}", ip_addr, port)
             .parse::<SocketAddr>()
             .unwrap();
         let id = create_node_id(ip_addr);
         let finger_table = FingerTable::new();
         // Always start at first entry of finger_table
         let next_finger = 0;
-        let successor = OtherNode::new(id.clone(), ip_addr);
+        let successor = if let Some(successor) = successor {
+            OtherNode::new(create_node_id(successor), successor)
+        } else {
+            OtherNode::new(id.clone(), ip_addr)
+        };
         let storage = Storage::new();
         debug!("New node {:?}", id);
         Node {
@@ -152,6 +155,7 @@ impl Node {
     }
 
     /// Notifies other peer about joining the network
+    /// TODO set remote to our successor
     pub fn join(&mut self, remote: OtherNode) -> bool {
         let message = Message::new(NOTIFY_JOIN, None, None);
         self.predecessor = None;

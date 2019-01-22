@@ -50,14 +50,18 @@ impl FingerTable {
 
     pub fn print(&self) {
         // info!("{0: <2} | {1: <97} | {2: <16}", "i", "id", "node");
+        let mut finger_table_string: String = "\n".to_string();
         for i in 0..self.entries.len() {
-            info!(
-                "{0: <2} | {1: <97} | {2: <16}",
+            let borrowed_str: &str = &format!(
+                "{0: <2} | {1: <97} | {2: <16}\n",
                 i,
                 self.entries[i].id,
                 self.entries[i].node.get_ip_addr()
-            )
+            );
+
+            finger_table_string.push_str(borrowed_str);
         }
+        info!("{}", finger_table_string);
     }
 }
 

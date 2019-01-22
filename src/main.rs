@@ -17,6 +17,7 @@ extern crate get_if_addrs;
 
 use getopts::Options;
 use std::env;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread::JoinHandle;
 use std::{thread, time};
 
@@ -88,9 +89,16 @@ fn main() {
     let now = time::Instant::now();
     thread::sleep(millis2000);
     assert!(now.elapsed() >= millis2000);
-
+    let successor_ip = format!("{}:{}", ip_address.clone(), 10050)
+        .parse::<SocketAddr>()
+        .unwrap();
     // Don't forget to join handles, otherwise program terminates instantely
-    let threads_handles = spawn_chord_circle(ip_address, number_of_nodes);
+    let thread_handle_first = spawn_node(ip_address.clone(), 10050, "FIRST".to_string(), None);
+    let threads_handles = spawn_chord_circle(ip_address, number_of_nodes, Some(successor_ip));
+
+    if let Err(e) = thread_handle_first.join() {
+        error!("{:?}", e)
+    }
     for handler in threads_handles {
         if let Err(e) = handler.join() {
             error!("{:?}", e)
@@ -103,11 +111,16 @@ fn print_usage(program: &str, opts: Options) {
     print!("{}", opts.usage(&brief));
 }
 
-fn spawn_node(ip_addr: String, port: i32, name: String) -> JoinHandle<()> {
-    let builder = thread::Builder::new().name("N1".to_string());
+fn spawn_node(
+    ip_addr: String,
+    port: i32,
+    name: String,
+    successor_ip: Option<SocketAddr>,
+) -> JoinHandle<()> {
+    let builder = thread::Builder::new().name(name.clone().to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new(ip_addr, port, None);
+            let mut node = node::Node::new(ip_addr, port, successor_ip);
             let mut node_clone = node.clone();
             let builder = thread::Builder::new().name(format!("{}-Listen", name).to_string());
             let handler = builder
@@ -131,7 +144,11 @@ fn spawn_node(ip_addr: String, port: i32, name: String) -> JoinHandle<()> {
         .unwrap()
 }
 
-fn spawn_chord_circle(ip_addr: String, number_of_nodes: i32) -> Vec<JoinHandle<()>> {
+fn spawn_chord_circle(
+    ip_addr: String,
+    number_of_nodes: i32,
+    successor_ip: Option<SocketAddr>,
+) -> Vec<JoinHandle<()>> {
     let mut node_handlers = Vec::new();
     let base_port: i32 = 10000;
     for x in 0..number_of_nodes {
@@ -139,6 +156,7 @@ fn spawn_chord_circle(ip_addr: String, number_of_nodes: i32) -> Vec<JoinHandle<(
             ip_addr.clone(),
             base_port + x,
             format!("N{}", x),
+            successor_ip,
         ))
     }
     node_handlers
