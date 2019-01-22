@@ -4,10 +4,12 @@ use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::{thread, time};
 
 use super::finger::FingerTable;
+use super::finger;
 use super::network_util;
 use super::protocols::*;
 use super::storage::Storage;
 use super::util::*;
+use super::chord;
 
 /// Simple representation of an external node in the network
 #[derive(Clone, Serialize, Deserialize)]
@@ -40,7 +42,7 @@ impl OtherNode {
 /// * `ip_addr`        - Ip address and port of the node
 /// * `finger_table`   - Finger table of the node, which stores up to n other nodes
 /// * `next_finger`    - Used to point on the entry of the finger table, we are currently processing
-/// * `successor`      - Successor of the node //TODO can be found out by finger table, //TODO do we need var finger_entries (e.g. 32 or 8)
+/// * `successor`      - Successor of the node //TODO can be found out by finger table, //TODO do we need var finger_entries (e.g. 32 or 8) -> Not really, finger_entries depend on bit_size of hashing!!
 /// * `predecessor`    - [Optional] Predecessor of the node
 /// * `storage`        - DHT storage inside the node
 #[derive(Clone)]
@@ -63,19 +65,20 @@ impl Node {
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
     // TODO implement predecessor: Option<SocketAddr>
-    pub fn new(ip_addr: String, port: i32, successor: Option<SocketAddr>) -> Node {
+    pub fn new(ip_addr: String, port: i32, initial_successor: Option<SocketAddr>) -> Node {
         let ip_addr = format!("{}:{}", ip_addr, port)
             .parse::<SocketAddr>()
             .unwrap();
         let id = create_node_id(ip_addr);
-        let finger_table = FingerTable::new();
         // Always start at first entry of finger_table
         let next_finger = 0;
-        let successor = if let Some(successor) = successor {
+        let successor = if let Some(successor) = initial_successor {
             OtherNode::new(create_node_id(successor), successor)
         } else {
             OtherNode::new(id.clone(), ip_addr)
         };
+        let finger_table = FingerTable::new(successor.clone());
+
         let storage = Storage::new();
         debug!("New node {:?}", id);
         Node {
@@ -144,10 +147,11 @@ impl Node {
     fn fix_fingers(&mut self) {
         let fix_finger_id: BigInt;
         let mut next = self.next_finger;
-        if next >= self.finger_table.length() {
+        //next >= self.finger_table.length()
+        if next >= chord::FINGERTABLE_SIZE {
             next = 0;
         }
-        fix_finger_id = get_fix_finger_id(&self.id, next);
+        fix_finger_id = finger::get_finger_id(&self.id, next);
         self.next_finger = next + 1;
         // n.fix_fingers()
         let message = Message::new(FIND_SUCCESSOR, Some(next), Some(fix_finger_id));
@@ -346,9 +350,7 @@ impl Node {
 
         match (msg.get_next_finger(), msg.get_id()) {
             (Some(index), Some(id)) => {
-                // TODO I believe that we get a
-                // TODO 'index out of bounds: the len is 0 but the index is 0'
-                // TODO in the following line
+                // indexOutOfBounds concern? -> not possible, because of implementation of put()
                 self.finger_table.put(index, id, from);
                 info!("FingerTable fixed.");
                 self.finger_table.print();

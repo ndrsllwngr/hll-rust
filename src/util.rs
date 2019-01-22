@@ -48,12 +48,3 @@ pub fn is_in_range(key: &BigInt, left: &BigInt, right: &BigInt) -> bool {
         (key > right && key < left) || (left == right && key != left)
     }
 }
-
-pub fn get_fix_finger_id(key: &BigInt, exponent: usize) -> BigInt {
-    // Get the offset
-    let two: BigInt = 2.to_bigint().unwrap();
-    let offset: BigInt = pow(two.clone(), exponent);
-
-    // Sum
-    key + offset
-}
