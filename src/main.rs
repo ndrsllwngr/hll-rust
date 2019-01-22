@@ -1,4 +1,5 @@
 extern crate crypto;
+extern crate getopts;
 extern crate num;
 extern crate num_bigint;
 
@@ -14,9 +15,10 @@ extern crate serde_json;
 
 extern crate get_if_addrs;
 
+use getopts::Options;
 use std::env;
-use std::thread;
 use std::thread::JoinHandle;
+use std::{thread, time};
 
 mod chord;
 mod finger;
@@ -30,11 +32,34 @@ fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
 
-    // get public ip address from command line arguments
-    let args: Vec<_> = env::args().collect();
-    let ip_address = if args.len() > 1 {
-        log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-        args[1].clone()
+    let args: Vec<String> = env::args().collect();
+    let program = args[0].clone();
+    let mut opts = Options::new();
+    opts.optopt("i", "", "Specify local ip address", "IPV4");
+    opts.optopt("n", "", "Specify number of nodes to spawn", "NUMBER");
+    opts.optopt(
+        "j",
+        "",
+        "Specify known node ip address and port",
+        "IPV4:PORT",
+    );
+    opts.optflag("h", "help", "Print help");
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => m,
+        Err(f) => panic!(f.to_string()),
+    };
+
+    if matches.opt_present("h") {
+        print_usage(&program, opts);
+        return;
+    }
+
+    let ip_address_optional = matches.opt_str("ip");
+    let node_number_optional = matches.opt_str("n");
+    let join_ip_optional = matches.opt_str("j");
+
+    let ip_address = if let Some(ip_address) = ip_address_optional {
+        ip_address
     } else {
         let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
         let iface = interfaces
@@ -46,15 +71,36 @@ fn main() {
             "127.0.0.1".to_string()
         }
     };
+    debug!("Using {} as ip address.", ip_address);
 
-    info!("USING IP_ADDRESS: {}", ip_address);
+    let number_of_nodes = if let Some(number) = node_number_optional {
+        match number.parse::<i32>() {
+            Ok(m) => m,
+            Err(f) => panic!(f.to_string()),
+        }
+    } else {
+        1
+    };
+    debug!("Spawning {} nodes.", number_of_nodes);
+
+    // TODO maybe instead ask to start program via input by user
+    let millis2000 = time::Duration::from_millis(2000);
+    let now = time::Instant::now();
+    thread::sleep(millis2000);
+    assert!(now.elapsed() >= millis2000);
+
     // Don't forget to join handles, otherwise program terminates instantely
-    let threads_handles = spawn_chord_circle(ip_address, 10);
+    let threads_handles = spawn_chord_circle(ip_address, number_of_nodes);
     for handler in threads_handles {
         if let Err(e) = handler.join() {
             error!("{:?}", e)
         }
     }
+}
+
+fn print_usage(program: &str, opts: Options) {
+    let brief = format!("Usage: {} FILE [options]", program);
+    print!("{}", opts.usage(&brief));
 }
 
 fn spawn_node(ip_addr: String, port: i32, name: String) -> JoinHandle<()> {
@@ -88,7 +134,7 @@ fn spawn_node(ip_addr: String, port: i32, name: String) -> JoinHandle<()> {
 fn spawn_chord_circle(ip_addr: String, number_of_nodes: i32) -> Vec<JoinHandle<()>> {
     let mut node_handlers = Vec::new();
     let base_port: i32 = 10000;
-    for x in 1..number_of_nodes {
+    for x in 0..number_of_nodes {
         node_handlers.push(spawn_node(
             ip_addr.clone(),
             base_port + x,
