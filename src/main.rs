@@ -12,10 +12,13 @@ extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 
+extern crate get_if_addrs;
+
 use num_bigint::ToBigInt;
 use std::net::SocketAddr;
 use std::str;
 use std::thread;
+use std::env;
 
 mod chord;
 mod finger;
@@ -28,80 +31,32 @@ mod util;
 fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
-    /*
-    //let id = "node_id".bytes();
-    //let ip_addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
-    let mut data = HashMap::new();
-    data.insert("key", "value");
-    let config = node::Config{id , ip_addr};
-    let storage = storage::Storage{data};
-    let node = node::Node{config, storage};
 
-    let finger_table: finger::FingerTable = finger::new_finger_table(&node, 5);
-    let mut bytes: Bytes = finger_table[0].id.clone();
+    // get public ip address from command line arguments
+    let args: Vec<_> = env::args().collect();
+    let ip_address = if args.len() > 1 {
+        log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
+        args[1].clone()
+    } else {
+        let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
+        let iface = interfaces.into_iter()
+            .find(|interface| interface.name == "en0" && interface.addr.ip().is_ipv4());
+        if let Some(iface) = iface {
+            iface.addr.ip().to_string()
+        } else {
+            "127.0.0.1".to_string()
+        }
+    };
 
-    assert_eq!(Some(b'f'), bytes.next());
-    assert_eq!(Some(b'i'), bytes.next());
-    assert_eq!(Some(b'n'), bytes.next());
 
+    info!("USING IP_ADDRESS: {}", ip_address);
 
-    test_endian("a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
-    test_modulo_bigint();
-    test_compare_bigint();
-
-    let mut test_node = node::Node::new("127.0.0.1:34254".parse().unwrap());
-    test_node.process_received_msg(
-        node::OtherNode::new(
-            BigInt::new(Sign::Minus, vec![1]),
-            "127.0.0.1:34254".parse().unwrap(),
-        ),
-        protocols::Message::new(0, Some(0), None),
-    );
-    test_node.process_received_msg(
-        node::OtherNode::new(
-            BigInt::new(Sign::Minus, vec![1]),
-            "127.0.0.1:34254".parse().unwrap(),
-        ),
-        protocols::Message::new(1, Some(0), None),
-    );
-    test_node.process_received_msg(
-        node::OtherNode::new(
-            BigInt::new(Sign::Minus, vec![1]),
-            "127.0.0.1:34254".parse().unwrap(),
-        ),
-        protocols::Message::new(2, Some(0), None),
-    );
-    test_node.process_received_msg(
-        node::OtherNode::new(
-            BigInt::new(Sign::Minus, vec![1]),
-            "127.0.0.1:34254".parse().unwrap(),
-        ),
-        protocols::Message::new(3, Some(0), Some(BigInt::new(Sign::Plus, vec![2]))),
-    );
-    test_node.process_received_msg(
-        node::OtherNode::new(
-            BigInt::new(Sign::Minus, vec![1]),
-            "127.0.0.1:34254".parse().unwrap(),
-        ),
-        protocols::Message::new(4, Some(0), None),
-    );
-    test_node.process_received_msg(
-        node::OtherNode::new(
-            BigInt::new(Sign::Minus, vec![1]),
-            "127.0.0.1:34254".parse().unwrap(),
-        ),
-        protocols::Message::new(5, Some(0), None),
-    );
-    // &test_node.start_network();
-    test_node.start_update_fingers();
-
-    ip_address_to_string_test();*/
-
+    let ip_address_clone_1 = ip_address.clone();
     let builder1 = thread::Builder::new().name("N1".to_string());
     let handler1 = builder1
         .spawn(|| {
             let mut node = node::Node::new(
-                "127.0.0.1:11110".parse::<SocketAddr>().unwrap(),
+                ip_address_clone_1,
                 11111,
                 None,
             );
@@ -127,11 +82,12 @@ fn main() {
         })
         .unwrap();
 
+    let ip_address_clone_2 = ip_address.clone();
     let builder2 = thread::Builder::new().name("N2".to_string());
     let handler2 = builder2
         .spawn(|| {
             let mut node = node::Node::new(
-                "127.0.0.1:22220".parse::<SocketAddr>().unwrap(),
+                ip_address_clone_2,
                 22221,
                 None,
             );
@@ -163,11 +119,12 @@ fn main() {
         })
         .unwrap();
 
+    let ip_address_clone_3 = ip_address.clone();
     let builder3 = thread::Builder::new().name("N3".to_string());
     let handler3 = builder3
         .spawn(|| {
             let mut node = node::Node::new(
-                "127.0.0.1:33330".parse::<SocketAddr>().unwrap(),
+                ip_address_clone_3,
                 33331,
                 None,
             );
