@@ -33,16 +33,16 @@ fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
 
+    // Command line options
     let args: Vec<String> = env::args().collect();
-    let program = args[0].clone();
     let mut opts = Options::new();
-    opts.optopt("i", "", "Specify local ip address", "IPV4");
-    opts.optopt("n", "", "Specify number of nodes to spawn", "NUMBER");
+    opts.optopt("i", "", "Use to specify local ip_address for nodes to bind to", "127.0.0.1");
+    opts.optopt("n", "", "Use to specify number of nodes to spawn (standard = 1)", "1");
     opts.optopt(
         "j",
         "",
-        "Specify known node ip address and port",
-        "IPV4:PORT",
+        "Use to join existing chord ring at a nodes ip_address:port",
+        "127.0.0.1:5555",
     );
     opts.optflag("h", "help", "Print help");
     let matches = match opts.parse(&args[1..]) {
@@ -51,30 +51,30 @@ fn main() {
     };
 
     if matches.opt_present("h") {
-        print_usage(&program, opts);
+        print!("\n{}", opts.usage("Usage: cargo run -- [options]"));
         return;
     }
 
-    let ip_address_optional = matches.opt_str("i");
-    let node_number_optional = matches.opt_str("n");
-    let join_ip_optional = matches.opt_str("j");
+    let ip_address_option = matches.opt_str("i");
+    let node_number_option = matches.opt_str("n");
+    let join_ip_option = matches.opt_str("j");
 
-    let ip_address = if let Some(ip_address) = ip_address_optional {
+    let ip_address = if let Some(ip_address) = ip_address_option {
         ip_address
     } else {
         let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
-        let iface = interfaces
+        let interface_option = interfaces
             .into_iter()
-            .find(|interface| interface.name == "en0" && interface.addr.ip().is_ipv4());
-        if let Some(iface) = iface {
-            iface.addr.ip().to_string()
+            .find(|i| i.name == "en0" && i.addr.ip().is_ipv4());
+        if let Some(interface) = interface_option {
+            interface.addr.ip().to_string()
         } else {
             "127.0.0.1".to_string()
         }
     };
     debug!("Using {} as ip address.", ip_address);
 
-    let number_of_nodes = if let Some(number) = node_number_optional {
+    let number_of_nodes = if let Some(number) = node_number_option {
         match number.parse::<i32>() {
             Ok(m) => m,
             Err(f) => panic!(f.to_string()),
@@ -84,11 +84,14 @@ fn main() {
     };
     debug!("Spawning {} nodes.", number_of_nodes);
 
+    // let join_ip =
+
     // TODO maybe instead ask to start program via input by user
     let millis2000 = time::Duration::from_millis(2000);
     let now = time::Instant::now();
     thread::sleep(millis2000);
     assert!(now.elapsed() >= millis2000);
+
     let successor_ip = format!("{}:{}", ip_address.clone(), 10050)
         .parse::<SocketAddr>()
         .unwrap();
@@ -104,11 +107,6 @@ fn main() {
             error!("{:?}", e)
         }
     }
-}
-
-fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} FILE [options]", program);
-    print!("{}", opts.usage(&brief));
 }
 
 fn spawn_node(
