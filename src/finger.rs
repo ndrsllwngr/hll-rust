@@ -4,12 +4,13 @@ use std::net::SocketAddr;
 
 use super::chord::FINGERTABLE_SIZE;
 use super::node::OtherNode;
-use super::util::create_node_id;
+use super::util;
 
 // Represents a single finger table entry
 #[derive(Clone)]
 pub struct FingerEntry {
-    pub id: BigInt, // ID hash of (n + 2^i) mod (2^m)
+    pub id: BigInt,
+    // ID hash of (n + 2^i) mod (2^m)
     pub node: OtherNode,
 }
 
@@ -19,21 +20,25 @@ pub struct FingerTable {
 }
 
 impl FingerTable {
-    pub fn new() -> FingerTable {
-        // TODO HAHA SO GEHT DAS NICHT, das ist ja ultra hacky, müssen uns überlegen wie das besser geht gn8
-        let id = create_node_id("127.0.0.1:22222".parse::<SocketAddr>().unwrap());
-        let node = OtherNode::new(
-            0.to_bigint().unwrap(),
-            "127.0.0.1:22222".parse::<SocketAddr>().unwrap(),
-        );
-        FingerTable {
-            entries: vec![FingerEntry { id, node }; FINGERTABLE_SIZE],
-        }
+    pub fn new(successor: OtherNode) -> FingerTable {
+        let mut entries: Vec<FingerEntry> = Vec::new();
+        entries.push(
+            FingerEntry{
+                // TODO maybe use hashing function with smaller bit range for testing. (Bitsize = entries in finger_table)
+                id: get_finger_id(successor.get_id(), 0_usize),
+                node: successor
+            });
+        FingerTable{entries}
     }
 
     pub fn put(&mut self, index: usize, id: BigInt, node: OtherNode) {
         let entry = FingerEntry { id, node };
-        self.entries[index] = entry;
+        if index >= self.length() {
+            self.entries.push(entry)
+        } else {
+            self.entries[index] = entry;
+
+        }
     }
 
     pub fn get(&self, index: usize) -> Option<&FingerEntry> {
@@ -49,11 +54,13 @@ impl FingerTable {
     }
 
     pub fn print(&self) {
-        // info!("{0: <2} | {1: <97} | {2: <16}", "i", "id", "node");
-        let mut finger_table_string: String = "\n".to_string();
+        let mut finger_table_string: String =
+            format!("\n{0: <2} | {1: <97} | {2: <20}\n\
+        ----------------------------------------------------------------------------------------------------------------------------\n",
+                    "#", "Start: node_id + 2^i", "Node_IP");
         for i in 0..self.entries.len() {
             let borrowed_str: &str = &format!(
-                "{0: <2} | {1: <97} | {2: <16}\n",
+                "{0: <2} | {1: <97} | {2: <20}\n",
                 i,
                 self.entries[i].id,
                 self.entries[i].node.get_ip_addr()
@@ -65,8 +72,18 @@ impl FingerTable {
     }
 }
 
-// TODO use this fn to generate indices of fingertable?
-fn finger_id(n: &[u8], i: usize, m: usize) -> Vec<u8> {
+
+pub fn get_finger_id(key: &BigInt, exponent: usize) -> BigInt {
+    // Get the offset
+    let two: BigInt = 2.to_bigint().unwrap();
+    let offset: BigInt = pow(two.clone(), exponent);
+
+    // Sum
+    key + offset
+}
+
+// Not in use right now TODO use this fn instead of get_finger_id to generate indices of fingertable?
+fn get_finger_id_with_modulo(n: &[u8], i: usize, m: usize) -> Vec<u8> {
     let id_int = BigInt::from_bytes_be(Sign::NoSign, n);
 
     // Get the offset
