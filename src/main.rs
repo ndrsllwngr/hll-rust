@@ -92,14 +92,15 @@ fn main() {
     thread::sleep(millis2000);
     assert!(now.elapsed() >= millis2000);
 
-    let successor_ip = format!("{}:{}", ip_address.clone(), 10050)
+    let first_node_ip = format!("{}:{}", ip_address.clone(), 6666)
         .parse::<SocketAddr>()
         .unwrap();
-    // Don't forget to join handles, otherwise program terminates instantely
-    let thread_handle_first = spawn_node(ip_address.clone(), 10050, "FIRST".to_string(), None);
-    let threads_handles = spawn_chord_circle(ip_address, number_of_nodes, Some(successor_ip));
 
-    if let Err(e) = thread_handle_first.join() {
+    let thread_handle_first_node = spawn_node(first_node_ip, "FIRST".to_string(), None);
+    let threads_handles = spawn_chord_circle(ip_address, number_of_nodes, Some(first_node_ip));
+
+    // Don't forget to join handles in the end, otherwise program terminates instantly
+    if let Err(e) = thread_handle_first_node.join() {
         error!("{:?}", e)
     }
     for handler in threads_handles {
@@ -110,15 +111,14 @@ fn main() {
 }
 
 fn spawn_node(
-    ip_addr: String,
-    port: i32,
+    node_ip_addr: SocketAddr,
     name: String,
     successor_ip: Option<SocketAddr>,
 ) -> JoinHandle<()> {
     let builder = thread::Builder::new().name(name.clone().to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new(ip_addr, port, successor_ip);
+            let mut node = node::Node::new(node_ip_addr, successor_ip);
             let mut node_clone = node.clone();
             let builder = thread::Builder::new().name(format!("{}-Listen", name).to_string());
             let handler = builder
@@ -143,16 +143,19 @@ fn spawn_node(
 }
 
 fn spawn_chord_circle(
-    ip_addr: String,
+    ip_address: String,
     number_of_nodes: i32,
     successor_ip: Option<SocketAddr>,
 ) -> Vec<JoinHandle<()>> {
     let mut node_handlers = Vec::new();
     let base_port: i32 = 10000;
     for x in 0..number_of_nodes {
+        let node_port = base_port + x;
+        let node_ip_addr = format!("{}:{}", ip_address.clone(), node_port)
+            .parse::<SocketAddr>()
+            .unwrap();
         node_handlers.push(spawn_node(
-            ip_addr.clone(),
-            base_port + x,
+            node_ip_addr,
             format!("N{}", x),
             successor_ip,
         ))

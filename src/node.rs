@@ -65,17 +65,14 @@ impl Node {
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
     // TODO implement predecessor: Option<SocketAddr>
-    pub fn new(ip_addr: String, port: i32, initial_successor: Option<SocketAddr>) -> Node {
-        let ip_addr = format!("{}:{}", ip_addr, port)
-            .parse::<SocketAddr>()
-            .unwrap();
-        let id = create_node_id(ip_addr);
+    pub fn new(node_ip_addr: SocketAddr, initial_successor: Option<SocketAddr>) -> Node {
+        let id = create_node_id(node_ip_addr);
         // Always start at first entry of finger_table
         let next_finger = 0;
         let successor = if let Some(successor) = initial_successor {
             OtherNode::new(create_node_id(successor), successor)
         } else {
-            OtherNode::new(id.clone(), ip_addr)
+            OtherNode::new(id.clone(), node_ip_addr)
         };
         let finger_table = FingerTable::new(successor.clone());
 
@@ -83,7 +80,7 @@ impl Node {
         debug!("New node {:?}", id);
         Node {
             id,
-            ip_addr,
+            ip_addr: node_ip_addr,
             finger_table,
             next_finger,
             successor,
