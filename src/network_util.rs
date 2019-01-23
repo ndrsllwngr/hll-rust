@@ -2,8 +2,10 @@ use std::net::{TcpStream, SocketAddr};
 use std::io::{BufWriter, Write};
 use std::thread;
 
-pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
-    thread::spawn(move || {
+
+pub fn send_string_to_socket(addr: SocketAddr, msg: String, sending_node_name: String) {
+    let builder = thread::Builder::new().name(format!("{}-Send", sending_node_name));
+    let handle = builder.spawn(move || {
         match TcpStream::connect(addr) {
             Ok(stream) => {
                 let mut writer = BufWriter::new(stream);
@@ -14,5 +16,8 @@ pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
                 error!("Unable to send msg - Failed to connect: {}", e);
             }
         }
-    });
+    }).unwrap();
+    if let Err(e) = handle.join() {
+        error!("{:?}", e)
+    }
 }

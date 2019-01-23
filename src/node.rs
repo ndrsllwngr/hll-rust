@@ -47,6 +47,7 @@ impl OtherNode {
 /// * `storage`        - DHT storage inside the node
 #[derive(Clone)]
 pub struct Node {
+    internal_name: String,
     id: BigInt,
     ip_addr: SocketAddr,
     finger_table: FingerTable,
@@ -65,7 +66,7 @@ impl Node {
     ///
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
-    pub fn new(node_ip_addr: SocketAddr, initial_successor: Option<SocketAddr>) -> Node {
+    pub fn new(name: String, node_ip_addr: SocketAddr, initial_successor: Option<SocketAddr>) -> Node {
         let id = create_node_id(node_ip_addr);
         // Always start at first entry of finger_table
         let next_finger = 0;
@@ -79,6 +80,7 @@ impl Node {
         let storage = Storage::new();
         debug!("New node {:?}", id);
         Node {
+            internal_name: name,
             id,
             ip_addr: node_ip_addr,
             finger_table,
@@ -185,7 +187,7 @@ impl Node {
         let packet = Packet::new(label, msg);
         let json_string = serde_json::to_string(&packet).unwrap();
         // Send packet to recipient
-        network_util::send_string_to_socket(*new_to.get_ip_addr(), json_string);
+        network_util::send_string_to_socket(*new_to.get_ip_addr(), json_string, self.internal_name.clone());
     }
 
     fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {

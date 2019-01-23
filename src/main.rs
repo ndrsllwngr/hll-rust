@@ -118,7 +118,7 @@ fn spawn_node(
     let builder = thread::Builder::new().name(name.clone().to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new(node_ip_addr, successor_ip);
+            let mut node = node::Node::new(name.clone(), node_ip_addr, successor_ip);
             let mut node_clone = node.clone();
             let builder = thread::Builder::new().name(format!("{}-Listen", name).to_string());
             let handler = builder
