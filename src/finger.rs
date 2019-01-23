@@ -48,8 +48,8 @@ impl FingerTable {
 
     pub fn print(&self) {
         let mut finger_table_string: String =
-            format!("\n{0: <2} | {1: <97} | {2: <117}\n\
-        -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n",
+            format!("\n{0: <2} | {1: <28} | {2: <27}\n\
+        -------------------------------------------------------------\n",
                     "i", "Start: parent_node_id + 2^i", "Node: SocketAddr, node_id");
         for i in 0..self.entries.len() {
             let entry = &self.entries[i];
@@ -59,7 +59,7 @@ impl FingerTable {
                 "".to_string()
             };
             let borrowed_str: &str = &format!(
-                "{0: <2} | {1: <97} | {2: <117}\n",
+                "{0: <2} | {1: <28} | {2: <27}\n",
                 i,
                 entry.id.to_string(),
                 node_string
@@ -70,7 +70,6 @@ impl FingerTable {
         info!("{}", finger_table_string);
     }
 }
-
 
 pub fn get_finger_id(key: &BigInt, exponent: usize) -> BigInt {
     // Get the offset

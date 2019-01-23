@@ -4,12 +4,16 @@ use num::bigint::{BigInt, Sign, ToBigInt};
 use num::traits::pow;
 use std::net::SocketAddr;
 
+use super::chord;
+
 //TODO discuss if this is better placed here or in node.rs
 //TODO write test for this function to verify correctness
 pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
     let hash = create_hash(&ip_addr.to_string());
     let byte_vec = hash.as_bytes().to_vec();
-    BigInt::from_bytes_be(Sign::Plus, &byte_vec)
+    BigInt::modpow(&BigInt::from_bytes_be(Sign::Plus, &byte_vec),
+                   &1.to_bigint().unwrap(),
+                   &chord::CHORD_CIRCLE_SIZE.to_bigint().unwrap())
 }
 
 //TODO write test for this function to verify correctness
