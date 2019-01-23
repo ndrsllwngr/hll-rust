@@ -59,12 +59,12 @@ pub struct Node {
 /// `Node` implementation
 impl Node {
     /// Creates new Node
+    /// TODO fix comments
     /// if `predecessor` is None, the node will initialize a new chord ring
     /// if `predecessor` is Some(), the node will join an existing network and `predecessor` as its own predecessor
     ///
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
-    // TODO implement predecessor: Option<SocketAddr>
     pub fn new(node_ip_addr: SocketAddr, initial_successor: Option<SocketAddr>) -> Node {
         let id = create_node_id(node_ip_addr);
         // Always start at first entry of finger_table
@@ -74,7 +74,7 @@ impl Node {
         } else {
             OtherNode::new(id.clone(), node_ip_addr)
         };
-        let finger_table = FingerTable::new(successor.clone());
+        let finger_table = FingerTable::new(successor.clone(), &id);
 
         let storage = Storage::new();
         debug!("New node {:?}", id);
@@ -106,9 +106,9 @@ impl Node {
         //   return n;
         for x in self.finger_table.length()..0 {
             let finger_entry = self.finger_table.get(x);
-            if let Some(finger_entry) = finger_entry {
-                if is_in_range(finger_entry.node.get_id(), &self.id, &find_id) {
-                    return finger_entry.node.clone();
+            if let Some(node) = finger_entry.node.clone() {
+                if is_in_range(node.get_id(), &self.id, &find_id) {
+                    return node;
                 }
             }
         }
@@ -144,8 +144,7 @@ impl Node {
     fn fix_fingers(&mut self) {
         let fix_finger_id: BigInt;
         let mut next = self.next_finger;
-        //next >= self.finger_table.length()
-        if next >= chord::FINGERTABLE_SIZE {
+        if next >= self.finger_table.length() {
             next = 0;
         }
         fix_finger_id = finger::get_finger_id(&self.id, next);
@@ -345,17 +344,13 @@ impl Node {
     fn found_successor(&mut self, from: OtherNode, msg: Message) {
         info!("MSG_TYPE_FOUND_SUCCESSOR = 4");
 
-        match (msg.get_next_finger(), msg.get_id()) {
-            (Some(index), Some(id)) => {
-                // indexOutOfBounds concern? -> not possible, because of implementation of put()
-                self.finger_table.put(index, id, from);
-                info!("FingerTable fixed.");
-                self.finger_table.print();
-            }
-            _ => {
-                self.successor = from;
-                self.successor.print("New successor is now");
-            }
+        if let Some(next_finger_index) = msg.get_next_finger() {
+            self.finger_table.put(next_finger_index,from);
+            info!("FingerTable fixed.");
+            self.finger_table.print();
+        } else {
+            self.successor = from;
+            self.successor.print("New successor is now");
         }
     }
 

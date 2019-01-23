@@ -2,7 +2,7 @@ use num::bigint::{BigInt, Sign, ToBigInt};
 use num::traits::pow;
 use std::net::SocketAddr;
 
-use super::chord::FINGERTABLE_SIZE;
+use super::chord;
 use super::node::OtherNode;
 use super::util;
 
@@ -11,7 +11,7 @@ use super::util;
 pub struct FingerEntry {
     pub id: BigInt,
     // ID hash of (n + 2^i) mod (2^m)
-    pub node: OtherNode,
+    pub node: Option<OtherNode>,
 }
 
 #[derive(Clone)]
@@ -20,33 +20,26 @@ pub struct FingerTable {
 }
 
 impl FingerTable {
-    pub fn new(successor: OtherNode) -> FingerTable {
+    // TODO maybe use hashing function with smaller bit range for testing. (Bitsize = entries in finger_table)
+    pub fn new(successor: OtherNode, parent_node_id: &BigInt) -> FingerTable {
         let mut entries: Vec<FingerEntry> = Vec::new();
-        entries.push(
-            FingerEntry{
-                // TODO maybe use hashing function with smaller bit range for testing. (Bitsize = entries in finger_table)
-                id: get_finger_id(successor.get_id(), 0_usize),
-                node: successor
+        for i in 0..chord::FINGERTABLE_SIZE {
+            entries.push(FingerEntry {
+                id: get_finger_id(parent_node_id, i),
+                node: None
             });
-        FingerTable{entries}
+        }
+
+        entries[0].node = Some(successor);
+        FingerTable { entries }
     }
 
-    pub fn put(&mut self, index: usize, id: BigInt, node: OtherNode) {
-        let entry = FingerEntry { id, node };
-        if index >= self.length() {
-            self.entries.push(entry)
-        } else {
-            self.entries[index] = entry;
-
-        }
+    pub fn put(&mut self, index: usize, node: OtherNode) {
+        self.entries[index].node = Some(node);
     }
 
-    pub fn get(&self, index: usize) -> Option<&FingerEntry> {
-        if self.length() < index {
-            Some(&self.entries[index])
-        } else {
-            None
-        }
+    pub fn get(&self, index: usize) -> &FingerEntry {
+            &self.entries[index]
     }
 
     pub fn length(&self) -> usize {
@@ -55,15 +48,21 @@ impl FingerTable {
 
     pub fn print(&self) {
         let mut finger_table_string: String =
-            format!("\n{0: <2} | {1: <97} | {2: <20}\n\
-        ----------------------------------------------------------------------------------------------------------------------------\n",
-                    "#", "Start: node_id + 2^i", "Node_IP");
+            format!("\n{0: <2} | {1: <97} | {2: <117}\n\
+        -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n",
+                    "i", "Start: parent_node_id + 2^i", "Node: SocketAddr, node_id");
         for i in 0..self.entries.len() {
+            let entry = &self.entries[i];
+            let node_string = if let Some(node) = entry.node.clone() {
+                format!("{}, {}", node.get_ip_addr(), node.get_id())
+            } else {
+                "".to_string()
+            };
             let borrowed_str: &str = &format!(
-                "{0: <2} | {1: <97} | {2: <20}\n",
+                "{0: <2} | {1: <97} | {2: <117}\n",
                 i,
-                self.entries[i].id,
-                self.entries[i].node.get_ip_addr()
+                entry.id.to_string(),
+                node_string
             );
 
             finger_table_string.push_str(borrowed_str);
