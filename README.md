@@ -16,6 +16,7 @@ High level languages: Rust - Group project (2018/2019)
   - [Usage](#usage)
   - [Used crates](#used-crates)
   - [Chord](#chord)
+    - [Short version](#short-version)
     - [Topology](#topology)
     - [Basic query](#basic-query)
     - [Scalable query](#scalable-query)
@@ -55,6 +56,39 @@ rustc 1.32.0 (9fda7c223 2019-01-16)
 ## Chord
 
 Chord is a protocol and algorithm for a peer-to-peer distributed hash table.
+
+### Short version
+
+1. Schritt
+```
+ode0 (SUCC=Node0, Pre=Node0)
+```
+Node0 setzt sich als selbst PRE und SUCC.
+
+2. Schritt
+Neue Node1 frägt bei Node0 nach seinem Successor (find_successor()).
+Da wartet er auf die Antwort, Node0 gibt sich selbst als Successor zurück.
+State:
+```
+Node0 (SUCC=Node0, Pre=Node0)
+Node1 (SUCC=Node0, Pre=Null)
+```
+
+3. Schritt
+Node1 frägt seinen Successor (Node0) nach dessen Predecessor und wartet auf Antwort.
+State:
+```
+Node0 (SUCC=Node0, Pre=Node0)
+Node1 (SUCC=Node0, Pre=Node0)
+```
+4. Schritt
+Node1 beantwortet seinem Successor und Predecessor, dass er dessen neuer Pre-/Successor ist.
+State:
+```
+Node0 (SUCC=Node1, Pre=Node1)
+Node1 (SUCC=Node0, Pre=Node0)
+```
+Chord Ring ist initialisiert!
 
 ### Topology
 
