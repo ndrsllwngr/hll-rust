@@ -61,7 +61,7 @@ Chord is a protocol and algorithm for a peer-to-peer distributed hash table.
 
 1. Schritt
 ```
-ode0 (SUCC=Node0, Pre=Node0)
+Node0 (SUCC=Node0, Pre=Node0)
 ```
 Node0 setzt sich als selbst PRE und SUCC.
 
