@@ -40,7 +40,7 @@ rustc 1.32.0 (9fda7c223 2019-01-16)
 
 ## Usage
 
-//TODO
+//TODO cmd line
 
 ## Used crates
 
