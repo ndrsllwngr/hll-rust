@@ -106,6 +106,76 @@ impl Node {
         }
     }
 
+    fn process_incoming_request_msg(&mut self, request: Request) -> Response {
+        match request {
+            Request::FindSuccessor {id}=> {
+                self.handle_find_successor_msg(id)
+            }
+            Request::GetPredecessor => {
+                self.handle_get_predecessor_msg()
+            }
+            Request::Notify { i_am, node } => {
+                self.handle_notify_msg(i_am, node)
+            }
+        }
+    }
+
+    fn handle_find_successor_msg(&self, id: BigInt) -> Response {
+        Response::FindSuccessorResponse {
+            found_successor: true,
+            successor: self.to_other_node()
+        }
+    }
+
+    fn handle_get_predecessor_msg(&self) -> Response {
+        Response::GetPredecessorResponse {
+            predecessor: self.predecessor.clone()
+        }
+    }
+
+    fn handle_notify_msg(&mut self, i_am: Notify, node: OtherNode ) -> Response {
+        match i_am {
+            Notify::Successor => {
+                // ToDo check if is really successor
+                if (true) {
+                    self.successor = node;
+                }
+            }
+            Notify::Predecessor => {
+                // ToDo check if is really predecessor
+                if (true) {
+                    self.predecessor = Some(node)
+                }
+            }
+        }
+        Response::NotifyResponse
+    }
+
+    fn process_incoming_response_msg(&mut self, response: Response) {
+        match response {
+            Response::FindSuccessorResponse {found_successor, successor } => {
+                self.handle_find_successor_response_msg(found_successor, successor)
+            }
+            Response::GetPredecessorResponse {predecessor} => {
+                self.handle_get_predecessor_response_msg(predecessor)
+            }
+            Response::NotifyResponse => {
+                self.handle_notify_response_msg()
+            }
+        }
+    }
+
+    fn handle_find_successor_response_msg(&self, found_successor: bool, successor: OtherNode) {
+
+    }
+
+    fn handle_get_predecessor_response_msg(&self, predecessor: Option<OtherNode>) {
+
+    }
+
+    fn handle_notify_response_msg(&self) {
+    }
+
 
 
 //    /// Gets closet preceding finger
@@ -175,29 +245,29 @@ impl Node {
 //        true
 //    }
 
-    pub fn send_msg(&mut self, mut label: OtherNode, to: Option<OtherNode>, mut msg: Message) {
-        // If no recipient is provided,
-        // the message is returned to the intial sender
-        // and labelled by `self` as `from`
-        let new_to = match to {
-            Some(to) => to,
-            None => {
-                let new_to = label.clone();
-                label = self.to_other_node();
-                new_to
-            }
-        };
-
-        // If the message id is undefined, it is set to `self``s ID
-        if msg.get_id().is_none() {
-            msg.set_id(Some(self.id.clone()))
-        }
-
-        let packet = Packet::new(label, msg);
-        let json_string = serde_json::to_string(&packet).unwrap();
-        // Send packet to recipient
-        self.send_message_to_socket(*new_to.get_ip_addr(), json_string);
-    }
+//    pub fn send_msg(&mut self, mut label: OtherNode, to: Option<OtherNode>, mut msg: Message) {
+//        // If no recipient is provided,
+//        // the message is returned to the intial sender
+//        // and labelled by `self` as `from`
+//        let new_to = match to {
+//            Some(to) => to,
+//            None => {
+//                let new_to = label.clone();
+//                label = self.to_other_node();
+//                new_to
+//            }
+//        };
+//
+//        // If the message id is undefined, it is set to `self``s ID
+//        if msg.get_id().is_none() {
+//            msg.set_id(Some(self.id.clone()))
+//        }
+//
+//        let packet = Packet::new(label, msg);
+//        let json_string = serde_json::to_string(&packet).unwrap();
+//        // Send packet to recipient
+//        self.send_message_to_socket(*new_to.get_ip_addr(), json_string);
+//    }
 
     /* TODO fix
     fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {
@@ -241,11 +311,11 @@ impl Node {
             let connection = io::read_until(buf_reader, b'\n', buf)
                 .and_then(move |(socket, buf)| {
                     let msg_string = str::from_utf8(&buf).unwrap();
-                    let parsed_packet: Packet = serde_json::from_str(msg_string).unwrap();
-                    let from = parsed_packet.get_from();
-                    let message = parsed_packet.get_message();
-                    let reply = node_clone.echo_message(message.clone());
-                    io::write_all(socket.into_inner(), serde_json::to_string(&reply).unwrap())
+
+                    let request: Request = serde_json::from_str(msg_string).unwrap();
+                    let response: Response = node_clone.process_incoming_request_msg(request);
+
+                    io::write_all(socket.into_inner(), serde_json::to_string(&response).unwrap())
                 })
                 .then(|_| Ok(())); // Just discard the socket and buffer
 
@@ -258,9 +328,10 @@ impl Node {
         Ok(())
     }
 
-    pub fn send_message_to_socket(&mut self, addr: SocketAddr, msg: String) -> Result<(), Box<std::error::Error>> {
+    pub fn send_message_to_socket(&mut self, addr: SocketAddr, msg: Request) -> Result<(), Box<std::error::Error>> {
         let client = TcpStream::connect(&addr).and_then(|stream| {
-            io::write_all(stream, msg).and_then(|(stream, msg)| {
+            let msg_string: String = serde_json::to_string(&msg).unwrap();
+            io::write_all(stream, &msg_string).and_then(|(stream, msg)| {
                 let sock = BufReader::new(stream);
                 io::read_until(sock, b'\n', vec![]).and_then(|(stream, buf)| {
                     let reply = str::from_utf8(&buf).unwrap();

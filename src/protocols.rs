@@ -117,7 +117,8 @@ pub enum Response {
 
     },
     GetPredecessorResponse {
-        predecessor: OtherNode
+        predecessor: Option<OtherNode>
     },
+    NotifyResponse
 
 }
