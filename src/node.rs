@@ -328,10 +328,10 @@ impl Node {
         Ok(())
     }
 
-    pub fn send_message_to_socket(&mut self, addr: SocketAddr, msg: Request) -> Result<(), Box<std::error::Error>> {
+    pub fn send_message_to_socket(&mut self, addr: SocketAddr, msg: &Request) -> Result<(), Box<std::error::Error>> {
+        let msg_string: String = serde_json::to_string(msg).unwrap();
         let client = TcpStream::connect(&addr).and_then(|stream| {
-            let msg_string: String = serde_json::to_string(&msg).unwrap();
-            io::write_all(stream, &msg_string).and_then(|(stream, msg)| {
+            io::write_all(stream, msg_string).and_then(|(stream, msg)| {
                 let sock = BufReader::new(stream);
                 io::read_until(sock, b'\n', vec![]).and_then(|(stream, buf)| {
                     let reply = str::from_utf8(&buf).unwrap();
