@@ -19,4 +19,5 @@ serde_json = "1.0.36"
 get_if_addrs = "0.5.3"
 getopts = "0.2.18"
 # check if we even need tokio
-# tokio = "0.1.14"
+tokio = "0.1.14"
+futures = "0.1.25"

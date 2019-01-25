@@ -3,6 +3,9 @@ extern crate getopts;
 extern crate num;
 extern crate num_bigint;
 
+extern crate tokio;
+extern crate futures;
+
 #[macro_use]
 extern crate log;
 extern crate log4rs;
@@ -28,9 +31,23 @@ mod node;
 mod protocols;
 mod storage;
 mod util;
+mod tokio_experiments;
 
 fn main() {
-    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
+    let builder = thread::Builder::new().name(format!("{}-Listen", "echo").to_string());
+    let handler = builder
+        .spawn(move || {
+            tokio_experiments::listen_and_answer();
+        })
+        .unwrap();
+    let millis2000 = time::Duration::from_millis(2000);
+    let now = time::Instant::now();
+    thread::sleep(millis2000);
+    tokio_experiments::write_to_stream_with_answer("127.0.0.1:12345".to_string());
+
+    handler.join();
+
+   /* log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
 
     // Command line options
@@ -107,7 +124,16 @@ fn main() {
         if let Err(e) = handler.join() {
             error!("{:?}", e)
         }
-    }
+    }*/
+
+
+
+
+
+
+
+
+
 }
 
 fn spawn_node(
