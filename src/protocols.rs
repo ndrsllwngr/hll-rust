@@ -89,3 +89,35 @@ impl Message {
         }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub enum Request {
+    FindSuccessor {
+        id: BigInt
+    },
+    GetPredecessor,
+    Notify{
+        i_am: Notify,
+        node: OtherNode,
+
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Notify {
+    Successor,
+    Predecessor
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Response {
+    FindSuccessorResponse {
+        found_successor: bool,
+        successor: OtherNode
+
+    },
+    GetPredecessorResponse {
+        predecessor: OtherNode
+    },
+
+}

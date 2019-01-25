@@ -34,20 +34,8 @@ mod util;
 mod tokio_experiments;
 
 fn main() {
-    let builder = thread::Builder::new().name(format!("{}-Listen", "echo").to_string());
-    let handler = builder
-        .spawn(move || {
-            tokio_experiments::listen_and_answer();
-        })
-        .unwrap();
-    let millis2000 = time::Duration::from_millis(2000);
-    let now = time::Instant::now();
-    thread::sleep(millis2000);
-    tokio_experiments::write_to_stream_with_answer("127.0.0.1:12345".to_string(), "Hi wazzup".to_string());
-    handler.join();
-
-    /* log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-     debug!("Booting...");
+    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
+    debug!("Booting...");
 
      // Command line options
      let args: Vec<String> = env::args().collect();
@@ -112,29 +100,39 @@ fn main() {
          .parse::<SocketAddr>()
          .unwrap();
 
-     let thread_handle_first_node = spawn_node(first_node_ip, "FIRST".to_string(), None);
-     let threads_handles = spawn_chord_circle(ip_address, number_of_nodes, Some(first_node_ip));
-
+     let first_node_handle = spawn_node("FIRST".to_string(), first_node_ip, None);
+     let mut node_handles = spawn_chord_circle(ip_address, number_of_nodes, first_node_ip);
+    node_handles.push(first_node_handle);
      // Don't forget to join handles in the end, otherwise program terminates instantly
-     if let Err(e) = thread_handle_first_node.join() {
-         error!("{:?}", e)
-     }
-     for handler in threads_handles {
+     for handler in node_handles {
          if let Err(e) = handler.join() {
              error!("{:?}", e)
          }
-     }*/
+     }
+
+
+//    let builder = thread::Builder::new().name(format!("{}-Listen", "echo").to_string());
+//    let handler = builder
+//        .spawn(move || {
+//            tokio_experiments::listen_and_answer();
+//        })
+//        .unwrap();
+//    let millis2000 = time::Duration::from_millis(2000);
+//    let now = time::Instant::now();
+//    thread::sleep(millis2000);
+//    tokio_experiments::write_to_stream_with_answer("127.0.0.1:12345".to_string(), "Hi wazzup".to_string());
+//    handler.join();
 }
 
-fn spawn_node(
-    node_ip_addr: SocketAddr,
-    name: String,
-    successor_ip: Option<SocketAddr>,
-) -> JoinHandle<()> {
+fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
     let builder = thread::Builder::new().name(name.clone().to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new(name.clone(), node_ip_addr, successor_ip);
+            let mut node = if let Some(entry_node_addr) = entry_node_addr {
+                node::Node::new(name.clone(), node_ip_addr, entry_node_addr)
+            } else {
+                node::Node::new_first(name.clone(), node_ip_addr)
+            };
             let mut node_clone = node.clone();
             let builder = thread::Builder::new().name(format!("{}-Listen", name).to_string());
             let handler = builder
@@ -145,7 +143,7 @@ fn spawn_node(
             let builder2 = thread::Builder::new().name(format!("{}-Update", name).to_string());
             let handler2 = builder2
                 .spawn(move || {
-                    node_clone.start_update_fingers();
+                    //node_clone.start_update_fingers();
                 })
                 .unwrap();
             if let Err(e) = handler.join() {
@@ -158,11 +156,7 @@ fn spawn_node(
         .unwrap()
 }
 
-fn spawn_chord_circle(
-    ip_address: String,
-    number_of_nodes: i32,
-    successor_ip: Option<SocketAddr>,
-) -> Vec<JoinHandle<()>> {
+fn spawn_chord_circle(ip_address: String, number_of_nodes: i32, entry_node_addr: SocketAddr) -> Vec<JoinHandle<()>> {
     let mut node_handlers = Vec::new();
     let base_port: i32 = 10000;
     for x in 0..number_of_nodes {
@@ -170,11 +164,9 @@ fn spawn_chord_circle(
         let node_ip_addr = format!("{}:{}", ip_address.clone(), node_port)
             .parse::<SocketAddr>()
             .unwrap();
-        node_handlers.push(spawn_node(
-            node_ip_addr,
-            format!("N{}", x),
-            successor_ip,
-        ))
+        node_handlers.push(
+            spawn_node(format!("N{}", x), node_ip_addr, Some(entry_node_addr)
+            ))
     }
     node_handlers
 }
