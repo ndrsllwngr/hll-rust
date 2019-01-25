@@ -12,7 +12,7 @@ use std::io::BufReader;
 
 pub fn listen_and_answer()-> Result<(), Box<std::error::Error>> {
 
-    let addr = addr.parse::<SocketAddr>().unwrap();
+    let addr = "127.0.0.1:12345".to_string().parse::<SocketAddr>().unwrap();
 
     let listener = TcpListener::bind(&addr).unwrap();
 
@@ -38,10 +38,10 @@ pub fn listen_and_answer()-> Result<(), Box<std::error::Error>> {
 }
 
 
-pub fn write_to_stream_with_answer(addr_str: String) -> Result<(), Box<std::error::Error>> {
+pub fn write_to_stream_with_answer(addr_str: String, msg: String) -> Result<(), Box<std::error::Error>> {
     let addr = addr_str.parse()?;
     let client = TcpStream::connect(&addr).and_then(|stream| {
-        io::write_all(stream, "hello world\n").and_then(|(stream, msg)| {
+        io::write_all(stream, msg).and_then(|(stream, msg)| {
             let sock = BufReader::new(stream);
             io::read_until(sock, b'\n', vec![]).and_then(|(stream, buf)| {
                 let msg = str::from_utf8(&buf).unwrap();
