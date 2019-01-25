@@ -1,7 +1,15 @@
 use num_bigint::BigInt;
-use std::io::{BufRead, BufReader};
-use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::{thread, time};
+
+use tokio::io;
+use tokio::net::{TcpStream,TcpListener};
+use tokio::prelude::*;
+
+use futures::{Future, Stream};
+
+use std::net::SocketAddr;
+use std::io::BufReader;
+
+use std::{thread, time, str};
 
 use super::finger::FingerTable;
 use super::finger;
@@ -190,7 +198,8 @@ impl Node {
         network_util::send_string_to_socket(*new_to.get_ip_addr(), json_string, self.internal_name.clone());
     }
 
-    fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {
+   /* TODO fix
+   fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {
         let mut reader = BufReader::new(stream);
 
         loop {
@@ -211,31 +220,52 @@ impl Node {
                 Err(e) => error!("Error reading message from {}: {}", client_addr, e),
             }
         }
-    }
+    }*/
 
     // HINT: this can be tested by connecting via bash terminal (preinstalled on Mac/Linux) by executing:
     // nc 127.0.0.1 34254
     // afterwards every message will be echoed in the console by handle_request
-    pub fn start_listening_on_socket(&mut self) {
-        let listener = TcpListener::bind(self.ip_addr).unwrap();
-        info!("Started listening on {}", self.ip_addr.to_string());
-        loop {
-            match listener.accept() {
-                Ok((stream, addr)) => {
-                    info!("Connection by {}", addr.to_string());
+    pub fn start_listening_on_socket(&mut self) -> Result<(), Box<std::error::Error>>{
 
-                    self.handle_request(stream, addr);
-                }
-                Err(e) => error!("Connection failed: {:?}", e),
-            };
-        }
+        let mut node = self.clone();
+        let listener = TcpListener::bind(&self.ip_addr).unwrap();
+
+        //TODO figure out if extensive cloning is working
+
+        let server = listener.incoming().for_each(move |socket| {
+            println!("accepted socket; addr={:?}", socket.peer_addr()?);
+
+            let buf = vec![];
+            let buf_reader = BufReader::new(socket);
+            let mut node_clone = node.clone();
+            let connection = io::read_until(buf_reader, b'\n', buf)
+                .and_then(move |(socket, buf)| {
+                    let msg_string = str::from_utf8(&buf).unwrap();
+                    let parsed_packet: Packet = serde_json::from_str(msg_string).unwrap();
+                    let from = parsed_packet.get_from();
+                    let message = parsed_packet.get_message();
+                    let reply = node_clone.echo_message(message.clone());
+                    io::write_all(socket.into_inner(), serde_json::to_string(&reply).unwrap())
+                })
+                .then(|_| Ok(())); // Just discard the socket and buffer
+
+            // Spawn a new task that processes the socket:
+            tokio::spawn(connection);
+
+            Ok(())
+        }).map_err(|e| println!("failed to accept socket; error = {:?}", e));
+        tokio::run(server);
+        Ok(())
     }
 
+    pub fn echo_message(&mut self, msg: Message) -> Message {
+        msg
+    }
     //pub fn network(&self) -> &Network{
     //    &self.network.unwrap()
     //}
 
-    pub fn process_incoming_msg(&mut self, from: OtherNode, msg: Message) {
+    pub fn process_incoming_msg(&mut self, from: OtherNode, msg: Message){
         match msg.get_message_type() {
             NOTIFY_PREDECESSOR => self.update_predecessor(from, msg),
             NOTIFY_SUCCESSOR => self.update_successor(from, msg),
