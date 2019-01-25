@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 
 use tokio::io;
-use tokio::net::{TcpStream,TcpListener};
+use tokio::net::{TcpStream, TcpListener};
 use tokio::prelude::*;
 
 use futures::{Future, Stream};
@@ -174,7 +174,7 @@ impl Node {
         true
     }
 
-    pub fn send_msg(&self, mut label: OtherNode, to: Option<OtherNode>, mut msg: Message) {
+    pub fn send_msg(&mut self, mut label: OtherNode, to: Option<OtherNode>, mut msg: Message) {
         // If no recipient is provided,
         // the message is returned to the intial sender
         // and labelled by `self` as `from`
@@ -195,38 +195,37 @@ impl Node {
         let packet = Packet::new(label, msg);
         let json_string = serde_json::to_string(&packet).unwrap();
         // Send packet to recipient
-        network_util::send_string_to_socket(*new_to.get_ip_addr(), json_string, self.internal_name.clone());
+        self.send_message_to_socket(*new_to.get_ip_addr(), json_string, self.internal_name.clone());
     }
 
-   /* TODO fix
-   fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {
-        let mut reader = BufReader::new(stream);
+    /* TODO fix
+    fn handle_request(&mut self, stream: TcpStream, client_addr: SocketAddr) {
+         let mut reader = BufReader::new(stream);
 
-        loop {
-            let mut buffer = String::new();
-            match reader.read_line(&mut buffer) {
-                Ok(len) => {
-                    // break when line is finished
-                    if len == 0 {
-                        break;
-                    } else {
-                        info!("New message from {}: {}", client_addr.to_string(), buffer);
-                        let parsed_packet: Packet = serde_json::from_str(&buffer).unwrap();
-                        let from = parsed_packet.get_from();
-                        let message = parsed_packet.get_message();
-                        self.process_incoming_msg(from.clone(), message.clone());
-                    }
-                }
-                Err(e) => error!("Error reading message from {}: {}", client_addr, e),
-            }
-        }
-    }*/
+         loop {
+             let mut buffer = String::new();
+             match reader.read_line(&mut buffer) {
+                 Ok(len) => {
+                     // break when line is finished
+                     if len == 0 {
+                         break;
+                     } else {
+                         info!("New message from {}: {}", client_addr.to_string(), buffer);
+                         let parsed_packet: Packet = serde_json::from_str(&buffer).unwrap();
+                         let from = parsed_packet.get_from();
+                         let message = parsed_packet.get_message();
+                         self.process_incoming_msg(from.clone(), message.clone());
+                     }
+                 }
+                 Err(e) => error!("Error reading message from {}: {}", client_addr, e),
+             }
+         }
+     }*/
 
     // HINT: this can be tested by connecting via bash terminal (preinstalled on Mac/Linux) by executing:
     // nc 127.0.0.1 34254
     // afterwards every message will be echoed in the console by handle_request
-    pub fn start_listening_on_socket(&mut self) -> Result<(), Box<std::error::Error>>{
-
+    pub fn start_listening_on_socket(&mut self) -> Result<(), Box<std::error::Error>> {
         let mut node = self.clone();
         let listener = TcpListener::bind(&self.ip_addr).unwrap();
 
@@ -258,14 +257,31 @@ impl Node {
         Ok(())
     }
 
+    pub fn send_message_to_socket(&mut self, addr: SocketAddr, msg: String, internal_node_name: String) -> Result<(), Box<std::error::Error>> {
+        let client = TcpStream::connect(&addr).and_then(|stream| {
+            io::write_all(stream, msg).and_then(|(stream, msg)| {
+                let sock = BufReader::new(stream);
+                io::read_until(sock, b'\n', vec![]).and_then(|(stream, buf)| {
+                    let reply = str::from_utf8(&buf).unwrap();
+                    println!("Got reply: {}", reply);
+                    //TODO Parse reply
+                    Ok(())
+                })
+            })
+        })
+            .map_err(|err| {
+                println!("connection error = {:?}", err);
+            });
+        tokio::run(client);
+        Ok(())
+    }
+
     pub fn echo_message(&mut self, msg: Message) -> Message {
         msg
     }
-    //pub fn network(&self) -> &Network{
-    //    &self.network.unwrap()
-    //}
 
-    pub fn process_incoming_msg(&mut self, from: OtherNode, msg: Message){
+
+    pub fn process_incoming_msg(&mut self, from: OtherNode, msg: Message) {
         match msg.get_message_type() {
             NOTIFY_PREDECESSOR => self.update_predecessor(from, msg),
             NOTIFY_SUCCESSOR => self.update_successor(from, msg),
@@ -377,7 +393,7 @@ impl Node {
         info!("MSG_TYPE_FOUND_SUCCESSOR = 4");
 
         if let Some(next_finger_index) = msg.get_next_finger() {
-            self.finger_table.put(next_finger_index,from);
+            self.finger_table.put(next_finger_index, from);
             info!("FingerTable fixed.");
             self.finger_table.print();
         } else {

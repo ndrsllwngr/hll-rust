@@ -46,93 +46,84 @@ fn main() {
     tokio_experiments::write_to_stream_with_answer("127.0.0.1:12345".to_string(), "Hi wazzup".to_string());
     handler.join();
 
-   /* log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-    debug!("Booting...");
+    /* log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
+     debug!("Booting...");
 
-    // Command line options
-    let args: Vec<String> = env::args().collect();
-    let mut opts = Options::new();
-    opts.optopt("i", "", "Use to specify local ip_address for nodes to bind to", "127.0.0.1");
-    opts.optopt("n", "", "Use to specify number of nodes to spawn (standard = 1)", "1");
-    opts.optopt(
-        "j",
-        "",
-        "Use to join existing chord ring at a nodes ip_address:port",
-        "127.0.0.1:5555",
-    );
-    opts.optflag("h", "help", "Print help");
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(f) => panic!(f.to_string()),
-    };
+     // Command line options
+     let args: Vec<String> = env::args().collect();
+     let mut opts = Options::new();
+     opts.optopt("i", "", "Use to specify local ip_address for nodes to bind to", "127.0.0.1");
+     opts.optopt("n", "", "Use to specify number of nodes to spawn (standard = 1)", "1");
+     opts.optopt(
+         "j",
+         "",
+         "Use to join existing chord ring at a nodes ip_address:port",
+         "127.0.0.1:5555",
+     );
+     opts.optflag("h", "help", "Print help");
+     let matches = match opts.parse(&args[1..]) {
+         Ok(m) => m,
+         Err(f) => panic!(f.to_string()),
+     };
 
-    if matches.opt_present("h") {
-        print!("\n{}", opts.usage("Usage: cargo run -- [options]"));
-        return;
-    }
+     if matches.opt_present("h") {
+         print!("\n{}", opts.usage("Usage: cargo run -- [options]"));
+         return;
+     }
 
-    let ip_address_option = matches.opt_str("i");
-    let node_number_option = matches.opt_str("n");
-    let join_ip_option = matches.opt_str("j");
+     let ip_address_option = matches.opt_str("i");
+     let node_number_option = matches.opt_str("n");
+     let join_ip_option = matches.opt_str("j");
 
-    let ip_address = if let Some(ip_address) = ip_address_option {
-        ip_address
-    } else {
-        let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
-        let interface_option = interfaces
-            .into_iter()
-            .find(|i| i.name == "en0" && i.addr.ip().is_ipv4());
-        if let Some(interface) = interface_option {
-            interface.addr.ip().to_string()
-        } else {
-            "127.0.0.1".to_string()
-        }
-    };
-    debug!("Using {} as ip address.", ip_address);
+     let ip_address = if let Some(ip_address) = ip_address_option {
+         ip_address
+     } else {
+         let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
+         let interface_option = interfaces
+             .into_iter()
+             .find(|i| i.name == "en0" && i.addr.ip().is_ipv4());
+         if let Some(interface) = interface_option {
+             interface.addr.ip().to_string()
+         } else {
+             "127.0.0.1".to_string()
+         }
+     };
+     debug!("Using {} as ip address.", ip_address);
 
-    let number_of_nodes = if let Some(number) = node_number_option {
-        match number.parse::<i32>() {
-            Ok(m) => m,
-            Err(f) => panic!(f.to_string()),
-        }
-    } else {
-        1
-    };
-    debug!("Spawning {} nodes.", number_of_nodes);
+     let number_of_nodes = if let Some(number) = node_number_option {
+         match number.parse::<i32>() {
+             Ok(m) => m,
+             Err(f) => panic!(f.to_string()),
+         }
+     } else {
+         1
+     };
+     debug!("Spawning {} nodes.", number_of_nodes);
 
-    // let join_ip =
+     // let join_ip =
 
-    // TODO maybe instead ask to start program via input by user
-    let millis2000 = time::Duration::from_millis(2000);
-    let now = time::Instant::now();
-    thread::sleep(millis2000);
-    assert!(now.elapsed() >= millis2000);
+     // TODO maybe instead ask to start program via input by user
+     let millis2000 = time::Duration::from_millis(2000);
+     let now = time::Instant::now();
+     thread::sleep(millis2000);
+     assert!(now.elapsed() >= millis2000);
 
-    let first_node_ip = format!("{}:{}", ip_address.clone(), 6666)
-        .parse::<SocketAddr>()
-        .unwrap();
+     let first_node_ip = format!("{}:{}", ip_address.clone(), 6666)
+         .parse::<SocketAddr>()
+         .unwrap();
 
-    let thread_handle_first_node = spawn_node(first_node_ip, "FIRST".to_string(), None);
-    let threads_handles = spawn_chord_circle(ip_address, number_of_nodes, Some(first_node_ip));
+     let thread_handle_first_node = spawn_node(first_node_ip, "FIRST".to_string(), None);
+     let threads_handles = spawn_chord_circle(ip_address, number_of_nodes, Some(first_node_ip));
 
-    // Don't forget to join handles in the end, otherwise program terminates instantly
-    if let Err(e) = thread_handle_first_node.join() {
-        error!("{:?}", e)
-    }
-    for handler in threads_handles {
-        if let Err(e) = handler.join() {
-            error!("{:?}", e)
-        }
-    }*/
-
-
-
-
-
-
-
-
-
+     // Don't forget to join handles in the end, otherwise program terminates instantly
+     if let Err(e) = thread_handle_first_node.join() {
+         error!("{:?}", e)
+     }
+     for handler in threads_handles {
+         if let Err(e) = handler.join() {
+             error!("{:?}", e)
+         }
+     }*/
 }
 
 fn spawn_node(
