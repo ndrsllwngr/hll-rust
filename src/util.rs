@@ -34,13 +34,9 @@ pub fn create_hash(string: &str) -> String {
 //TODO write test for this function to verify correctness
 pub fn is_in_half_range(key: &BigInt, n: &BigInt, successor: &BigInt) -> bool {
     //(n == successor) can only be the case if a chord ring has been freshly initialized
-    if n < successor {
-        (key > n && key <= successor) || (n == successor)
-    } else {
-        //TODO check if we do need this, but prob not
-        // (key > successor && key <= n) || (n == successor)
-        false
-    }
+    //TODO check if we do need this, but prob not
+    // (key > successor && key <= n) || (n == successor)
+    ((n < successor) && (key > n && key <= successor)) || (n == successor)
 }
 
 /**

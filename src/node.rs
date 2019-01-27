@@ -20,7 +20,7 @@ use super::util::*;
 use super::chord;
 
 /// Simple representation of an external node in the network
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct OtherNode {
     id: BigInt,
     ip_addr: SocketAddr,
@@ -83,7 +83,7 @@ impl Node {
             internal_name: internal_name,
             id: create_node_id(node_ip_addr),
             ip_addr: node_ip_addr,
-            successor: OtherNode{id: create_node_id(entry_node_addr), ip_addr: entry_node_addr},
+            successor: OtherNode { id: create_node_id(entry_node_addr), ip_addr: entry_node_addr },
             predecessor: None,
             joined: false,
         }
@@ -101,19 +101,21 @@ impl Node {
         }
     }
 
-    pub fn join(&mut self){
-        let req = Request::FindSuccessor {id: self.id.clone()};
-        self.send_message_to_socket(self.successor.ip_addr,&req);
+    pub fn join(&mut self) {
+        info!("Starting joining process");
+        let req = Request::FindSuccessor { id: self.id.clone() };
+        self.send_message_to_socket(self.successor.ip_addr, req);
     }
 
-    pub fn start_stabilisation(&mut self){
+    pub fn start_stabilisation(&mut self) {
         let mut node_clone = self.clone();
         let builder = thread::Builder::new().name(format!("{}-Stabilize", node_clone.internal_name).to_string());
         let handler = builder
             .spawn(move || {
-                loop{
+                info!("Starting stabilisation");
+                loop {
                     let req = Request::GetPredecessor;
-                    node_clone.send_message_to_socket(node_clone.successor.ip_addr, &req);
+                    node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
                     thread::sleep(chord::NODE_STABILIZE_INTERVAL);
                 }
             })
@@ -128,44 +130,43 @@ impl Node {
         }
     }
 
-    fn process_incoming_request_msg(&mut self, request: Request) -> Response {
+    fn process_incoming_request(&mut self, request: Request) -> Response {
         match request {
-            Request::FindSuccessor {id}=> {
-                self.handle_find_successor_msg(id)
+            Request::FindSuccessor { id } => {
+                self.handle_find_successor_request(id)
             }
             Request::GetPredecessor => {
-                self.handle_get_predecessor_msg()
+                self.handle_get_predecessor_request()
             }
             Request::Notify { node } => {
-                self.handle_notify_msg(node)
+                self.handle_notify_request(node)
             }
         }
     }
 
-    fn handle_find_successor_msg(&self, id: BigInt) -> Response {
-
-        if is_in_half_range(&id,&self.id, self.successor.get_id()){
-            Response::FoundSuccessor {successor: self.successor.clone()}
+    fn handle_find_successor_request(&self, id: BigInt) -> Response {
+        if is_in_half_range(&id, &self.id, self.successor.get_id()) {
+            Response::FoundSuccessor { successor: self.successor.clone() }
         } else {
-            Response::AskFurther {next_node: self.successor.clone()}
+            Response::AskFurther { next_node: self.successor.clone() }
         }
-
     }
 
-    fn handle_get_predecessor_msg(&self) -> Response {
+    fn handle_get_predecessor_request(&self) -> Response {
         Response::GetPredecessorResponse {
             predecessor: self.predecessor.clone()
         }
     }
 
-    fn handle_notify_msg(&mut self, node: OtherNode ) -> Response {
-
+    fn handle_notify_request(&mut self, node: OtherNode) -> Response {
         match &self.predecessor {
             None => {
+                info!("[Node #{}] Predecessor is now: {}",self.id , node.id);
                 self.predecessor = Some(node)
             }
             Some(pre) => {
-                if is_in_range(node.get_id(), pre.get_id(), &self.id){
+                if is_in_range(node.get_id(), pre.get_id(), &self.id) {
+                    info!("[Node #{}] Predecessor is now: {}",self.id , node.id);
                     self.predecessor = Some(node)
                 }
             }
@@ -179,10 +180,10 @@ impl Node {
             Response::FoundSuccessor { successor } => {
                 self.handle_found_successor_response(successor)
             }
-            Response::AskFurther {next_node } => {
+            Response::AskFurther { next_node } => {
                 self.handle_ask_further_response(next_node)
             }
-            Response::GetPredecessorResponse {predecessor} => {
+            Response::GetPredecessorResponse { predecessor } => {
                 self.handle_get_predecessor_response(predecessor)
             }
             Response::NotifyResponse => {
@@ -192,6 +193,7 @@ impl Node {
     }
 
     fn handle_found_successor_response(&mut self, successor: OtherNode) {
+        info!("Found my new successor: node #{}", successor.id.clone());
         self.successor = successor;
         if !self.joined {
             self.start_stabilisation();
@@ -200,23 +202,23 @@ impl Node {
     }
 
     fn handle_ask_further_response(&mut self, next_node: OtherNode) {
-        let req = Request::FindSuccessor {id: self.id.clone()};
-        self.send_message_to_socket(next_node.ip_addr,&req);
+        info!("Did not get successor yet, asking node #{} now...", next_node.id);
+        let req = Request::FindSuccessor { id: self.id.clone() };
+        self.send_message_to_socket(next_node.ip_addr, req);
     }
 
     fn handle_get_predecessor_response(&mut self, predecessor: Option<OtherNode>) {
         if let Some(predecessor) = predecessor {
-            if is_in_range(predecessor.get_id(),&self.id, self.successor.get_id()){
+            if is_in_range(predecessor.get_id(), &self.id, self.successor.get_id()) {
+                info!("Successor was node #{}, but got node #{} as predecessor of successor, so it is  successor now...", self.successor.id.clone(), predecessor.id.clone());
                 self.successor = predecessor;
             }
         }
-        let req = Request::Notify {node: self.to_other_node()};
-        self.send_message_to_socket(self.successor.ip_addr,&req);
+        let req = Request::Notify { node: self.to_other_node() };
+        self.send_message_to_socket(self.successor.ip_addr, req);
     }
 
-    fn handle_notify_response(&self) {
-    }
-
+    fn handle_notify_response(&self) {}
 
 
 //    /// Gets closet preceding finger
@@ -342,21 +344,28 @@ impl Node {
         let listener = TcpListener::bind(&self.ip_addr).unwrap();
 
         //TODO figure out if extensive cloning is working
+        info!("[Node #{}] Starting to listen on socket: {}", self.id, self.ip_addr);
 
         let server = listener.incoming().for_each(move |socket| {
-            println!("accepted socket; addr={:?}", socket.peer_addr()?);
+            info!("[Node #{}] accepted socket; addr={:?}", node.id.clone(), socket.peer_addr()?);
 
             let buf = vec![];
             let buf_reader = BufReader::new(socket);
             let mut node_clone = node.clone();
             let connection = io::read_until(buf_reader, b'\n', buf)
                 .and_then(move |(socket, buf)| {
+                    let stream = socket.into_inner();
+
                     let msg_string = str::from_utf8(&buf).unwrap();
 
-                    let request: Request = serde_json::from_str(msg_string).unwrap();
-                    let response: Response = node_clone.process_incoming_request_msg(request);
-
-                    io::write_all(socket.into_inner(), serde_json::to_string(&response).unwrap())
+                    let message: RequestMessage = serde_json::from_str(msg_string).unwrap();
+                    let request: Request = message.request;
+                    info!("[Node #{}] Got request from Node #{}: {:?}", node_clone.id.clone(), message.sender.id, request.clone());
+                    let response: Response = node_clone.process_incoming_request(request);
+                    info!("[Node #{}] Sending response: {:?}", node_clone.id.clone(), response.clone());
+                    let response_message = ResponseMessage { sender: node_clone.to_other_node(), response };
+                    let response_string = format!("{}\n", serde_json::to_string(&response_message).unwrap());
+                    io::write_all(stream, response_string)
                 })
                 .then(|_| Ok(())); // Just discard the socket and buffer
 
@@ -369,30 +378,34 @@ impl Node {
         Ok(())
     }
 
-    pub fn send_message_to_socket(&mut self, addr: SocketAddr, msg: &Request) -> Result<(), Box<std::error::Error>> {
-        let msg_string: String = serde_json::to_string(msg).unwrap();
-        let client = TcpStream::connect(&addr).and_then(|stream| {
-            io::write_all(stream, msg_string).and_then(|(stream, msg)| {
-                let sock = BufReader::new(stream);
-                io::read_until(sock, b'\n', vec![]).and_then(|(stream, buf)| {
-                    let reply = str::from_utf8(&buf).unwrap();
-                    println!("Got reply: {}", reply);
-                    //TODO Parse reply
-                    Ok(())
+    pub fn send_message_to_socket(&mut self, addr: SocketAddr, request: Request) {
+        let node = self.clone();
+        let builder = thread::Builder::new().name(self.internal_name.clone().to_string());
+        builder
+            .spawn(move || {
+                let mut node = node.clone();
+                let request_message = RequestMessage { sender: node.to_other_node(), request };
+                let request_message_string: String = format!("{}\n", serde_json::to_string(&request_message).unwrap());
+                let client = TcpStream::connect(&addr).and_then(move |stream| {
+                    io::write_all(stream, request_message_string).and_then(move |(stream, msg)| {
+                        let sock = BufReader::new(stream);
+                        io::read_until(sock, b'\n', vec![]).and_then(move |(stream, buf)| {
+                            let response_string = str::from_utf8(&buf).unwrap();
+                            let response_message: ResponseMessage = serde_json::from_str(response_string).unwrap();
+                            let response: Response = response_message.response;
+                            info!("[Node #{}] Got response from Node #{}: {:?}", node.id.clone(), response_message.sender.id, response.clone());
+                            node.process_incoming_response(response);
+                            Ok(())
+                        })
+                    })
                 })
-            })
-        })
-            .map_err(|err| {
-                println!("connection error = {:?}", err);
+                    .map_err(|err| {
+                        println!("connection error = {:?}", err);
+                    });
+                tokio::run(client);
+                //Ok(())
             });
-        tokio::run(client);
-        Ok(())
     }
-
-    pub fn echo_message(&mut self, msg: Message) -> Message {
-        msg
-    }
-
 
 //    pub fn process_incoming_msg(&mut self, from: OtherNode, msg: Message) {
 //        match msg.get_message_type() {
