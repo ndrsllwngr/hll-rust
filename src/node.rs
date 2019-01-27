@@ -62,6 +62,7 @@ pub struct Node {
     // next_finger: usize,
     successor: OtherNode,
     predecessor: Option<OtherNode>,
+    joined: bool,
     // storage: Storage,
 }
 
@@ -84,6 +85,7 @@ impl Node {
             ip_addr: node_ip_addr,
             successor: OtherNode{id: create_node_id(entry_node_addr), ip_addr: entry_node_addr},
             predecessor: None,
+            joined: false,
         }
     }
 
@@ -95,7 +97,27 @@ impl Node {
             ip_addr: node_ip_addr.clone(),
             successor: OtherNode { id: id.clone(), ip_addr: node_ip_addr.clone() },
             predecessor: Some(OtherNode { id: id, ip_addr: node_ip_addr }),
+            joined: true,
         }
+    }
+
+    pub fn join(&mut self){
+        let req = Request::FindSuccessor {id: self.id.clone()};
+        self.send_message_to_socket(self.successor.ip_addr,&req);
+    }
+
+    pub fn start_stabilisation(&mut self){
+        let mut node_clone = self.clone();
+        let builder = thread::Builder::new().name(format!("{}-Stabilize", node_clone.internal_name).to_string());
+        let handler = builder
+            .spawn(move || {
+                loop{
+                    let req = Request::GetPredecessor;
+                    node_clone.send_message_to_socket(node_clone.successor.ip_addr, &req);
+                    thread::sleep(chord::NODE_STABILIZE_INTERVAL);
+                }
+            })
+            .unwrap();
     }
 
     /// Converts internal representation of node to the simpler representation OtherNode
@@ -114,17 +136,20 @@ impl Node {
             Request::GetPredecessor => {
                 self.handle_get_predecessor_msg()
             }
-            Request::Notify { i_am, node } => {
-                self.handle_notify_msg(i_am, node)
+            Request::Notify { node } => {
+                self.handle_notify_msg(node)
             }
         }
     }
 
     fn handle_find_successor_msg(&self, id: BigInt) -> Response {
-        Response::FindSuccessorResponse {
-            found_successor: true,
-            successor: self.to_other_node()
+
+        if is_in_half_range(&id,&self.id, self.successor.get_id()){
+            Response::FoundSuccessor {successor: self.successor.clone()}
+        } else {
+            Response::AskFurther {next_node: self.successor.clone()}
         }
+
     }
 
     fn handle_get_predecessor_msg(&self) -> Response {
@@ -133,47 +158,63 @@ impl Node {
         }
     }
 
-    fn handle_notify_msg(&mut self, i_am: Notify, node: OtherNode ) -> Response {
-        match i_am {
-            Notify::Successor => {
-                // ToDo check if is really successor
-                if (true) {
-                    self.successor = node;
-                }
+    fn handle_notify_msg(&mut self, node: OtherNode ) -> Response {
+
+        match &self.predecessor {
+            None => {
+                self.predecessor = Some(node)
             }
-            Notify::Predecessor => {
-                // ToDo check if is really predecessor
-                if (true) {
+            Some(pre) => {
+                if is_in_range(node.get_id(), pre.get_id(), &self.id){
                     self.predecessor = Some(node)
                 }
             }
         }
+        //TODO check if maybe a failure notification is necessary
         Response::NotifyResponse
     }
 
-    fn process_incoming_response_msg(&mut self, response: Response) {
+    fn process_incoming_response(&mut self, response: Response) {
         match response {
-            Response::FindSuccessorResponse {found_successor, successor } => {
-                self.handle_find_successor_response_msg(found_successor, successor)
+            Response::FoundSuccessor { successor } => {
+                self.handle_found_successor_response(successor)
+            }
+            Response::AskFurther {next_node } => {
+                self.handle_ask_further_response(next_node)
             }
             Response::GetPredecessorResponse {predecessor} => {
-                self.handle_get_predecessor_response_msg(predecessor)
+                self.handle_get_predecessor_response(predecessor)
             }
             Response::NotifyResponse => {
-                self.handle_notify_response_msg()
+                self.handle_notify_response()
             }
         }
     }
 
-    fn handle_find_successor_response_msg(&self, found_successor: bool, successor: OtherNode) {
-
+    fn handle_found_successor_response(&mut self, successor: OtherNode) {
+        self.successor = successor;
+        if !self.joined {
+            self.start_stabilisation();
+            self.joined = true;
+        }
     }
 
-    fn handle_get_predecessor_response_msg(&self, predecessor: Option<OtherNode>) {
-
+    fn handle_ask_further_response(&mut self, next_node: OtherNode) {
+        let req = Request::FindSuccessor {id: self.id.clone()};
+        self.send_message_to_socket(next_node.ip_addr,&req);
     }
 
-    fn handle_notify_response_msg(&self) {
+    fn handle_get_predecessor_response(&mut self, predecessor: Option<OtherNode>) {
+        if let Some(predecessor) = predecessor {
+            if is_in_range(predecessor.get_id(),&self.id, self.successor.get_id()){
+                self.successor = predecessor;
+            }
+        }
+        let req = Request::Notify {node: self.to_other_node()};
+        self.send_message_to_socket(self.successor.ip_addr,&req);
+    }
+
+    fn handle_notify_response(&self) {
     }
 
 
