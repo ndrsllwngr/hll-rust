@@ -165,9 +165,11 @@ impl Node {
                 self.predecessor = Some(node)
             }
             Some(pre) => {
-                if is_in_range(node.get_id(), pre.get_id(), &self.id) {
+                println!("[{:p} - {}] Current pre id: {}, possible new pre id: {}", self, self.id, pre.id, node.id);
+                if pre.id != node.id && is_in_range(node.get_id(), pre.get_id(), &self.id) {
                     info!("[Node #{}] Predecessor is now: {}",self.id , node.id);
-                    self.predecessor = Some(node)
+                    self.predecessor = Some(node);
+                    println!("Predecessor: {}", self.predecessor.clone().unwrap().id);
                 }
             }
         }
