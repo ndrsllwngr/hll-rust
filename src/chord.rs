@@ -13,7 +13,9 @@ pub const SUCCESSORLIST_SIZE: usize = CHORD_CIRCLE_BITS;
 /// At most a number of `2^m` nodes are allowed in the Chord Circle (Bit Shift left)
 pub const CHORD_CIRCLE_SIZE: usize = 1 << CHORD_CIRCLE_BITS;
 
-pub const NODE_STABILIZE_INTERVAL: time::Duration = time::Duration::from_millis(1000);
+pub const NODE_STABILIZE_INTERVAL: time::Duration = time::Duration::from_millis(10000);
+
+pub const NODE_INIT_SLEEP_INTERVAL: time::Duration = time::Duration::from_millis(2000);
 
 // pub const CHORD_CHANGE_INTERVALL: usize = 5;
 
