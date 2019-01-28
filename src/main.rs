@@ -34,6 +34,14 @@ mod storage;
 mod util;
 mod tokio_experiments;
 
+
+/*
+    run this with or without -p flag to start a new chord circle
+
+    run this with -p & -j to join an existing chord circle
+    example: cargo run -- -j 210.0.0.41:6666 -p 10001
+*/
+
 fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
@@ -42,13 +50,13 @@ fn main() {
     // Command line options
     let args: Vec<String> = env::args().collect();
     let mut opts = Options::new();
-    opts.optopt("i", "", "Use to specify local ip_address for nodes to bind to", "127.0.0.1");
-    opts.optopt("n", "", "Use to specify number of nodes to spawn (standard = 1)", "1");
+    opts.optopt("i", "", "Used to specify local ip_address for nodes to bind to", "127.0.0.1");
+    opts.optopt("p", "", "Used to specify the port the node listens on", "10000");
     opts.optopt(
         "j",
         "",
         "Use to join existing chord ring at a nodes ip_address:port",
-        "127.0.0.1:5555",
+        "127.0.0.1:6666",
     );
     opts.optflag("h", "help", "Print help");
     let matches = match opts.parse(&args[1..]) {
@@ -62,8 +70,8 @@ fn main() {
     }
 
     let ip_address_option = matches.opt_str("i");
-    let node_number_option = matches.opt_str("n");
     let join_ip_option = matches.opt_str("j");
+    let port_option = matches.opt_str("p");
 
     let ip_address = if let Some(ip_address) = ip_address_option {
         ip_address
@@ -80,70 +88,67 @@ fn main() {
     };
     debug!("Using {} as ip address.", ip_address);
 
-    let number_of_nodes = if let Some(number) = node_number_option {
+    let port = if let Some(number) = port_option {
         match number.parse::<i32>() {
             Ok(m) => m,
             Err(f) => panic!(f.to_string()),
         }
     } else {
-        1
+        6666 //TODO maybe randomise
     };
-    debug!("Spawning {} nodes.", number_of_nodes);
+    debug!("Port is {}.", port);
 
-    // let join_ip =
-
-    // TODO maybe instead ask to start program via input by user
-    let millis2000 = time::Duration::from_millis(2000);
-    //let now = time::Instant::now();
-    //thread::sleep(millis2000);
-    //assert!(now.elapsed() >= millis2000);
-
-    let first_node_ip = format!("{}:{}", ip_address.clone(), 6666)
+    let listen_ip = format!("{}:{}", ip_address.clone(), port)
         .parse::<SocketAddr>()
         .unwrap();
 
-    let first_node_handle = spawn_first_node("FIRST".to_string(), first_node_ip);
-    thread::sleep(millis2000);
-    first_node_handle.join();
-    //let mut node_handles = spawn_chord_circle(ip_address, number_of_nodes, first_node_ip);
-    //node_handles.push(first_node_handle);
-    //// Don't forget to join handles in the end, otherwise program terminates instantly
-    //for handler in node_handles {
-    //    if let Err(e) = handler.join() {
-    //        error!("{:?}", e)
-    //    }
-    //}
 
-
-//    let builder = thread::Builder::new().name(format!("{}-Listen", "echo").to_string());
-//    let handler = builder
-//        .spawn(move || {
-//            tokio_experiments::listen_and_answer();
-//        })
-//        .unwrap();
-//    let millis2000 = time::Duration::from_millis(2000);
-//    let now = time::Instant::now();
-//    thread::sleep(millis2000);
-//    tokio_experiments::write_to_stream_with_answer("127.0.0.1:12345".to_string(), "Hi wazzup".to_string());
-//    handler.join();
+    if let Some(join_ip) = join_ip_option {
+        //Join existing node
+        let node_handle = spawn_node("Node".to_string(), listen_ip, join_ip.parse::<SocketAddr>().unwrap());
+        node_handle.join();
+    } else {
+        //Create new ring
+        let first_node_handle = spawn_first_node("FIRST".to_string(), listen_ip);
+        first_node_handle.join();
+    }
 }
 
-//fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHandle<()> {
-//    let builder = thread::Builder::new().name(name.clone().to_string());
-//    builder
-//        .spawn(move || {
-//            let mut node = node::Node::new(name.clone(), node_ip_addr, entry_node_addr);
-//            let mut node_clone = node.clone();
-//            let builder = thread::Builder::new().name(format!("{}-Listening", name).to_string());
-//            let handler = builder
-//                .spawn(move || {
-//                    node.start_listening_on_socket();
-//                }).unwrap();
-//            node_clone.join();
-//            handler.join();
-//        })
-//        .unwrap()
-//}
+fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHandle<()> {
+    let builder = thread::Builder::new().name(name.clone().to_string());
+    builder
+        .spawn(move || {
+            let mut node = node::Node::new(name.clone(), node_ip_addr.clone(), entry_node_addr.clone());
+            let id = node.id.clone();
+            let other_node = node.to_other_node();
+
+            let arc = Arc::new(Mutex::new(node));
+            let arc_clone = arc.clone();
+
+            let id_clone = id.clone();
+            let name_clone = name.clone();
+            let builder = thread::Builder::new().name(format!("{}-Listening", name_clone.clone()).to_string());
+            let handle1 = builder
+                .spawn(move || {
+                    node::Node::start_listening_on_socket(arc_clone, node_ip_addr, id_clone);
+                }).unwrap();
+
+
+            thread::sleep(chord::NODE_INIT_SLEEP_INTERVAL);
+            node::Node::join(id.clone(),other_node,entry_node_addr,name_clone.clone());
+
+            let arc_clone2 = arc.clone();
+            let builder = thread::Builder::new().name(format!("{}-Stabilizing", name.clone()).to_string());
+            let handle2 =builder
+                .spawn(move || {
+                    node::Node::start_stabilisation(arc_clone2);
+                }).unwrap();
+
+            handle1.join();
+            handle2.join();
+        })
+        .unwrap()
+}
 
 fn spawn_first_node(name: String, node_ip_addr: SocketAddr) -> JoinHandle<()> {
     let builder = thread::Builder::new().name(name.clone().to_string());
@@ -167,9 +172,6 @@ fn spawn_first_node(name: String, node_ip_addr: SocketAddr) -> JoinHandle<()> {
                 .spawn(move || {
                     node::Node::start_stabilisation(arc_clone2);
                 }).unwrap();
-
-            println!("{}", 2345);
-            //node.start_stabilisation();
             handle1.join();
             handle2.join();
         })

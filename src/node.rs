@@ -104,11 +104,11 @@ impl Node {
         }
     }
 
-    pub fn join(&mut self) {
+    pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr, name: String) {
         info!("Starting joining process");
-        let req = Request::FindSuccessor { id: self.id.clone() };
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network_util::send_string_to_socket(self.successor.ip_addr.clone(), serde_json::to_string(&msg).unwrap(), self.internal_name.clone());
+        let req = Request::FindSuccessor { id};
+        let msg = Message::RequestMessage { sender: sender, request: req };
+        network_util::send_string_to_socket(join_ip, serde_json::to_string(&msg).unwrap(), name);
         //self.send_message_to_socket(self.successor.ip_addr, req);
     }
 
@@ -116,10 +116,14 @@ impl Node {
     pub fn start_stabilisation(arc: Arc<Mutex<Node>>) {
         info!("Starting stabilisation");
         loop {
-            let req = Request::GetPredecessor;
+
             let node = arc.try_lock().unwrap();
-            let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
-            network_util::send_string_to_socket(node.successor.ip_addr.clone(), serde_json::to_string(&msg).unwrap(), node.internal_name.clone());
+
+            if node.joined {
+                let req = Request::GetPredecessor;
+                let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
+                network_util::send_string_to_socket(node.successor.ip_addr.clone(), serde_json::to_string(&msg).unwrap(), node.internal_name.clone());
+            }else { info!("Not joined jet going to sleep again") }
 
             //this is super important, because otherwise the lock would persist endlessly due to the loop
             drop(node);
@@ -129,7 +133,7 @@ impl Node {
     }
 
     /// Converts internal representation of node to the simpler representation OtherNode
-    fn to_other_node(&self) -> OtherNode {
+    pub fn to_other_node(&self) -> OtherNode {
         OtherNode {
             id: self.id.clone(),
             ip_addr: self.ip_addr,
@@ -171,7 +175,7 @@ impl Node {
                 self.predecessor = Some(node)
             }
             Some(pre) => {
-                println!("[{:p} - {}] Current pre id: {}, possible new pre id: {}", self, self.id, pre.id, node.id);
+                println!("---------------> [Node #{}] Current pre id: {}, possible new pre id: {}. Successor is: {:?}", self.id, pre.id, node.id, self.successor.id);
                 if pre.id != node.id && is_in_range(node.get_id(), pre.get_id(), &self.id) {
                     info!("[Node #{}] Predecessor is now: {}", self.id, node.id);
                     self.predecessor = Some(node);
@@ -248,7 +252,7 @@ impl Node {
         info!("[Node #{}] Starting to listen on socket: {}", id.clone(), addr);
 
         let server = listener.incoming().for_each(move |socket| {
-            info!("[Node #{}] accepted socket; addr={:?}", id, socket.peer_addr()?);
+            //info!("[Node #{}] accepted socket; addr={:?}", id, socket.peer_addr()?);
 
             let buf = vec![];
             let buf_reader = BufReader::new(socket);
