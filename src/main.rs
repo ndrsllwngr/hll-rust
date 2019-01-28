@@ -23,6 +23,7 @@ use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread::JoinHandle;
 use std::{thread, time};
+use std::sync::{Arc,Mutex};
 
 mod chord;
 mod finger;
@@ -103,14 +104,15 @@ fn main() {
 
     let first_node_handle = spawn_first_node("FIRST".to_string(), first_node_ip);
     thread::sleep(millis2000);
-    let mut node_handles = spawn_chord_circle(ip_address, number_of_nodes, first_node_ip);
-    node_handles.push(first_node_handle);
-    // Don't forget to join handles in the end, otherwise program terminates instantly
-    for handler in node_handles {
-        if let Err(e) = handler.join() {
-            error!("{:?}", e)
-        }
-    }
+    first_node_handle.join();
+    //let mut node_handles = spawn_chord_circle(ip_address, number_of_nodes, first_node_ip);
+    //node_handles.push(first_node_handle);
+    //// Don't forget to join handles in the end, otherwise program terminates instantly
+    //for handler in node_handles {
+    //    if let Err(e) = handler.join() {
+    //        error!("{:?}", e)
+    //    }
+    //}
 
 
 //    let builder = thread::Builder::new().name(format!("{}-Listen", "echo").to_string());
@@ -124,56 +126,67 @@ fn main() {
 //    thread::sleep(millis2000);
 //    tokio_experiments::write_to_stream_with_answer("127.0.0.1:12345".to_string(), "Hi wazzup".to_string());
 //    handler.join();
-
 }
 
-fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHandle<()> {
-    let builder = thread::Builder::new().name(name.clone().to_string());
-    builder
-        .spawn(move || {
-            let mut node = node::Node::new(name.clone(), node_ip_addr, entry_node_addr);
-            let mut node_clone = node.clone();
-            let builder = thread::Builder::new().name(format!("{}-Listening", name).to_string());
-            let handler = builder
-                .spawn(move || {
-                    node.start_listening_on_socket();
-                }).unwrap();
-            node_clone.join();
-            handler.join();
-        })
-        .unwrap()
-}
+//fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHandle<()> {
+//    let builder = thread::Builder::new().name(name.clone().to_string());
+//    builder
+//        .spawn(move || {
+//            let mut node = node::Node::new(name.clone(), node_ip_addr, entry_node_addr);
+//            let mut node_clone = node.clone();
+//            let builder = thread::Builder::new().name(format!("{}-Listening", name).to_string());
+//            let handler = builder
+//                .spawn(move || {
+//                    node.start_listening_on_socket();
+//                }).unwrap();
+//            node_clone.join();
+//            handler.join();
+//        })
+//        .unwrap()
+//}
 
 fn spawn_first_node(name: String, node_ip_addr: SocketAddr) -> JoinHandle<()> {
     let builder = thread::Builder::new().name(name.clone().to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new_first(name.clone(), node_ip_addr);
-            node.start_stabilisation();
-            let builder = thread::Builder::new().name(format!("{}-Listening", name).to_string());
-            crossbeam::scope(|scope| {
-                scope.spawn(|_| {
-                    node.start_listening_on_socket();
-                });
-            });
+            let mut node = node::Node::new_first(name.clone(), node_ip_addr.clone());
+            let id = node.id.clone();
+            let arc = Arc::new(Mutex::new(node));
+            let arc_clone = arc.clone();
+
+            let name_clone = name.clone();
+            let builder = thread::Builder::new().name(format!("{}-Listening", name_clone.clone()).to_string());
+            let handle1 = builder
+                .spawn(move || {
+                    node::Node::start_listening_on_socket(arc_clone, node_ip_addr, id);
+                }).unwrap();
+
+            let arc_clone2 = arc.clone();
+            let builder = thread::Builder::new().name(format!("{}-Stabilizing", name.clone()).to_string());
+            let handle2 =builder
+                .spawn(move || {
+                    node::Node::start_stabilisation(arc_clone2);
+                }).unwrap();
+
             println!("{}", 2345);
             //node.start_stabilisation();
-            //handler.join();
+            handle1.join();
+            handle2.join();
         })
         .unwrap()
 }
 
-fn spawn_chord_circle(ip_address: String, number_of_nodes: i32, entry_node_addr: SocketAddr) -> Vec<JoinHandle<()>> {
-    let mut node_handlers = Vec::new();
-    let base_port: i32 = 10000;
-    for x in 0..number_of_nodes {
-        let node_port = base_port + x;
-        let node_ip_addr = format!("{}:{}", ip_address.clone(), node_port)
-            .parse::<SocketAddr>()
-            .unwrap();
-        node_handlers.push(
-            spawn_node(format!("N{}", x), node_ip_addr, entry_node_addr,
-            ))
-    }
-    node_handlers
-}
+//fn spawn_chord_circle(ip_address: String, number_of_nodes: i32, entry_node_addr: SocketAddr) -> Vec<JoinHandle<()>> {
+//    let mut node_handlers = Vec::new();
+//    let base_port: i32 = 10000;
+//    for x in 0..number_of_nodes {
+//        let node_port = base_port + x;
+//        let node_ip_addr = format!("{}:{}", ip_address.clone(), node_port)
+//            .parse::<SocketAddr>()
+//            .unwrap();
+//        node_handlers.push(
+//            spawn_node(format!("N{}", x), node_ip_addr, entry_node_addr,
+//            ))
+//    }
+//    node_handlers
+//}
