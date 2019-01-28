@@ -2,17 +2,18 @@ use num_bigint::BigInt;
 
 use super::node::OtherNode;
 
-#[derive(Serialize, Deserialize)]
-pub struct RequestMessage {
-    pub sender: OtherNode,
-    pub request: Request,
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum Message {
+    RequestMessage {
+        sender: OtherNode,
+        request: Request,
+    },
+    ResponseMessage {
+        sender: OtherNode,
+        response: Response,
+    }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct ResponseMessage {
-    pub sender: OtherNode,
-    pub response: Response,
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Request {

@@ -37,6 +37,7 @@ fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
 
+
     // Command line options
     let args: Vec<String> = env::args().collect();
     let mut opts = Options::new();
@@ -123,6 +124,7 @@ fn main() {
 //    thread::sleep(millis2000);
 //    tokio_experiments::write_to_stream_with_answer("127.0.0.1:12345".to_string(), "Hi wazzup".to_string());
 //    handler.join();
+
 }
 
 fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHandle<()> {
@@ -147,15 +149,16 @@ fn spawn_first_node(name: String, node_ip_addr: SocketAddr) -> JoinHandle<()> {
     builder
         .spawn(move || {
             let mut node = node::Node::new_first(name.clone(), node_ip_addr);
-            let mut node_clone = node.clone();
+            node.start_stabilisation();
             let builder = thread::Builder::new().name(format!("{}-Listening", name).to_string());
-            let handler = builder
-                .spawn(move || {
+            crossbeam::scope(|scope| {
+                scope.spawn(|_| {
                     node.start_listening_on_socket();
-                }).unwrap();
-
-            node_clone.start_stabilisation();
-            handler.join();
+                });
+            });
+            println!("{}", 2345);
+            //node.start_stabilisation();
+            //handler.join();
         })
         .unwrap()
 }
