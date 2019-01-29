@@ -127,7 +127,7 @@ fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAdd
 
             let id_clone = id.clone();
             let name_clone = name.clone();
-            let builder = thread::Builder::new().name(format!("{}-Listening", name_clone.clone()).to_string());
+            let builder = thread::Builder::new().name("Listen".to_string());
             let handle1 = builder
                 .spawn(move || {
                     node::Node::start_listening_on_socket(arc_clone, node_ip_addr, id_clone);
@@ -138,7 +138,7 @@ fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAdd
             node::Node::join(id.clone(),other_node,entry_node_addr,name_clone.clone());
 
             let arc_clone2 = arc.clone();
-            let builder = thread::Builder::new().name(format!("{}-Stabilizing", name.clone()).to_string());
+            let builder = thread::Builder::new().name("Stabilize".to_string());
             let handle2 =builder
                 .spawn(move || {
                     node::Node::start_stabilisation(arc_clone2);
@@ -160,14 +160,14 @@ fn spawn_first_node(name: String, node_ip_addr: SocketAddr) -> JoinHandle<()> {
             let arc_clone = arc.clone();
 
             let name_clone = name.clone();
-            let builder = thread::Builder::new().name(format!("{}-Listening", name_clone.clone()).to_string());
+            let builder = thread::Builder::new().name("Listen".to_string());
             let handle1 = builder
                 .spawn(move || {
                     node::Node::start_listening_on_socket(arc_clone, node_ip_addr, id);
                 }).unwrap();
 
             let arc_clone2 = arc.clone();
-            let builder = thread::Builder::new().name(format!("{}-Stabilizing", name.clone()).to_string());
+            let builder = thread::Builder::new().name("Stabilize".to_string());
             let handle2 =builder
                 .spawn(move || {
                     node::Node::start_stabilisation(arc_clone2);

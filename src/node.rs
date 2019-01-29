@@ -78,12 +78,12 @@ impl Node {
     ///
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
-    pub fn new(internal_name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> Node {
+    pub fn new(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> Node {
         //let next_finger = 0; // Always start at first entry of finger_table
         //let finger_table = FingerTable::new(successor.clone(), &id);
         //let storage = Storage::new();
         Node {
-            internal_name: internal_name,
+            internal_name: name,
             id: create_node_id(node_ip_addr),
             ip_addr: node_ip_addr,
             successor: OtherNode { id: create_node_id(entry_node_addr), ip_addr: entry_node_addr },
@@ -92,10 +92,10 @@ impl Node {
         }
     }
 
-    pub fn new_first(internal_name: String, node_ip_addr: SocketAddr) -> Node {
+    pub fn new_first(name: String, node_ip_addr: SocketAddr) -> Node {
         let id = create_node_id(node_ip_addr);
         Node {
-            internal_name: internal_name,
+            internal_name: name,
             id: id.clone(),
             ip_addr: node_ip_addr.clone(),
             successor: OtherNode { id: id.clone(), ip_addr: node_ip_addr.clone() },
@@ -106,7 +106,7 @@ impl Node {
 
     pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr, name: String) {
         info!("Starting joining process");
-        let req = Request::FindSuccessor { id};
+        let req = Request::FindSuccessor { id };
         let msg = Message::RequestMessage { sender: sender, request: req };
         network_util::send_string_to_socket(join_ip, serde_json::to_string(&msg).unwrap(), name);
         //self.send_message_to_socket(self.successor.ip_addr, req);
@@ -114,16 +114,16 @@ impl Node {
 
     //TODO pass internal name & othernode as parameters
     pub fn start_stabilisation(arc: Arc<Mutex<Node>>) {
-        info!("Starting stabilisation");
+        info!("Starting stabilisation...");
         loop {
-
+            info!("Stabilize.............");
             let node = arc.try_lock().unwrap();
 
             if node.joined {
                 let req = Request::GetPredecessor;
                 let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
                 network_util::send_string_to_socket(node.successor.ip_addr.clone(), serde_json::to_string(&msg).unwrap(), node.internal_name.clone());
-            }else { info!("Not joined jet going to sleep again") }
+            } else { info!("Not joined jet going to sleep again") }
 
             //this is super important, because otherwise the lock would persist endlessly due to the loop
             drop(node);
@@ -143,19 +143,22 @@ impl Node {
     fn process_incoming_request(&mut self, request: Request) -> Response {
         match request {
             Request::FindSuccessor { id } => {
+                info!("[Node #{}] Request::FindSuccessor({})", self.clone().id, id.clone());
                 self.handle_find_successor_request(id)
             }
             Request::GetPredecessor => {
+                info!("[Node #{}] Request::GetPredecessor", self.clone().id);
                 self.handle_get_predecessor_request()
             }
             Request::Notify { node } => {
+                info!("[Node #{}] Request::Notify(node: {})", self.clone().id, node.id.clone());
                 self.handle_notify_request(node)
             }
         }
     }
 
     fn handle_find_successor_request(&self, id: BigInt) -> Response {
-        if is_in_half_range(&id, &self.id, self.successor.get_id()) {
+        if is_in_interval(&id, &self.id, self.successor.get_id()) {
             Response::FoundSuccessor { successor: self.successor.clone() }
         } else {
             Response::AskFurther { next_node: self.successor.clone() }
@@ -171,15 +174,14 @@ impl Node {
     fn handle_notify_request(&mut self, node: OtherNode) -> Response {
         match &self.predecessor {
             None => {
-                info!("[Node #{}] Predecessor is now: {}", self.id, node.id);
+                info!("[Node #{}] Notify: Had no Pre. Pre is now: {}", self.id, node.id);
                 self.predecessor = Some(node)
             }
             Some(pre) => {
-                println!("---------------> [Node #{}] Current pre id: {}, possible new pre id: {}. Successor is: {:?}", self.id, pre.id, node.id, self.successor.id);
-                if pre.id != node.id && is_in_range(node.get_id(), pre.get_id(), &self.id) {
-                    info!("[Node #{}] Predecessor is now: {}", self.id, node.id);
+                info!("[Node #{}] Notify: Current Pre: {}, possible new Pre: {}. Successor is: {:?}", self.id, pre.id, node.id, self.successor.id);
+                if pre.id != node.id && is_in_interval(node.get_id(), pre.get_id(), &self.id) {
                     self.predecessor = Some(node);
-                    println!("Predecessor: {}", self.predecessor.clone().unwrap().id);
+                    info!("[Node #{}] Took new Pre: {}", self.id, self.predecessor.clone().unwrap().id);
                 }
             }
         }
@@ -190,15 +192,19 @@ impl Node {
     fn process_incoming_response(&mut self, response: Response) {
         match response {
             Response::FoundSuccessor { successor } => {
+                info!("[Node #{}] Response::FoundSuccessor(successor: {})", self.clone().id, successor.id.clone());
                 self.handle_found_successor_response(successor)
             }
             Response::AskFurther { next_node } => {
+                info!("[Node #{}] Response::AskFurther(next_node: {}", self.clone().id, next_node.id.clone());
                 self.handle_ask_further_response(next_node)
             }
             Response::GetPredecessorResponse { predecessor } => {
+                info!("[Node #{}] Response::GetPredecessorResponse(predecessor: {:?})", self.clone().id, predecessor.clone());
                 self.handle_get_predecessor_response(predecessor)
             }
             Response::NotifyResponse => {
+                //info!("Response::NotifyResponse");
                 self.handle_notify_response()
             }
         }
@@ -226,8 +232,10 @@ impl Node {
 
     fn handle_get_predecessor_response(&mut self, predecessor: Option<OtherNode>) {
         if let Some(predecessor) = predecessor {
-            if is_in_range(predecessor.get_id(), &self.id, self.successor.get_id()) {
-                info!("Successor was node #{}, but got node #{} as predecessor of successor, so it is  successor now...", self.successor.id.clone(), predecessor.id.clone());
+            // maybe update my successor:
+            if predecessor.get_id() != &self.id &&
+                is_in_interval(predecessor.get_id(), &self.id, self.successor.get_id()) {
+                info!("[Node #{}] GetPreResp: Had succ #{}, got pre #{}, new succ: #{}", self.id.clone(), self.successor.id.clone(), predecessor.id.clone(), predecessor.id.clone());
                 self.successor = predecessor;
             }
         }
@@ -267,7 +275,7 @@ impl Node {
                     let mut node = arc_clone.try_lock().unwrap();
                     match message {
                         Message::RequestMessage { sender, request } => {
-                            info!("[Node #{}] Got request from Node #{}: {:?}", node.id.clone(), sender.id, request.clone());
+                            debug!("[Node #{}] Got request from Node #{}: {:?}", node.id.clone(), sender.id, request.clone());
                             let internal_name = node.internal_name.clone();
                             let response = node.process_incoming_request(request);
                             let msg = Message::ResponseMessage { sender: node.to_other_node(), response };
@@ -276,7 +284,7 @@ impl Node {
                             Ok(())
                         }
                         Message::ResponseMessage { sender, response } => {
-                            info!("[Node #{}] Got response from Node #{}: {:?}", node.id.clone(), sender.id, response.clone());
+                            debug!("[Node #{}] Got response from Node #{}: {:?}", node.id.clone(), sender.id, response.clone());
                             node.process_incoming_response(response);
                             drop(node);
                             Ok(())
