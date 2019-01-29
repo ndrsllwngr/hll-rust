@@ -91,14 +91,27 @@ impl Node {
         }
     }
 
-
-
     /// Converts internal representation of node to the simpler representation OtherNode
     pub fn to_other_node(&self) -> OtherNode {
         OtherNode {
             id: self.id.clone(),
             ip_addr: self.ip_addr,
         }
+    }
+
+    pub fn print_current_state(&self) {
+        let pre_string = if let Some(pre) = self.predecessor.clone() {
+            pre.get_id().to_string()
+        } else {
+            "None".to_string()
+        };
+        let string_to_print =
+            format!("\n\n{0: <18} | #{1: <6}\n{2: <18} | #{3: <6}\n{4: <18} | #{5: <6}\n",
+                    "I am Node".to_string(), self.id,
+                    "My Predecessor is".to_string(), pre_string,
+                    "My Successor is".to_string(), self.successor.id
+            );
+        info!("{}", string_to_print);
     }
 
     pub fn process_incoming_request(&mut self, request: Request) -> Response {
@@ -160,8 +173,8 @@ impl Node {
                 self.predecessor = Some(node)
             }
             Some(pre) => {
-                info!("[Node #{}] Notify: Current Pre: {}, possible new Pre: {}. Successor is: {:?}", self.id, pre.id, node.id, self.successor.id);
-                if pre.id != node.id && is_in_interval( pre.get_id(), &self.id, node.get_id()) {
+                info!("[Node #{}] Notify: Current Pre: {}, possible new Pre: {}. Successor is: {}", self.id, pre.id, node.id, self.successor.id);
+                if pre.id != node.id && is_in_interval(pre.get_id(), &self.id, node.get_id()) {
                     self.predecessor = Some(node);
                     info!("[Node #{}] Took new Pre: {}", self.id, self.predecessor.clone().unwrap().id);
                 }
@@ -187,8 +200,6 @@ impl Node {
 
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
         network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
-
-        //self.send_message_to_socket(next_node.ip_addr, req);
     }
 
     fn handle_get_predecessor_response(&mut self, predecessor: Option<OtherNode>) {
@@ -204,12 +215,7 @@ impl Node {
 
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
         network_util::send_string_to_socket(self.successor.ip_addr.clone(), serde_json::to_string(&msg).unwrap());
-
-        //self.send_message_to_socket(self.successor.ip_addr, req);
     }
 
     fn handle_notify_response(&self) {}
-
-
-
 }

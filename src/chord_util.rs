@@ -30,7 +30,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
             let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
             network_util::send_string_to_socket(node.successor.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
         } else { info!("Not joined jet going to sleep again") }
-
+        node.print_current_state();
         //this is super important, because otherwise the lock would persist endlessly due to the loop
         drop(node);
         //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
