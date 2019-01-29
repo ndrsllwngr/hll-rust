@@ -158,7 +158,7 @@ impl Node {
     }
 
     fn handle_find_successor_request(&self, id: BigInt) -> Response {
-        if is_in_interval(&id, &self.id, self.successor.get_id()) {
+        if is_in_interval(&self.id, self.successor.get_id(), &id) {
             Response::FoundSuccessor { successor: self.successor.clone() }
         } else {
             Response::AskFurther { next_node: self.successor.clone() }
@@ -179,7 +179,7 @@ impl Node {
             }
             Some(pre) => {
                 info!("[Node #{}] Notify: Current Pre: {}, possible new Pre: {}. Successor is: {:?}", self.id, pre.id, node.id, self.successor.id);
-                if pre.id != node.id && is_in_interval(node.get_id(), pre.get_id(), &self.id) {
+                if pre.id != node.id && is_in_interval( pre.get_id(), &self.id, node.get_id()) {
                     self.predecessor = Some(node);
                     info!("[Node #{}] Took new Pre: {}", self.id, self.predecessor.clone().unwrap().id);
                 }
@@ -234,7 +234,7 @@ impl Node {
         if let Some(predecessor) = predecessor {
             // maybe update my successor:
             if predecessor.get_id() != &self.id &&
-                is_in_interval(predecessor.get_id(), &self.id, self.successor.get_id()) {
+                is_in_interval(&self.id, self.successor.get_id(), predecessor.get_id()) {
                 info!("[Node #{}] GetPreResp: Had succ #{}, got pre #{}, new succ: #{}", self.id.clone(), self.successor.id.clone(), predecessor.id.clone(), predecessor.id.clone());
                 self.successor = predecessor;
             }

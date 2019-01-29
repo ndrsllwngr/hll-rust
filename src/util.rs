@@ -31,11 +31,14 @@ pub fn create_hash(string: &str) -> String {
 
 
 // TODO write test for this function to verify correctness
-pub fn is_in_interval(test: &BigInt, start: &BigInt, end: &BigInt) -> bool {
-    if start == end {
+/**
+ * Test if id ∈ (first, second)
+ */
+pub fn is_in_interval(first: &BigInt, second: &BigInt, id: &BigInt,) -> bool {
+    if first == second {
         true
     } else {
-        x_modulo_ring_size(test - start) < x_modulo_ring_size(end - start)
+        x_modulo_ring_size(id - first) < x_modulo_ring_size(second - first)
     }
 }
 fn x_modulo_ring_size(x: BigInt) -> BigInt {
