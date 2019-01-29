@@ -16,8 +16,20 @@ pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
                    &chord::CHORD_RING_SIZE.to_bigint().unwrap())
 }
 
+// TODO write test for this function to verify correctness
+/**
+ * Test if id ∈ (first, second)
+ */
+pub fn is_in_interval(first: &BigInt, second: &BigInt, id: &BigInt) -> bool {
+    if first == second {
+        true
+    } else {
+        x_modulo_ring_size(id - first) < x_modulo_ring_size(second - first)
+    }
+}
+
 //TODO write test for this function to verify correctness
-pub fn create_hash(string: &str) -> String {
+fn create_hash(string: &str) -> String {
     // create a Sha1 object
     let mut hasher = Sha1::new();
 
@@ -28,19 +40,6 @@ pub fn create_hash(string: &str) -> String {
     hasher.result_str()
 }
 
-
-
-// TODO write test for this function to verify correctness
-/**
- * Test if id ∈ (first, second)
- */
-pub fn is_in_interval(first: &BigInt, second: &BigInt, id: &BigInt,) -> bool {
-    if first == second {
-        true
-    } else {
-        x_modulo_ring_size(id - first) < x_modulo_ring_size(second - first)
-    }
-}
 fn x_modulo_ring_size(x: BigInt) -> BigInt {
     let one: &BigInt = &1.to_bigint().unwrap();
     let chord_ring_size: &BigInt = &chord::CHORD_RING_SIZE.to_bigint().unwrap();
