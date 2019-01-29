@@ -47,7 +47,6 @@ impl OtherNode {
 /// * `storage`        - DHT storage inside the node
 #[derive(Clone)]
 pub struct Node {
-    pub internal_name: String,
     //TODO not pup
     pub id: BigInt,
     pub ip_addr: SocketAddr,
@@ -68,12 +67,11 @@ impl Node {
     ///
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
-    pub fn new(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> Node {
+    pub fn new(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> Node {
         //let next_finger = 0; // Always start at first entry of finger_table
         //let finger_table = FingerTable::new(successor.clone(), &id);
         //let storage = Storage::new();
         Node {
-            internal_name: name,
             id: create_node_id(node_ip_addr),
             ip_addr: node_ip_addr,
             successor: OtherNode { id: create_node_id(entry_node_addr), ip_addr: entry_node_addr },
@@ -82,10 +80,9 @@ impl Node {
         }
     }
 
-    pub fn new_first(name: String, node_ip_addr: SocketAddr) -> Node {
+    pub fn new_first(node_ip_addr: SocketAddr) -> Node {
         let id = create_node_id(node_ip_addr);
         Node {
-            internal_name: name,
             id: id.clone(),
             ip_addr: node_ip_addr.clone(),
             successor: OtherNode { id: id.clone(), ip_addr: node_ip_addr.clone() },
@@ -189,7 +186,7 @@ impl Node {
         let req = Request::FindSuccessor { id: self.id.clone() };
 
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap(), self.internal_name.clone());
+        network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
 
         //self.send_message_to_socket(next_node.ip_addr, req);
     }
@@ -206,7 +203,7 @@ impl Node {
         let req = Request::Notify { node: self.to_other_node() };
 
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network_util::send_string_to_socket(self.successor.ip_addr.clone(), serde_json::to_string(&msg).unwrap(), self.internal_name.clone());
+        network_util::send_string_to_socket(self.successor.ip_addr.clone(), serde_json::to_string(&msg).unwrap());
 
         //self.send_message_to_socket(self.successor.ip_addr, req);
     }

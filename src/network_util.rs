@@ -14,7 +14,7 @@ use tokio::prelude::*;
 use super::node::*;
 use super::protocols::*;
 
-pub fn send_string_to_socket(addr: SocketAddr, msg: String, sending_node_name: String) {
+pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
     let builder = thread::Builder::new().name("Send".to_string());
     let handle = builder.spawn(move || {
         match net::TcpStream::connect(addr.clone()) {
@@ -59,11 +59,10 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
                 match message {
                     Message::RequestMessage { sender, request } => {
                         debug!("[Node #{}] Got request from Node #{}: {:?}", node.id.clone(), sender.get_id(), request.clone());
-                        let internal_name = node.internal_name.clone();
                         let response = node.process_incoming_request(request);
                         let msg = Message::ResponseMessage { sender: node.to_other_node(), response };
                         drop(node);
-                        send_string_to_socket(sender.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap(), internal_name);
+                        send_string_to_socket(sender.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
                         Ok(())
                     }
                     Message::ResponseMessage { sender, response } => {

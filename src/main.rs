@@ -102,20 +102,20 @@ fn main() {
 
     if let Some(join_ip) = join_ip_option {
         //Join existing node
-        let node_handle = spawn_node("Node".to_string(), listen_ip, join_ip.parse::<SocketAddr>().unwrap());
+        let node_handle = spawn_node(listen_ip, join_ip.parse::<SocketAddr>().unwrap());
         node_handle.join();
     } else {
         //Create new ring
-        let first_node_handle = spawn_first_node("FIRST".to_string(), listen_ip);
+        let first_node_handle = spawn_first_node(listen_ip);
         first_node_handle.join();
     }
 }
 
-fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHandle<()> {
-    let builder = thread::Builder::new().name(name.clone().to_string());
+fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHandle<()> {
+    let builder = thread::Builder::new().name("Node".to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new(name.clone(), node_ip_addr.clone(), entry_node_addr.clone());
+            let mut node = node::Node::new(node_ip_addr.clone(), entry_node_addr.clone());
             let id = node.id.clone();
             let other_node = node.to_other_node();
 
@@ -123,7 +123,6 @@ fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAdd
             let arc_clone = arc.clone();
 
             let id_clone = id.clone();
-            let name_clone = name.clone();
             let builder = thread::Builder::new().name("Listen".to_string());
             let handle1 = builder
                 .spawn(move || {
@@ -132,7 +131,7 @@ fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAdd
 
 
             thread::sleep(chord::NODE_INIT_SLEEP_INTERVAL);
-            chord_util::join(id.clone(),other_node,entry_node_addr,name_clone.clone());
+            chord_util::join(id.clone(),other_node,entry_node_addr);
 
             let arc_clone2 = arc.clone();
             let builder = thread::Builder::new().name("Stabilize".to_string());
@@ -147,16 +146,15 @@ fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAdd
         .unwrap()
 }
 
-fn spawn_first_node(name: String, node_ip_addr: SocketAddr) -> JoinHandle<()> {
-    let builder = thread::Builder::new().name(name.clone().to_string());
+fn spawn_first_node(node_ip_addr: SocketAddr) -> JoinHandle<()> {
+    let builder = thread::Builder::new().name("MasterNode".to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new_first(name.clone(), node_ip_addr.clone());
+            let mut node = node::Node::new_first(node_ip_addr.clone());
             let id = node.id.clone();
             let arc = Arc::new(Mutex::new(node));
             let arc_clone = arc.clone();
 
-            let name_clone = name.clone();
             let builder = thread::Builder::new().name("Listen".to_string());
             let handle1 = builder
                 .spawn(move || {
