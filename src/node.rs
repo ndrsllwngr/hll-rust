@@ -1,25 +1,15 @@
+use std::{str, thread, time};
+use std::net::SocketAddr;
+
 use num_bigint::BigInt;
 
-use tokio::io;
-use tokio::net::{TcpStream, TcpListener};
-use tokio::prelude::*;
-use std::sync::{Arc, Mutex};
-
-use futures::{Future, Stream};
-
-use std::net::SocketAddr;
-use std::io::{BufReader, Read};
-//use std::net::TcpListener;
-
-use std::{thread, time, str};
-
-use super::finger::FingerTable;
+use super::chord;
 use super::finger;
+use super::finger::FingerTable;
 use super::network_util;
 use super::protocols::*;
 use super::storage::Storage;
 use super::util::*;
-use super::chord;
 
 /// Simple representation of an external node in the network
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -57,15 +47,15 @@ impl OtherNode {
 /// * `storage`        - DHT storage inside the node
 #[derive(Clone)]
 pub struct Node {
-    internal_name: String,
+    pub internal_name: String,
     //TODO not pup
     pub id: BigInt,
-    ip_addr: SocketAddr,
+    pub ip_addr: SocketAddr,
     // finger_table: FingerTable, TODO we will care about this later
     // next_finger: usize,
-    successor: OtherNode,
+    pub successor: OtherNode,
     predecessor: Option<OtherNode>,
-    joined: bool,
+    pub joined: bool,
     // storage: Storage,
 }
 
@@ -104,33 +94,7 @@ impl Node {
         }
     }
 
-    pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr, name: String) {
-        info!("Starting joining process");
-        let req = Request::FindSuccessor { id };
-        let msg = Message::RequestMessage { sender: sender, request: req };
-        network_util::send_string_to_socket(join_ip, serde_json::to_string(&msg).unwrap(), name);
-        //self.send_message_to_socket(self.successor.ip_addr, req);
-    }
 
-    //TODO pass internal name & othernode as parameters
-    pub fn start_stabilisation(arc: Arc<Mutex<Node>>) {
-        info!("Starting stabilisation...");
-        loop {
-            info!("Stabilize.............");
-            let node = arc.try_lock().unwrap();
-
-            if node.joined {
-                let req = Request::GetPredecessor;
-                let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
-                network_util::send_string_to_socket(node.successor.ip_addr.clone(), serde_json::to_string(&msg).unwrap(), node.internal_name.clone());
-            } else { info!("Not joined jet going to sleep again") }
-
-            //this is super important, because otherwise the lock would persist endlessly due to the loop
-            drop(node);
-            //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
-            thread::sleep(chord::NODE_STABILIZE_INTERVAL);
-        }
-    }
 
     /// Converts internal representation of node to the simpler representation OtherNode
     pub fn to_other_node(&self) -> OtherNode {
@@ -140,7 +104,7 @@ impl Node {
         }
     }
 
-    fn process_incoming_request(&mut self, request: Request) -> Response {
+    pub fn process_incoming_request(&mut self, request: Request) -> Response {
         match request {
             Request::FindSuccessor { id } => {
                 info!("[Node #{}] Request::FindSuccessor({})", self.clone().id, id.clone());
@@ -153,6 +117,27 @@ impl Node {
             Request::Notify { node } => {
                 info!("[Node #{}] Request::Notify(node: {})", self.clone().id, node.id.clone());
                 self.handle_notify_request(node)
+            }
+        }
+    }
+
+    pub fn process_incoming_response(&mut self, response: Response) {
+        match response {
+            Response::FoundSuccessor { successor } => {
+                info!("[Node #{}] Response::FoundSuccessor(successor: {})", self.clone().id, successor.id.clone());
+                self.handle_found_successor_response(successor)
+            }
+            Response::AskFurther { next_node } => {
+                info!("[Node #{}] Response::AskFurther(next_node: {}", self.clone().id, next_node.id.clone());
+                self.handle_ask_further_response(next_node)
+            }
+            Response::GetPredecessorResponse { predecessor } => {
+                info!("[Node #{}] Response::GetPredecessorResponse(predecessor: {:?})", self.clone().id, predecessor.clone());
+                self.handle_get_predecessor_response(predecessor)
+            }
+            Response::NotifyResponse => {
+                //info!("Response::NotifyResponse");
+                self.handle_notify_response()
             }
         }
     }
@@ -187,27 +172,6 @@ impl Node {
         }
         //TODO check if maybe a failure notification is necessary
         Response::NotifyResponse
-    }
-
-    fn process_incoming_response(&mut self, response: Response) {
-        match response {
-            Response::FoundSuccessor { successor } => {
-                info!("[Node #{}] Response::FoundSuccessor(successor: {})", self.clone().id, successor.id.clone());
-                self.handle_found_successor_response(successor)
-            }
-            Response::AskFurther { next_node } => {
-                info!("[Node #{}] Response::AskFurther(next_node: {}", self.clone().id, next_node.id.clone());
-                self.handle_ask_further_response(next_node)
-            }
-            Response::GetPredecessorResponse { predecessor } => {
-                info!("[Node #{}] Response::GetPredecessorResponse(predecessor: {:?})", self.clone().id, predecessor.clone());
-                self.handle_get_predecessor_response(predecessor)
-            }
-            Response::NotifyResponse => {
-                //info!("Response::NotifyResponse");
-                self.handle_notify_response()
-            }
-        }
     }
 
     fn handle_found_successor_response(&mut self, successor: OtherNode) {
@@ -250,55 +214,5 @@ impl Node {
     fn handle_notify_response(&self) {}
 
 
-    // HINT: this can be tested by connecting via bash terminal (preinstalled on Mac/Linux) by executing:
-    // nc 127.0.0.1 34254
-    // afterwards every message will be echoed in the console by handle_request
-    pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, id: BigInt) -> Result<(), Box<std::error::Error>> {
-        let listener = TcpListener::bind(&addr).unwrap();
 
-        //TODO figure out if extensive cloning is working
-        info!("[Node #{}] Starting to listen on socket: {}", id.clone(), addr);
-
-        let server = listener.incoming().for_each(move |socket| {
-            //info!("[Node #{}] accepted socket; addr={:?}", id, socket.peer_addr()?);
-
-            let buf = vec![];
-            let buf_reader = BufReader::new(socket);
-
-            let arc_clone = node_arc.clone();
-
-            let connection = io::read_until(buf_reader, b'\n', buf)
-                .and_then(move |(socket, buf)| {
-                    let stream = socket.into_inner();
-                    let msg_string = str::from_utf8(&buf).unwrap();
-                    let message = serde_json::from_str(msg_string).unwrap();
-                    let mut node = arc_clone.try_lock().unwrap();
-                    match message {
-                        Message::RequestMessage { sender, request } => {
-                            debug!("[Node #{}] Got request from Node #{}: {:?}", node.id.clone(), sender.id, request.clone());
-                            let internal_name = node.internal_name.clone();
-                            let response = node.process_incoming_request(request);
-                            let msg = Message::ResponseMessage { sender: node.to_other_node(), response };
-                            drop(node);
-                            network_util::send_string_to_socket(sender.ip_addr, serde_json::to_string(&msg).unwrap(), internal_name);
-                            Ok(())
-                        }
-                        Message::ResponseMessage { sender, response } => {
-                            debug!("[Node #{}] Got response from Node #{}: {:?}", node.id.clone(), sender.id, response.clone());
-                            node.process_incoming_response(response);
-                            drop(node);
-                            Ok(())
-                        }
-                    }
-                })
-                .then(|_| Ok(())); // Just discard the socket and buffer
-
-            // Spawn a new task that processes the socket:
-            tokio::spawn(connection);
-
-            Ok(())
-        }).map_err(|e| println!("failed to accept socket; error = {:?}", e));
-        tokio::run(server);
-        Ok(())
-    }
 }

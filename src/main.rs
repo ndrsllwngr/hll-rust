@@ -1,31 +1,28 @@
 extern crate crypto;
-extern crate getopts;
-extern crate num;
-extern crate num_bigint;
-
-extern crate tokio;
 extern crate futures;
-
+extern crate get_if_addrs;
+extern crate getopts;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
-
+extern crate num;
+extern crate num_bigint;
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-
-extern crate serde;
 extern crate serde_json;
+extern crate tokio;
 
-extern crate get_if_addrs;
-
-use getopts::Options;
+use std::{thread, time};
 use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
-use std::{thread, time};
-use std::sync::{Arc,Mutex};
+
+use getopts::Options;
 
 mod chord;
+mod chord_util;
 mod finger;
 mod network_util;
 mod node;
@@ -130,18 +127,18 @@ fn spawn_node(name: String, node_ip_addr: SocketAddr, entry_node_addr: SocketAdd
             let builder = thread::Builder::new().name("Listen".to_string());
             let handle1 = builder
                 .spawn(move || {
-                    node::Node::start_listening_on_socket(arc_clone, node_ip_addr, id_clone);
+                    network_util::start_listening_on_socket(arc_clone, node_ip_addr, id_clone);
                 }).unwrap();
 
 
             thread::sleep(chord::NODE_INIT_SLEEP_INTERVAL);
-            node::Node::join(id.clone(),other_node,entry_node_addr,name_clone.clone());
+            chord_util::join(id.clone(),other_node,entry_node_addr,name_clone.clone());
 
             let arc_clone2 = arc.clone();
             let builder = thread::Builder::new().name("Stabilize".to_string());
             let handle2 =builder
                 .spawn(move || {
-                    node::Node::start_stabilisation(arc_clone2);
+                    chord_util::stabilize(arc_clone2);
                 }).unwrap();
 
             handle1.join();
@@ -163,14 +160,14 @@ fn spawn_first_node(name: String, node_ip_addr: SocketAddr) -> JoinHandle<()> {
             let builder = thread::Builder::new().name("Listen".to_string());
             let handle1 = builder
                 .spawn(move || {
-                    node::Node::start_listening_on_socket(arc_clone, node_ip_addr, id);
+                    network_util::start_listening_on_socket(arc_clone, node_ip_addr, id);
                 }).unwrap();
 
             let arc_clone2 = arc.clone();
             let builder = thread::Builder::new().name("Stabilize".to_string());
             let handle2 =builder
                 .spawn(move || {
-                    node::Node::start_stabilisation(arc_clone2);
+                    chord_util::stabilize(arc_clone2);
                 }).unwrap();
             handle1.join();
             handle2.join();
