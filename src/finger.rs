@@ -16,18 +16,22 @@ pub struct FingerEntry {
 
 #[derive(Clone)]
 pub struct FingerTable {
+    parent_node_id: BigInt,
     entries: Vec<FingerEntry>,
 }
 
 impl FingerTable {
+    pub fn new(parent_node_id: BigInt) -> FingerTable {
+        FingerTable { parent_node_id, entries: Vec::with_capacity(chord::FINGERTABLE_SIZE) }
+    }
     // TODO maybe use hashing function with smaller bit range for testing. (Bitsize = entries in finger_table)
-    pub fn new(successor: OtherNode, parent_node_id: &BigInt) -> FingerTable {
-        let mut entries: Vec<FingerEntry> = Vec::new();
+    pub fn new_first(parent_node_id: BigInt, successor: OtherNode) -> FingerTable {
+        let mut entries: Vec<FingerEntry> = Vec::with_capacity(chord::FINGERTABLE_SIZE);
         entries.push(FingerEntry {
-            id: get_finger_id(parent_node_id, 0),
+            id: get_finger_id(&parent_node_id, 0),
             node: successor,
         });
-        FingerTable { entries }
+        FingerTable { parent_node_id, entries }
     }
 
     pub fn put(&mut self, index: usize, finger_id: BigInt, node: OtherNode) {
@@ -44,7 +48,11 @@ impl FingerTable {
     }
 
     pub fn set_successor(&mut self, successor: OtherNode) {
-        self.entries[0].node = successor;
+        if self.entries.is_empty() {
+            self.entries.push(FingerEntry{id: get_finger_id(&self.parent_node_id, 0), node: successor});
+        } else {
+            self.entries[0].node = successor;
+        }
     }
 
     pub fn get(&self, index: usize) -> &FingerEntry {

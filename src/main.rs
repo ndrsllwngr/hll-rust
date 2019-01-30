@@ -115,7 +115,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHand
     let builder = thread::Builder::new().name("Node".to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new(node_ip_addr.clone(), entry_node_addr.clone());
+            let mut node = node::Node::new(node_ip_addr.clone());
             let id = node.id.clone();
             let other_node = node.to_other_node();
 

@@ -25,16 +25,17 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
     info!("Starting stabilisation...");
     loop {
         info!("Stabilize.............");
-        let node = arc.lock().unwrap();
+        let mut node = arc.lock().unwrap();
 
         if node.joined {
             let req = Request::GetPredecessor;
             let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
 
             let mut ring_is_alive = false;
-            for succ in &node.successor_list {
+            for succ in node.successor_list.clone() {
                 if network_util::check_alive(succ.get_ip_addr().clone(), node.to_other_node()) {
                     network_util::send_string_to_socket(succ.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+                    node.update_successor_and_successor_list(succ);
                     ring_is_alive = true;
                     break;
                 }
@@ -43,8 +44,8 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
                 error!("No functional successor found in successor list. RING IS DEAD. Initializing shutdown...");
                 process::exit(1);
             }
+            node.print_current_state();
         } else { info!("Not joined jet going to sleep again") }
-        node.print_current_state();
         //this is super important, because otherwise the lock would persist endlessly due to the loop
         drop(node);
         //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
