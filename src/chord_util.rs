@@ -3,6 +3,7 @@ use std::thread::JoinHandle;
 use std::{thread, time};
 use std::sync::{Arc, Mutex};
 use num_bigint::BigInt;
+use std::process;
 
 use super::network_util;
 use super::protocols::*;
@@ -29,7 +30,19 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
         if node.joined {
             let req = Request::GetPredecessor;
             let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
-            network_util::send_string_to_socket(node.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+
+            let mut ring_is_alive = false;
+            for succ in &node.successor_list {
+                if network_util::check_alive(succ.get_ip_addr().clone(), node.to_other_node()) {
+                    network_util::send_string_to_socket(succ.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+                    ring_is_alive = true;
+                    break;
+                }
+            }
+            if !ring_is_alive {
+                error!("No functional successor found in successor list. RING IS DEAD. Initializing shutdown...");
+                process::exit(1);
+            }
         } else { info!("Not joined jet going to sleep again") }
         node.print_current_state();
         //this is super important, because otherwise the lock would persist endlessly due to the loop

@@ -39,9 +39,11 @@ pub fn check_alive (addr: SocketAddr, sender: OtherNode) -> bool {
             let msg = serde_json::to_string(&Message::Ping{sender}).unwrap();
             let mut writer = BufWriter::new(stream);
             writer.write_all(msg.as_bytes()).unwrap();
+            info!("ALIVE");
             true
         }
         Err(e) => {
+            info!("NOT ALIVE");
             false
         }
     }

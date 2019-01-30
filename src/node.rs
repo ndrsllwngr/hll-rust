@@ -49,6 +49,7 @@ pub struct Node {
     pub finger_table: FingerTable,
     // next_finger: usize,
     pub predecessor: Option<OtherNode>,
+    pub successor_list: Vec<OtherNode>,
     pub joined: bool,
     // storage: Storage,
 }
@@ -71,8 +72,9 @@ impl Node {
         Node {
             id: id.clone(),
             ip_addr: node_ip_addr,
-            finger_table: FingerTable::new(successor, &id),
+            finger_table: FingerTable::new(successor.clone(), &id),
             predecessor: None,
+            successor_list: vec![successor],
             joined: false,
         }
     }
@@ -83,8 +85,9 @@ impl Node {
         Node {
             id: id.clone(),
             ip_addr: node_ip_addr.clone(),
-            finger_table: FingerTable::new(successor, &id),
+            finger_table: FingerTable::new(successor.clone(), &id),
             predecessor: Some(OtherNode { id: id, ip_addr: node_ip_addr }),
+            successor_list: vec![successor],
             joined: true,
         }
     }
@@ -102,6 +105,7 @@ impl Node {
     }
 
     pub fn set_successor(&mut self, successor: OtherNode) {
+        self.successor_list[0] = successor.clone(); // TODO get list from succ
         self.finger_table.set_successor(successor);
     }
 
