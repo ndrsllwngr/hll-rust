@@ -28,6 +28,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
         let node = arc.lock().unwrap();
 
         if node.joined {
+            node.print_current_state();
             let node_other = node.to_other_node().clone();
             let succ_list = node.successor_list.clone();
             drop(node);
