@@ -1,7 +1,7 @@
 use std::{str, thread, time};
 use std::net::SocketAddr;
 
-use num_bigint::BigInt;
+use num_bigint::{BigInt, ToBigInt};
 
 use super::chord;
 use super::finger;
@@ -67,7 +67,7 @@ impl Node {
         //let finger_table = FingerTable::new(successor.clone(), &id);
         //let storage = Storage::new();
         let id = create_node_id(node_ip_addr);
-        let successor =   OtherNode { id: create_node_id(entry_node_addr), ip_addr: entry_node_addr };
+        let successor = OtherNode { id: create_node_id(entry_node_addr), ip_addr: entry_node_addr };
         Node {
             id: id.clone(),
             ip_addr: node_ip_addr,
@@ -118,6 +118,20 @@ impl Node {
                     "My Successor is".to_string(), self.get_successor().id
             );
         info!("{}", string_to_print);
+    }
+
+    fn closest_preceding_node(&self, id: BigInt) -> OtherNode {
+        let mut min_abs: BigInt = 999999999.to_bigint().unwrap();
+        let mut return_node: OtherNode = self.to_other_node();
+        for i in 0..self.finger_table.length() {
+            let entry = self.finger_table.get(i);
+            let finger_abs = chord_abs(&entry.node.id, &id);
+            if finger_abs < min_abs {
+                min_abs = finger_abs;
+                return_node = entry.node.clone()
+            }
+        }
+        return_node
     }
 
     pub fn process_incoming_request(&mut self, request: Request) -> Response {
@@ -172,9 +186,9 @@ impl Node {
 
     fn handle_find_successor_request(&self, id: BigInt) -> Response {
         if is_in_interval(&self.id, self.get_successor().get_id(), &id) {
-            Response::FoundSuccessor {successor: self.get_successor().clone() }
+            Response::FoundSuccessor { successor: self.get_successor().clone() }
         } else {
-            Response::AskFurther { next_node: self.get_successor()}
+            Response::AskFurther { next_node: self.closest_preceding_node(id) }
         }
     }
 
@@ -204,9 +218,9 @@ impl Node {
 
     fn handle_find_successor_finger_request(&self, index: usize, finger_id: BigInt) -> Response {
         if is_in_interval(&self.id, self.get_successor().get_id(), &finger_id) {
-            Response::FoundSuccessorFinger {index: index, finger_id: finger_id, successor: self.get_successor().clone() }
+            Response::FoundSuccessorFinger { index: index, finger_id: finger_id, successor: self.get_successor().clone() }
         } else {
-            Response::AskFurtherFinger {index: index, finger_id: finger_id, next_node: self.get_successor() }
+            Response::AskFurtherFinger { index: index, finger_id: finger_id, next_node: self.get_successor() }
         }
     }
 

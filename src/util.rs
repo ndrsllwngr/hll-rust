@@ -28,6 +28,14 @@ pub fn is_in_interval(first: &BigInt, second: &BigInt, id: &BigInt) -> bool {
     }
 }
 
+pub fn chord_abs(a: &BigInt, b: &BigInt) -> BigInt {
+    if b < a {
+        chord::CHORD_RING_SIZE - a + b
+    } else {
+        b - a
+    }
+}
+
 //TODO write test for this function to verify correctness
 fn create_hash(string: &str) -> String {
     // create a Sha1 object
