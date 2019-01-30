@@ -21,7 +21,7 @@ appenders:
         kind: delete
 
 root:
-  level: debug
+  level: info
   appenders:
     - console
     - error
