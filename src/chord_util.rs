@@ -26,9 +26,9 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
     loop {
         info!("Stabilize.............");
         let node = arc.lock().unwrap();
-        node.print_current_state();
 
         if node.joined {
+            node.print_current_state();
             let node_other = node.to_other_node().clone();
             let succ_list = node.successor_list.clone();
             drop(node);
@@ -43,7 +43,6 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
 
                     let mut node = arc.lock().unwrap();
                     node.update_successor_and_successor_list(succ);
-                    drop(node);
                     ring_is_alive = true;
                     break;
                 }
