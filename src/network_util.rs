@@ -40,10 +40,10 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
     let listener = TcpListener::bind(&addr).unwrap();
 
     //TODO figure out if extensive cloning is working
-    info!("[Node #{}] Starting to listen on socket: {}", id.clone(), addr);
+    debug!("[Node #{}] Starting to listen on socket: {}", id.clone(), addr);
 
     let server = listener.incoming().for_each(move |socket| {
-        //info!("[Node #{}] accepted socket; addr={:?}", id, socket.peer_addr()?);
+        //debug!("[Node #{}] accepted socket; addr={:?}", id, socket.peer_addr()?);
 
         let buf = vec![];
         let buf_reader = BufReader::new(socket);
@@ -55,7 +55,7 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
                 let stream = socket.into_inner();
                 let msg_string = str::from_utf8(&buf).unwrap();
                 let message = serde_json::from_str(msg_string).unwrap();
-                let mut node = arc_clone.try_lock().unwrap();
+                let mut node = arc_clone.lock().unwrap();
                 match message {
                     Message::RequestMessage { sender, request } => {
                         debug!("[Node #{}] Got request from Node #{}: {:?}", node.id.clone(), sender.get_id(), request.clone());

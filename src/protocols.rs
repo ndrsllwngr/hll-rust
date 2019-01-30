@@ -24,6 +24,10 @@ pub enum Request {
     Notify {
         node: OtherNode,
     },
+    FindSuccessorFinger {
+        index: usize,
+        finger_id: BigInt
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -38,4 +42,15 @@ pub enum Response {
         predecessor: Option<OtherNode>
     },
     NotifyResponse,
+    FoundSuccessorFinger {
+        index: usize,
+        finger_id: BigInt,
+        successor: OtherNode
+    },
+    AskFurtherFinger {
+        index: usize,
+        finger_id: BigInt,
+        next_node: OtherNode
+    },
+
 }
