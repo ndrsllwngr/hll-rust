@@ -25,25 +25,24 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
     info!("Starting stabilisation...");
     loop {
         info!("Stabilize.............");
+        // make a copy of node and instantly drop it
         let node = arc.lock().unwrap();
+        let node_clone = node.clone();
+        drop(node);
 
-        if node.joined {
-            node.print_current_state();
-            let node_other = node.to_other_node().clone();
-            let succ_list = node.successor_list.clone();
-            drop(node);
-
-            let req = Request::GetPredecessor;
-            let msg = Message::RequestMessage { sender: node_other.clone(), request: req };
+        if node_clone.joined {
+            node_clone.print_current_state();
 
             let mut ring_is_alive = false;
-            for succ in succ_list {
-                if network_util::check_alive(succ.get_ip_addr().clone(), node_other.clone() ) {
+            for succ in node_clone.successor_list.clone() {
+                if network_util::check_alive(succ.get_ip_addr().clone(), node_clone.to_other_node().clone()) {
+                    let req = Request::GetPredecessor;
+                    let msg = Message::RequestMessage { sender: node_clone.to_other_node().clone(), request: req };
                     network_util::send_string_to_socket(succ.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
 
-                    let mut node = arc.lock().unwrap();
-                    node.update_successor_and_successor_list(succ);
-                    drop(node);
+                    // after async operation check alive lock again.
+                    arc.lock().unwrap().update_successor_and_successor_list(succ);
+
                     ring_is_alive = true;
                     break;
                 }
@@ -53,8 +52,8 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
                 process::exit(1);
             }
         } else {
-            drop(node);
-            info!("Not joined jet going to sleep again") }
+            info!("Not joined jet going to sleep again")
+        }
         //this is super important, because otherwise the lock would persist endlessly due to the loop
         //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
         thread::sleep(chord::NODE_STABILIZE_INTERVAL);
@@ -78,7 +77,6 @@ pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
             } else {
                 1
             };
-
         } else { info!("Not joined jet going to sleep again") }
         //this is super important, because otherwise the lock would persist endlessly due to the loop
         drop(node);
@@ -90,21 +88,25 @@ pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
 pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
     info!("Starting check_predecessor...");
     loop {
-        let mut node = arc.lock().unwrap();
-        if node.joined {
-            if let Some(predecessor) = node.predecessor.clone() {
-                if !network_util::check_alive(predecessor.get_ip_addr().clone(), node.to_other_node()) {
-                    node.predecessor = None;
+        // make a copy of node and instantly drop it
+        let node = arc.lock().unwrap();
+        let node_clone = node.clone();
+        drop(node);
+
+        if node_clone.joined {
+            if let Some(predecessor) = node_clone.predecessor.clone() {
+                if !network_util::check_alive(predecessor.get_ip_addr().clone(), node_clone.to_other_node().clone()) {
                     info!("Node #{} is dead", predecessor.get_id());
+
+                    // after async operation check alive lock again.
+                    arc.lock().unwrap().predecessor = None;
                 } else {
                     info!("Node #{} is alive", predecessor.get_id());
                 }
             }
         } else { info!("Not joined jet going to sleep again") }
         //this is super important, because otherwise the lock would persist endlessly due to the loop
-        drop(node);
         //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
         thread::sleep(chord::NODE_CHECK_PREDECESSOR_INTERVAL);
     }
-
 }
