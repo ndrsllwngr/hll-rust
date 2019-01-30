@@ -144,9 +144,17 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHand
                     chord_util::fix_fingers(arc_clone3);
                 }).unwrap();
 
+            let arc_clone4 = arc.clone();
+            let handle4 = thread::Builder::new().name("Check_Predecessor".to_string())
+                .spawn(move || {
+                    chord_util::check_predecessor(arc_clone4);
+                }).unwrap();
+
             handle1.join();
             handle2.join();
             handle3.join();
+            handle4.join();
+
         })
         .unwrap()
 }
@@ -177,9 +185,16 @@ fn spawn_first_node(node_ip_addr: SocketAddr) -> JoinHandle<()> {
                     chord_util::fix_fingers(arc_clone3);
                 }).unwrap();
 
+            let arc_clone4 = arc.clone();
+            let handle4 = thread::Builder::new().name("Check_Predecessor".to_string())
+                .spawn(move || {
+                    chord_util::check_predecessor(arc_clone4);
+                }).unwrap();
+
             handle1.join();
             handle2.join();
             handle3.join();
+            handle4.join();
         })
         .unwrap()
 }

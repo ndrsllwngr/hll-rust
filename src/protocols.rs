@@ -4,6 +4,9 @@ use super::node::OtherNode;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Message {
+    Ping {
+        sender: OtherNode
+    },
     RequestMessage {
         sender: OtherNode,
         request: Request,

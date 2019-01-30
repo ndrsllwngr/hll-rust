@@ -33,6 +33,20 @@ pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
     }
 }
 
+pub fn check_alive (addr: SocketAddr, sender: OtherNode) -> bool {
+    match net::TcpStream::connect(addr.clone()) {
+        Ok(stream) => {
+            let msg = serde_json::to_string(&Message::Ping{sender}).unwrap();
+            let mut writer = BufWriter::new(stream);
+            writer.write_all(msg.as_bytes()).unwrap();
+            true
+        }
+        Err(e) => {
+            false
+        }
+    }
+}
+
 // HINT: this can be tested by connecting via bash terminal (preinstalled on Mac/Linux) by executing:
 // nc 127.0.0.1 34254
 // afterwards every message will be echoed in the console by handle_request
@@ -57,6 +71,10 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
                 let message = serde_json::from_str(msg_string).unwrap();
                 let mut node = arc_clone.lock().unwrap();
                 match message {
+                    Message::Ping{ sender } => {
+                        debug!("Got pinged from Node #{}", sender.get_id());
+                        Ok(())
+                    }
                     Message::RequestMessage { sender, request } => {
                         debug!("[Node #{}] Got request from Node #{}: {:?}", node.id.clone(), sender.get_id(), request.clone());
                         let response = node.process_incoming_request(request);

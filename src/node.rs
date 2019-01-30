@@ -48,7 +48,7 @@ pub struct Node {
     pub ip_addr: SocketAddr,
     pub finger_table: FingerTable,
     // next_finger: usize,
-    predecessor: Option<OtherNode>,
+    pub predecessor: Option<OtherNode>,
     pub joined: bool,
     // storage: Storage,
 }

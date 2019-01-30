@@ -64,3 +64,25 @@ pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
         thread::sleep(chord::NODE_FIX_FINGERS_INTERVAL);
     }
 }
+
+pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
+    info!("Starting check_predecessor...");
+    loop {
+        let mut node = arc.lock().unwrap();
+        if node.joined {
+            if let Some(predecessor) = node.predecessor.clone() {
+                if !network_util::check_alive(predecessor.get_ip_addr().clone(), node.to_other_node()) {
+                    node.predecessor = None;
+                    info!("Node #{} is dead", predecessor.get_id());
+                } else {
+                    info!("Node #{} is alive", predecessor.get_id());
+                }
+            }
+        } else { info!("Not joined jet going to sleep again") }
+        //this is super important, because otherwise the lock would persist endlessly due to the loop
+        drop(node);
+        //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
+        thread::sleep(chord::NODE_CHECK_PREDECESSOR_INTERVAL);
+    }
+
+}
