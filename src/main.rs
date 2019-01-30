@@ -29,8 +29,6 @@ mod node;
 mod protocols;
 mod storage;
 mod util;
-mod tokio_experiments;
-
 
 /*
     run this with or without -p flag to start a new chord circle
@@ -115,7 +113,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHand
     let builder = thread::Builder::new().name("Node".to_string());
     builder
         .spawn(move || {
-            let mut node = node::Node::new(node_ip_addr.clone(), entry_node_addr.clone());
+            let mut node = node::Node::new(node_ip_addr.clone());
             let id = node.id.clone();
             let other_node = node.to_other_node();
 
@@ -144,9 +142,17 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHand
                     chord_util::fix_fingers(arc_clone3);
                 }).unwrap();
 
+            let arc_clone4 = arc.clone();
+            let handle4 = thread::Builder::new().name("Check_Predecessor".to_string())
+                .spawn(move || {
+                    chord_util::check_predecessor(arc_clone4);
+                }).unwrap();
+
             handle1.join();
             handle2.join();
             handle3.join();
+            handle4.join();
+
         })
         .unwrap()
 }
@@ -177,9 +183,16 @@ fn spawn_first_node(node_ip_addr: SocketAddr) -> JoinHandle<()> {
                     chord_util::fix_fingers(arc_clone3);
                 }).unwrap();
 
+            let arc_clone4 = arc.clone();
+            let handle4 = thread::Builder::new().name("Check_Predecessor".to_string())
+                .spawn(move || {
+                    chord_util::check_predecessor(arc_clone4);
+                }).unwrap();
+
             handle1.join();
             handle2.join();
             handle3.join();
+            handle4.join();
         })
         .unwrap()
 }

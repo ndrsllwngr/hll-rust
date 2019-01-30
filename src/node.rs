@@ -48,7 +48,8 @@ pub struct Node {
     pub ip_addr: SocketAddr,
     pub finger_table: FingerTable,
     // next_finger: usize,
-    predecessor: Option<OtherNode>,
+    pub predecessor: Option<OtherNode>,
+    pub successor_list: Vec<OtherNode>,
     pub joined: bool,
     // storage: Storage,
 }
@@ -62,17 +63,18 @@ impl Node {
     ///
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
-    pub fn new(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> Node {
+    pub fn new(node_ip_addr: SocketAddr) -> Node {
         //let next_finger = 0; // Always start at first entry of finger_table
         //let finger_table = FingerTable::new(successor.clone(), &id);
         //let storage = Storage::new();
         let id = create_node_id(node_ip_addr);
-        let successor = OtherNode { id: create_node_id(entry_node_addr), ip_addr: entry_node_addr };
-        Node {
+
+        Node{
             id: id.clone(),
             ip_addr: node_ip_addr,
-            finger_table: FingerTable::new(successor, &id),
+            finger_table: FingerTable::new(id.clone()),
             predecessor: None,
+            successor_list: Vec::with_capacity(chord::SUCCESSORLIST_SIZE),
             joined: false,
         }
     }
@@ -83,8 +85,9 @@ impl Node {
         Node {
             id: id.clone(),
             ip_addr: node_ip_addr.clone(),
-            finger_table: FingerTable::new(successor, &id),
+            finger_table: FingerTable::new_first(id.clone(),successor.clone()),
             predecessor: Some(OtherNode { id: id, ip_addr: node_ip_addr }),
+            successor_list: vec![successor],
             joined: true,
         }
     }
@@ -101,8 +104,13 @@ impl Node {
         self.finger_table.get_successor()
     }
 
-    pub fn set_successor(&mut self, successor: OtherNode) {
-        self.finger_table.set_successor(successor);
+    pub fn update_successor_and_successor_list(&mut self, successor: OtherNode) {
+        //if self.finger_table.length() == 0  || &self.get_successor().id != &successor.id {
+            self.finger_table.set_successor(successor.clone());
+            let req = Request::GetSuccessorList;
+            let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
+            network_util::send_string_to_socket(successor.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+        //}
     }
 
     pub fn print_current_state(&self) {
@@ -111,16 +119,28 @@ impl Node {
         } else {
             "None".to_string()
         };
-        let string_to_print =
+        let mut string_to_print =
             format!("\n\n{0: <18} | #{1: <6}\n{2: <18} | #{3: <6}\n{4: <18} | #{5: <6}\n",
                     "I am Node".to_string(), self.id,
                     "My Predecessor is".to_string(), pre_string,
                     "My Successor is".to_string(), self.get_successor().id
             );
+
+        string_to_print.push_str("\n\nMy successor list is:\n");
+        string_to_print.push_str(&format!("{0: <2} | {1: <6}\n", "i".to_string(), "Node #".to_string()));
+        string_to_print.push_str("---------------\n");
+        for i in 0..self.successor_list.len() {
+            let succ = &self.successor_list[i];
+            let node_string = format!("{0: <2} | {1: <6}\n", i, succ.get_id());
+
+            string_to_print.push_str(&node_string);
+        }
+
         info!("{}", string_to_print);
     }
 
     fn closest_preceding_node(&self, id: BigInt) -> OtherNode {
+        // TODO better bounding
         let mut min_abs: BigInt = 999999999.to_bigint().unwrap();
         let mut return_node: OtherNode = self.to_other_node();
         for i in 0..self.finger_table.length() {
@@ -152,6 +172,10 @@ impl Node {
                 debug!("[Node #{}] Request::FindSuccessorFinger({})", self.clone().id, finger_id.clone());
                 self.handle_find_successor_finger_request(index, finger_id)
             }
+            Request::GetSuccessorList => {
+                debug!("[Node #{}] Request::GetSuccessorList", self.clone().id);
+                self.handle_get_successor_list_request()
+            }
         }
     }
 
@@ -180,6 +204,10 @@ impl Node {
             Response::AskFurtherFinger { index, finger_id, next_node } => {
                 debug!("[Node #{}] Response::AskFurtherFinger(next_node: {}", self.clone().id, next_node.id.clone());
                 self.handle_ask_further_finger_response(index, finger_id, next_node)
+            }
+            Response::GetSuccessorListResponse { successor_list } => {
+                debug!("[Node #{}] Response::GetSuccessorListResponse(successor_list: {:?}", self.clone().id, successor_list.clone());
+                self.handle_get_successor_list_response(successor_list)
             }
         }
     }
@@ -224,9 +252,13 @@ impl Node {
         }
     }
 
+    fn handle_get_successor_list_request(&self) -> Response {
+        Response::GetSuccessorListResponse {successor_list: self.successor_list.clone()}
+    }
+
     fn handle_found_successor_response(&mut self, successor: OtherNode) {
         debug!("Found my new successor: node #{}", successor.id.clone());
-        self.set_successor(successor);
+        self.update_successor_and_successor_list(successor);
         if !self.joined {
             debug!("Starting of stabilization not yet implemented");
             //TODO self.start_stabilisation();
@@ -248,7 +280,7 @@ impl Node {
             if predecessor.get_id() != &self.id &&
                 is_in_interval(&self.id, self.get_successor().get_id(), predecessor.get_id()) {
                 debug!("[Node #{}] GetPreResp: Had succ #{}, got pre #{}, new succ: #{}", self.id.clone(), self.get_successor().id.clone(), predecessor.id.clone(), predecessor.id.clone());
-                self.set_successor(predecessor);
+                self.update_successor_and_successor_list(predecessor);
             }
         }
         let req = Request::Notify { node: self.to_other_node() };
@@ -274,5 +306,16 @@ impl Node {
 
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
         network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+    }
+
+    fn handle_get_successor_list_response(&mut self, successor_list: Vec<OtherNode>) {
+        let mut new_successor_list = vec![self.get_successor().clone()];
+            if self.successor_list.len() < chord::SUCCESSORLIST_SIZE {
+                new_successor_list.append(&mut successor_list.clone())
+        } else {
+                new_successor_list.append(&mut successor_list.clone()[..(successor_list.len()-1)].to_owned())
+        };
+        self.successor_list = new_successor_list;
+
     }
 }

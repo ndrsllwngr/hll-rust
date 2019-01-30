@@ -4,6 +4,9 @@ use super::node::OtherNode;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Message {
+    Ping {
+        sender: OtherNode
+    },
     RequestMessage {
         sender: OtherNode,
         request: Request,
@@ -28,6 +31,7 @@ pub enum Request {
         index: usize,
         finger_id: BigInt
     },
+    GetSuccessorList
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -52,5 +56,8 @@ pub enum Response {
         finger_id: BigInt,
         next_node: OtherNode
     },
+    GetSuccessorListResponse {
+        successor_list: Vec<OtherNode>
+    }
 
 }
