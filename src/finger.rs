@@ -11,7 +11,7 @@ use super::util;
 pub struct FingerEntry {
     pub id: BigInt,
     // ID hash of (n + 2^i) mod (2^m)
-    pub node: Option<OtherNode>,
+    pub node: OtherNode,
 }
 
 #[derive(Clone)]
@@ -23,41 +23,50 @@ impl FingerTable {
     // TODO maybe use hashing function with smaller bit range for testing. (Bitsize = entries in finger_table)
     pub fn new(successor: OtherNode, parent_node_id: &BigInt) -> FingerTable {
         let mut entries: Vec<FingerEntry> = Vec::new();
-        for i in 0..chord::FINGERTABLE_SIZE {
-            entries.push(FingerEntry {
-                id: get_finger_id(parent_node_id, i),
-                node: None
-            });
-        }
-
-        entries[0].node = Some(successor);
+        entries.push(FingerEntry {
+            id: get_finger_id(parent_node_id, 0),
+            node: successor,
+        });
         FingerTable { entries }
     }
 
-    pub fn put(&mut self, index: usize, node: OtherNode) {
-        self.entries[index].node = Some(node);
+    pub fn put(&mut self, index: usize, finger_id: BigInt, node: OtherNode) {
+        let finger_entry = FingerEntry {id: finger_id, node: node};
+        if self.entries.len() > index {
+            self.entries[index] = finger_entry;
+        } else {
+            self.entries.push(finger_entry);
+        }
+    }
+
+    pub fn get_successor(&self) -> OtherNode {
+        self.entries[0].node.clone()
+    }
+
+    pub fn set_successor(&mut self, successor: OtherNode) {
+        self.entries[0].node = successor;
     }
 
     pub fn get(&self, index: usize) -> &FingerEntry {
-            &self.entries[index]
+        &self.entries[index]
     }
 
     pub fn length(&self) -> usize {
         self.entries.len()
     }
 
-    pub fn print(&self) {
+    pub fn print(&self, node_id: BigInt) {
+
         let mut finger_table_string: String =
-            format!("\n{0: <2} | {1: <28} | {2: <27}\n\
+        format!("\n\nI am Node #{}. Fixed whole finger_table", node_id);
+        finger_table_string.push_str(
+            &format!("\n{0: <2} | {1: <28} | {2: <27}\n\
         -------------------------------------------------------------\n",
-                    "i", "Start: parent_node_id + 2^i", "Node: SocketAddr, node_id");
+                    "i", "Start: parent_node_id + 2^i", "Node: SocketAddr, node_id"));
         for i in 0..self.entries.len() {
             let entry = &self.entries[i];
-            let node_string = if let Some(node) = entry.node.clone() {
-                format!("{}, {}", node.get_ip_addr(), node.get_id())
-            } else {
-                "".to_string()
-            };
+            let node_string = format!("{}, {}", entry.node.get_ip_addr(), entry.node.get_id());
+
             let borrowed_str: &str = &format!(
                 "{0: <2} | {1: <28} | {2: <27}\n",
                 i,
@@ -71,13 +80,13 @@ impl FingerTable {
     }
 }
 
-pub fn get_finger_id(key: &BigInt, exponent: usize) -> BigInt {
+pub fn get_finger_id(n: &BigInt, exponent: usize) -> BigInt {
     // Get the offset
     let two: BigInt = 2.to_bigint().unwrap();
     let offset: BigInt = pow(two.clone(), exponent);
 
     // Sum
-    key + offset
+    n + offset
 }
 
 // Not in use right now TODO use this fn instead of get_finger_id to generate indices of fingertable?

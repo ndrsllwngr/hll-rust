@@ -123,8 +123,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHand
             let arc_clone = arc.clone();
 
             let id_clone = id.clone();
-            let builder = thread::Builder::new().name("Listen".to_string());
-            let handle1 = builder
+            let handle1 = thread::Builder::new().name("Listen".to_string())
                 .spawn(move || {
                     network_util::start_listening_on_socket(arc_clone, node_ip_addr, id_clone);
                 }).unwrap();
@@ -134,14 +133,20 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: SocketAddr) -> JoinHand
             chord_util::join(id.clone(),other_node,entry_node_addr);
 
             let arc_clone2 = arc.clone();
-            let builder = thread::Builder::new().name("Stabilize".to_string());
-            let handle2 =builder
+            let handle2 = thread::Builder::new().name("Stabilize".to_string())
                 .spawn(move || {
                     chord_util::stabilize(arc_clone2);
                 }).unwrap();
 
+            let arc_clone3 = arc.clone();
+            let handle3 = thread::Builder::new().name("Fix_Fingers".to_string())
+                .spawn(move || {
+                    chord_util::fix_fingers(arc_clone3);
+                }).unwrap();
+
             handle1.join();
             handle2.join();
+            handle3.join();
         })
         .unwrap()
 }
@@ -155,20 +160,26 @@ fn spawn_first_node(node_ip_addr: SocketAddr) -> JoinHandle<()> {
             let arc = Arc::new(Mutex::new(node));
             let arc_clone = arc.clone();
 
-            let builder = thread::Builder::new().name("Listen".to_string());
-            let handle1 = builder
+            let handle1 = thread::Builder::new().name("Listen".to_string())
                 .spawn(move || {
                     network_util::start_listening_on_socket(arc_clone, node_ip_addr, id);
                 }).unwrap();
 
             let arc_clone2 = arc.clone();
-            let builder = thread::Builder::new().name("Stabilize".to_string());
-            let handle2 =builder
+            let handle2 =thread::Builder::new().name("Stabilize".to_string())
                 .spawn(move || {
                     chord_util::stabilize(arc_clone2);
                 }).unwrap();
+
+            let arc_clone3 = arc.clone();
+            let handle3 = thread::Builder::new().name("Fix_Fingers".to_string())
+                .spawn(move || {
+                    chord_util::fix_fingers(arc_clone3);
+                }).unwrap();
+
             handle1.join();
             handle2.join();
+            handle3.join();
         })
         .unwrap()
 }
