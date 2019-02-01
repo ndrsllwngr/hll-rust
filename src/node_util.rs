@@ -3,20 +3,21 @@ use prettytable::format;
 
 
 pub fn print_current_node_state(node: &Node) {
-    let node_string = node.id.clone().to_string();
-    let predecessor_string = if let Some(pre) = node.predecessor.clone() {
-        pre.get_id().to_string()
-    } else {
-        "None".to_string()
-    };
-    let successor_string = node.get_successor().get_id().to_string();
+    let mut pre_id_string = "None".to_string();
+    let mut pre_ip_string = "None".to_string();
+
+    if let Some(pre) = node.predecessor.clone() {
+        pre_id_string = pre.get_id().to_string();
+        pre_ip_string = pre.get_ip_addr().to_string();
+    }
+    let succ_id_string = node.get_successor().get_id().to_string();
+    let succ_ip_string = node.get_successor().get_ip_addr().to_string();
 
     //Node Info
-    let mut node_info_table = table!(["I am Node #", &node_string],
-                    ["Predecessor", &predecessor_string],
-                    ["My Successor is",  &successor_string],
-                    ["", ""],
-                    [&node.ip_addr.clone().to_string()]);
+    let mut node_info_table = table!(["", "id", "ip"],
+                    [Brb => "Self", &node.id.clone().to_string(), &node.ip_addr.clone().to_string()],
+                    ["Predecessor", &pre_id_string, &pre_ip_string],
+                    ["Successor",  &succ_id_string, &succ_ip_string]);
     node_info_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
 
 
