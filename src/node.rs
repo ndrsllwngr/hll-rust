@@ -230,7 +230,7 @@ impl Node {
                 debug!("[Node #{}] Response::DHTFoundKey", self.clone().id);
                 self.handle_dht_found_key_response(data)
             }
-            Response::DHTDeletedKey { key_existed} => {
+            Response::DHTDeletedKey { key_existed } => {
                 debug!("[Node #{}] Response::DHTDeletedKey", self.clone().id);
                 self.handle_dht_deleted_key_response(key_existed)
             }
@@ -245,6 +245,25 @@ impl Node {
             Response::DHTAskFurtherDelete { next_node, key } => {
                 debug!("[Node #{}] Response::DHTAskFurtherDelete", self.clone().id);
                 self.handle_dht_ask_further_delete_response(next_node, key)
+            }
+        }
+    }
+
+    pub fn process_incoming_dht_interaction_request(&self, request: DHTInteractionRequest) {
+        match request {
+            DHTInteractionRequest::InitialStore { key, value } => {
+                let hashed_key = create_id(&key);
+                let req = Request::DHTStoreKey { data: (hashed_key, value) };
+                let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
+
+                network_util::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+            }
+            DHTInteractionRequest::InitialFind { key } => {
+                let hashed_key = create_id(&key);
+                let req = Request::DHTFindKey { key: hashed_key };
+                let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
+
+                network_util::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
             }
         }
     }
@@ -463,7 +482,8 @@ impl Node {
 
     fn handle_dht_ask_further_delete_response(&self,
                                               next_node: OtherNode,
-                                              key: BigInt) {debug!("Did not find key {} yet, asking node #{} now...", key, next_node.id);
+                                              key: BigInt) {
+        debug!("Did not find key {} yet, asking node #{} now...", key, next_node.id);
         let req = Request::DHTDeleteKey { key };
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 

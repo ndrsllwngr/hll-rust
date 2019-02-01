@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use num::bigint::{BigInt, Sign, ToBigInt};
 
+use super::util::*;
+
 #[derive(Clone)]
 pub struct Storage {
     data: HashMap<BigInt, String>,
@@ -24,4 +26,9 @@ impl Storage {
     pub fn delete(&mut self, key: &BigInt) -> Option<String> {
         self.data.remove(key)
     }
+}
+
+pub fn make_hashed_key_value_pair(key: String, value: String) -> (BigInt, String) {
+    let id = create_id(&key);
+    (id, value)
 }
