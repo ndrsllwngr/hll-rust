@@ -16,6 +16,14 @@ pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
                    &chord::CHORD_RING_SIZE.to_bigint().unwrap())
 }
 
+pub fn create_id(string: &str) -> BigInt {
+    let hash = create_hash(string);
+    let byte_vec = hash.as_bytes().to_vec();
+    BigInt::modpow(&BigInt::from_bytes_be(Sign::Plus, &byte_vec),
+                   &1.to_bigint().unwrap(),
+                   &chord::CHORD_RING_SIZE.to_bigint().unwrap())
+}
+
 // TODO write test for this function to verify correctness
 /**
  * Test if id ∈ (first, second)

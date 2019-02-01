@@ -24,7 +24,7 @@ pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
                 debug!("Sent msg: {}", msg);
             }
             Err(e) => {
-                error!("Unable to send msg to {} - Failed to connect: {}",addr, e);
+                error!("Unable to send msg to {} - Failed to connect: {}", addr, e);
             }
         }
     }).unwrap();
@@ -33,10 +33,10 @@ pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
     }
 }
 
-pub fn check_alive (addr: SocketAddr, sender: OtherNode) -> bool {
+pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {
     match net::TcpStream::connect(addr.clone()) {
         Ok(stream) => {
-            let msg = serde_json::to_string(&Message::Ping{sender}).unwrap();
+            let msg = serde_json::to_string(&Message::Ping { sender }).unwrap();
             let mut writer = BufWriter::new(stream);
             writer.write_all(msg.as_bytes()).unwrap();
             true
@@ -71,7 +71,7 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
                 let message = serde_json::from_str(msg_string).unwrap();
                 let mut node = arc_clone.lock().unwrap();
                 match message {
-                    Message::Ping{ sender } => {
+                    Message::Ping { sender } => {
                         debug!("Got pinged from Node #{}", sender.get_id());
                         Ok(())
                     }
@@ -86,6 +86,12 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
                     Message::ResponseMessage { sender, response } => {
                         debug!("[Node #{}] Got response from Node #{}: {:?}", node.id.clone(), sender.get_id(), response.clone());
                         node.process_incoming_response(response);
+                        drop(node);
+                        Ok(())
+                    }
+                    Message::DHTInteraction { request } => {
+                        info!("[Node #{}] Got dht interaction: {:?}", node.id.clone(), request.clone());
+                        node.process_incoming_dht_interaction_request(request);
                         drop(node);
                         Ok(())
                     }

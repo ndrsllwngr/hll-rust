@@ -17,7 +17,7 @@ pub struct FingerEntry {
 #[derive(Clone)]
 pub struct FingerTable {
     parent_node_id: BigInt,
-    entries: Vec<FingerEntry>,
+    pub entries: Vec<FingerEntry>,
 }
 
 impl FingerTable {

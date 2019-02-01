@@ -7,6 +7,7 @@ extern crate log;
 extern crate log4rs;
 extern crate num;
 extern crate num_bigint;
+#[macro_use] extern crate prettytable;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -26,6 +27,7 @@ mod chord_util;
 mod finger;
 mod network_util;
 mod node;
+mod node_util;
 mod protocols;
 mod storage;
 mod util;
@@ -96,7 +98,6 @@ fn main() {
     let listen_ip = format!("{}:{}", ip_address.clone(), port)
         .parse::<SocketAddr>()
         .unwrap();
-
 
     if let Some(join_ip) = join_ip_option {
         //Join existing node

@@ -1,8 +1,17 @@
 use std::collections::HashMap;
+use num::bigint::{BigInt, Sign, ToBigInt};
+
+use super::util::*;
 
 #[derive(Clone)]
 pub struct Storage {
-    data: HashMap<String, String>,
+    pub data: HashMap<BigInt, DHTEntry>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DHTEntry {
+    pub key: String,
+    pub value: String,
 }
 
 impl Storage {
@@ -12,15 +21,20 @@ impl Storage {
         }
     }
 
-    // pub fn put(&mut self, key: String, value: String) {
-    //     self.data.insert(key, value);
-    // }
+    pub fn put(&mut self, data: (BigInt, DHTEntry)) {
+        self.data.insert(data.0, data.1);
+    }
 
-    // pub fn get(&mut self, key: String) -> Option<&String> {
-    //     self.data.get(&key)
-    // }
+    pub fn get(&self, key_id: &BigInt) -> Option<&DHTEntry> {
+        self.data.get(key_id)
+    }
 
-    // pub fn delete(&mut self, key: String) {
-    //     self.data.remove(&key);
-    // }
+    pub fn delete(&mut self, key_id: &BigInt) -> Option<DHTEntry> {
+        self.data.remove(key_id)
+    }
+}
+
+pub fn make_hashed_key_value_pair(key: String, value: String) -> (BigInt, DHTEntry) {
+    let id = create_id(&key);
+    (id, DHTEntry{key, value})
 }
