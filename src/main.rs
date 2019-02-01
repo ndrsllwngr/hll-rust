@@ -13,9 +13,9 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate tokio;
 
-use std::{thread, time};
+use std::thread;
 use std::env;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 
@@ -101,11 +101,11 @@ fn main() {
     if let Some(join_ip) = join_ip_option {
         //Join existing node
         let node_handle = spawn_node(listen_ip, Some(join_ip.parse::<SocketAddr>().unwrap()));
-        node_handle.join();
+        node_handle.join().expect("node_handle.join() failed");
     } else {
         //Create new ring
         let first_node_handle = spawn_node(listen_ip, None);
-        first_node_handle.join();
+        first_node_handle.join().expect("first_node_handle.join() failed");
     }
 }
 
@@ -118,7 +118,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
     let builder = thread::Builder::new().name("Node".to_string());
     builder
         .spawn(move || {
-            let mut node = if let Some(entry_node_addr) = entry_node_addr {
+            let node = if let Some(entry_node_addr) = entry_node_addr {
                 node::Node::new(node_ip_addr.clone())
             } else {
                 node::Node::new_first(node_ip_addr.clone())
@@ -134,7 +134,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
             
             let handle1 = thread::Builder::new().name("Listen".to_string())
                 .spawn(move || {
-                    network_util::start_listening_on_socket(arc_clone, node_ip_addr, id_clone);
+                    network_util::start_listening_on_socket(arc_clone, node_ip_addr, id_clone).expect("network_util::start_listening_on_socket failed");
                 }).unwrap();
 
             if let Some(entry_node_addr) = entry_node_addr {
@@ -160,10 +160,10 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
                     chord_util::check_predecessor(arc_clone4);
                 }).unwrap();
 
-            handle1.join();
-            handle2.join();
-            handle3.join();
-            handle4.join();
+            handle1.join().expect("handle1 failed");
+            handle2.join().expect("handle2 failed");
+            handle3.join().expect("handle3 failed");
+            handle4.join().expect("handle4 failed");
 
         })
         .unwrap()
