@@ -227,7 +227,8 @@ impl Node {
         match request {
             DHTInteractionRequest::InitialStore { key, value } => {
                 let key_id = create_id(&key);
-                let req = Request::DHTStoreKey { data: (key_id, DHTEntry{key, value}) };
+                let req = Request::DHTStoreKey { data: (key_id, DHTEntry { key, value }) };
+                info!("Trying to store data {:?}", req.clone());
                 let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
                 network_util::send_string_to_socket(self.ip_addr.clone(), serde_json::to_string(&msg).unwrap());
@@ -299,7 +300,8 @@ impl Node {
                                     data: (BigInt, DHTEntry)) -> Response {
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if is_in_interval(predecessor.get_id(), &self.id, &data.0) {
+            if &self.id == &data.0 ||
+                (&data.0 != predecessor.get_id() && is_in_interval(predecessor.get_id(), &self.id, &data.0)) {
                 self.storage.put(data);
                 Response::DHTStoredKey
             } else {
@@ -319,7 +321,8 @@ impl Node {
     fn handle_dht_find_key_request(&self, key_id: BigInt) -> Response {
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if is_in_interval(predecessor.get_id(), &self.id, &key_id) {
+            if &self.id == &key_id ||
+                (&key_id != predecessor.get_id() && is_in_interval(predecessor.get_id(), &self.id, &key_id)) {
                 let value_option = self.storage.get(&key_id);
                 Response::DHTFoundKey { data: (key_id, value_option.map(|v| v.clone())) }
             } else {
