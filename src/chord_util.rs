@@ -25,7 +25,7 @@ pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
 pub fn stabilize(arc: Arc<Mutex<Node>>) {
     info!("Starting stabilisation...");
     loop {
-        info!("Stabilize.............");
+        debug!("Stabilize.............");
         // make a copy of node and instantly drop it
         let node = arc.lock().unwrap();
         let node_clone = node.clone();
@@ -62,7 +62,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
 }
 
 pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
-    info!("Starting fix_fingers...");
+    debug!("Starting fix_fingers...");
     let mut next = 1;
     loop {
         let node = arc.lock().unwrap();
@@ -87,7 +87,7 @@ pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
 }
 
 pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
-    info!("Starting check_predecessor...");
+    debug!("Starting check_predecessor...");
     loop {
         // make a copy of node and instantly drop it
         let node = arc.lock().unwrap();
@@ -97,12 +97,12 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
         if node_clone.joined {
             if let Some(predecessor) = node_clone.predecessor.clone() {
                 if !network_util::check_alive(predecessor.get_ip_addr().clone(), node_clone.to_other_node().clone()) {
-                    info!("Node #{} is dead", predecessor.get_id());
+                    debug!("Node #{} is dead", predecessor.get_id());
 
                     // after async operation check alive lock again.
                     arc.lock().unwrap().predecessor = None;
                 } else {
-                    info!("Node #{} is alive", predecessor.get_id());
+                    debug!("Node #{} is alive", predecessor.get_id());
                 }
             }
         } else { info!("Not joined jet going to sleep again") }
