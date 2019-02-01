@@ -342,7 +342,8 @@ impl Node {
     fn handle_dht_delete_key_request(&mut self, key_id: BigInt) -> Response {
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if is_in_interval(predecessor.get_id(), &self.id, &key_id) {
+            if &self.id == &key_id ||
+                (&key_id != predecessor.get_id() && is_in_interval(predecessor.get_id(), &self.id, &key_id)) {
                 let key_existed = self.storage.delete(&key_id).is_some();
                 Response::DHTDeletedKey { key_existed }
             } else {
