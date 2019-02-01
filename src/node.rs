@@ -8,7 +8,7 @@ use super::finger;
 use super::finger::FingerTable;
 use super::network_util;
 use super::protocols::*;
-use super::storage::Storage;
+use super::storage::{Storage, DHTEntry};
 use super::util::*;
 
 /// Simple representation of an external node in the network
@@ -155,13 +155,13 @@ impl Node {
                 debug!("[Node #{}] Request::StoreKey", self.clone().id);
                 self.handle_dht_store_key_request(data)
             }
-            Request::DHTFindKey { key } => {
+            Request::DHTFindKey { key_id } => {
                 debug!("[Node #{}] Request::FindKey", self.clone().id);
-                self.handle_dht_find_key_request(key)
+                self.handle_dht_find_key_request(key_id)
             }
-            Request::DHTDeleteKey { key } => {
+            Request::DHTDeleteKey { key_id } => {
                 debug!("[Node #{}] Request::DeleteKey", self.clone().id);
-                self.handle_dht_delete_key_request(key)
+                self.handle_dht_delete_key_request(key_id)
             }
         }
     }
@@ -212,13 +212,13 @@ impl Node {
                 debug!("[Node #{}] Response::DHTAskFurtherStore", self.clone().id);
                 self.handle_dht_ask_further_store_response(next_node, data)
             }
-            Response::DHTAskFurtherFind { next_node, key } => {
+            Response::DHTAskFurtherFind { next_node, key_id } => {
                 debug!("[Node #{}] Response::DHTAskFurtherFind", self.clone().id);
-                self.handle_dht_ask_further_find_response(next_node, key)
+                self.handle_dht_ask_further_find_response(next_node, key_id)
             }
-            Response::DHTAskFurtherDelete { next_node, key } => {
+            Response::DHTAskFurtherDelete { next_node, key_id } => {
                 debug!("[Node #{}] Response::DHTAskFurtherDelete", self.clone().id);
-                self.handle_dht_ask_further_delete_response(next_node, key)
+                self.handle_dht_ask_further_delete_response(next_node, key_id)
             }
         }
     }
@@ -226,22 +226,22 @@ impl Node {
     pub fn process_incoming_dht_interaction_request(&self, request: DHTInteractionRequest) {
         match request {
             DHTInteractionRequest::InitialStore { key, value } => {
-                let hashed_key = create_id(&key);
-                let req = Request::DHTStoreKey { data: (hashed_key, value) };
+                let key_id = create_id(&key);
+                let req = Request::DHTStoreKey { data: (key_id, DHTEntry{key, value}) };
                 let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
                 network_util::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
             }
             DHTInteractionRequest::InitialFind { key } => {
-                let hashed_key = create_id(&key);
-                let req = Request::DHTFindKey { key: hashed_key };
+                let key_id = create_id(&key);
+                let req = Request::DHTFindKey { key_id };
                 let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
                 network_util::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
             }
             DHTInteractionRequest::InitialDelete { key } => {
-                let hashed_key = create_id(&key);
-                let req = Request::DHTDeleteKey { key: hashed_key };
+                let key_id = create_id(&key);
+                let req = Request::DHTDeleteKey { key_id };
                 let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
                 network_util::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
@@ -296,7 +296,7 @@ impl Node {
     }
 
     fn handle_dht_store_key_request(&mut self,
-                                    data: (BigInt, String)) -> Response {
+                                    data: (BigInt, DHTEntry)) -> Response {
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
             if is_in_interval(predecessor.get_id(), &self.id, &data.0) {
@@ -316,42 +316,42 @@ impl Node {
         }
     }
 
-    fn handle_dht_find_key_request(&self, key: BigInt) -> Response {
+    fn handle_dht_find_key_request(&self, key_id: BigInt) -> Response {
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if is_in_interval(predecessor.get_id(), &self.id, &key) {
-                let value_option = self.storage.get(&key);
-                Response::DHTFoundKey { data: (key, value_option.map(|v| v.clone())) }
+            if is_in_interval(predecessor.get_id(), &self.id, &key_id) {
+                let value_option = self.storage.get(&key_id);
+                Response::DHTFoundKey { data: (key_id, value_option.map(|v| v.clone())) }
             } else {
                 Response::DHTAskFurtherFind {
-                    next_node: self.closest_preceding_node(key.clone()),
-                    key: key,
+                    next_node: self.closest_preceding_node(key_id.clone()),
+                    key_id: key_id,
                 }
             }
         } else {
             Response::DHTAskFurtherFind {
-                next_node: self.closest_preceding_node(key.clone()),
-                key: key,
+                next_node: self.closest_preceding_node(key_id.clone()),
+                key_id: key_id,
             }
         }
     }
 
-    fn handle_dht_delete_key_request(&mut self, key: BigInt) -> Response {
+    fn handle_dht_delete_key_request(&mut self, key_id: BigInt) -> Response {
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if is_in_interval(predecessor.get_id(), &self.id, &key) {
-                let key_existed = self.storage.delete(&key).is_some();
+            if is_in_interval(predecessor.get_id(), &self.id, &key_id) {
+                let key_existed = self.storage.delete(&key_id).is_some();
                 Response::DHTDeletedKey { key_existed }
             } else {
                 Response::DHTAskFurtherDelete {
-                    next_node: self.closest_preceding_node(key.clone()),
-                    key: key,
+                    next_node: self.closest_preceding_node(key_id.clone()),
+                    key_id: key_id,
                 }
             }
         } else {
             Response::DHTAskFurtherDelete {
-                next_node: self.closest_preceding_node(key.clone()),
-                key: key,
+                next_node: self.closest_preceding_node(key_id.clone()),
+                key_id: key_id,
             }
         }
     }
@@ -425,11 +425,11 @@ impl Node {
         info!("Key stored");
     }
 
-    fn handle_dht_found_key_response(&self, data: (BigInt, Option<String>)) {
-        if let Some(value) = data.1.clone() {
-            info!("Value for key {} is {}", data.0, value);
+    fn handle_dht_found_key_response(&self, data: (BigInt, Option<DHTEntry>)) {
+        if let Some(dht_entry) = data.1.clone() {
+            info!("Value for key {} (id: {}) is {}", dht_entry.key, data.0, dht_entry.value);
         } else {
-            info!("No value for key {} found in the network", data.0)
+            info!("No value for key_id {} found in the network", data.0)
         }
     }
 
@@ -443,7 +443,7 @@ impl Node {
 
     fn handle_dht_ask_further_store_response(&self,
                                              next_node: OtherNode,
-                                             data: (BigInt, String)) {
+                                             data: (BigInt, DHTEntry)) {
         debug!("Did not store data {:?} yet, asking node #{} now...", data, next_node.id);
         let req = Request::DHTStoreKey { data };
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
@@ -453,9 +453,9 @@ impl Node {
 
     fn handle_dht_ask_further_find_response(&self,
                                             next_node: OtherNode,
-                                            key: BigInt) {
-        debug!("Did not find key {} yet, asking node #{} now...", key, next_node.id);
-        let req = Request::DHTFindKey { key };
+                                            key_id: BigInt) {
+        debug!("Did not find key {} yet, asking node #{} now...", key_id, next_node.id);
+        let req = Request::DHTFindKey { key_id };
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
         network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
@@ -463,9 +463,9 @@ impl Node {
 
     fn handle_dht_ask_further_delete_response(&self,
                                               next_node: OtherNode,
-                                              key: BigInt) {
-        debug!("Did not find key {} yet, asking node #{} now...", key, next_node.id);
-        let req = Request::DHTDeleteKey { key };
+                                              key_id: BigInt) {
+        debug!("Did not find key {} yet, asking node #{} now...", key_id, next_node.id);
+        let req = Request::DHTDeleteKey { key_id };
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
         network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());

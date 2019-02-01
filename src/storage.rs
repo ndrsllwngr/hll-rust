@@ -5,7 +5,13 @@ use super::util::*;
 
 #[derive(Clone)]
 pub struct Storage {
-    pub data: HashMap<BigInt, String>,
+    pub data: HashMap<BigInt, DHTEntry>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DHTEntry {
+    pub key: String,
+    pub value: String,
 }
 
 impl Storage {
@@ -15,20 +21,20 @@ impl Storage {
         }
     }
 
-    pub fn put(&mut self, data: (BigInt, String)) {
+    pub fn put(&mut self, data: (BigInt, DHTEntry)) {
         self.data.insert(data.0, data.1);
     }
 
-    pub fn get(&self, key: &BigInt) -> Option<&String> {
-        self.data.get(key)
+    pub fn get(&self, key_id: &BigInt) -> Option<&DHTEntry> {
+        self.data.get(key_id)
     }
 
-    pub fn delete(&mut self, key: &BigInt) -> Option<String> {
-        self.data.remove(key)
+    pub fn delete(&mut self, key_id: &BigInt) -> Option<DHTEntry> {
+        self.data.remove(key_id)
     }
 }
 
-pub fn make_hashed_key_value_pair(key: String, value: String) -> (BigInt, String) {
+pub fn make_hashed_key_value_pair(key: String, value: String) -> (BigInt, DHTEntry) {
     let id = create_id(&key);
-    (id, value)
+    (id, DHTEntry{key, value})
 }

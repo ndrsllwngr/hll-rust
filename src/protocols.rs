@@ -1,6 +1,7 @@
 use num_bigint::BigInt;
 
 use super::node::OtherNode;
+use super::storage::DHTEntry;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Message {
@@ -37,13 +38,13 @@ pub enum Request {
     },
     GetSuccessorList,
     DHTStoreKey {
-        data: (BigInt, String)
+        data: (BigInt, DHTEntry)
     },
     DHTFindKey {
-        key: BigInt
+        key_id: BigInt
     },
     DHTDeleteKey {
-        key: BigInt
+        key_id: BigInt
     },
 }
 
@@ -74,22 +75,22 @@ pub enum Response {
     },
     DHTStoredKey,
     DHTFoundKey {
-        data: (BigInt, Option<String>)
+        data: (BigInt, Option<DHTEntry>)
     },
     DHTDeletedKey {
         key_existed: bool
     },
     DHTAskFurtherStore {
         next_node: OtherNode,
-        data: (BigInt, String),
+        data: (BigInt, DHTEntry),
     },
     DHTAskFurtherFind {
         next_node: OtherNode,
-        key: BigInt,
+        key_id: BigInt,
     },
     DHTAskFurtherDelete {
         next_node: OtherNode,
-        key: BigInt,
+        key_id: BigInt,
     },
 }
 

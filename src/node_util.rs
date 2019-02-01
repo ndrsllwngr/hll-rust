@@ -36,9 +36,9 @@ pub fn print_current_node_state(node: &Node) {
     finger_table_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
 
     // Storage
-    let mut storage_table = table!(["key", "value"]);
-    for (key, value) in node.storage.data.iter() {
-        storage_table.add_row(row![&key.clone().to_string(), value]);
+    let mut storage_table = table!(["key_id", "key", "value"]);
+    for (key_id, dht_entry) in node.storage.data.iter() {
+        storage_table.add_row(row![&key_id.clone().to_string(), &dht_entry.key, &dht_entry.value]);
     }
     storage_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
 
