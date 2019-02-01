@@ -1,10 +1,6 @@
 #!/bin/sh
-# Test file
 cargo build
 PROJECT_BUILD="/target/debug/hll-rust"
-
-# trap ctrl-c and call ctrl_c()
-#trap ctrl_c SIGINT SIGTERM EXIT
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 nohup   .$PROJECT_BUILD -i 10.0.1.2 -p 11111                   > /dev/null 2>&1 &
