@@ -14,7 +14,9 @@ pub fn print_current_node_state(node: &Node) {
     //Node Info
     let mut node_info_table = table!(["I am Node #", &node_string],
                     ["Predecessor", &predecessor_string],
-                    ["My Successor is",  &successor_string]);
+                    ["My Successor is",  &successor_string],
+                    ["", ""],
+                    [&node.ip_addr.clone().to_string()]);
     node_info_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
 
 
@@ -47,5 +49,5 @@ pub fn print_current_node_state(node: &Node) {
                     [node_info_table, successor_list_table, finger_table_table, storage_table]);
     state_table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
 
-    state_table.printstd();
+    info!("\n{}", state_table);
 }
