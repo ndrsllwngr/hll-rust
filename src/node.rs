@@ -114,32 +114,6 @@ impl Node {
         //}
     }
 
-    pub fn print_current_state(&self) {
-        let pre_string = if let Some(pre) = self.predecessor.clone() {
-            pre.get_id().to_string()
-        } else {
-            "None".to_string()
-        };
-        let mut string_to_print =
-            format!("\n\n{0: <18} | #{1: <6}\n{2: <18} | #{3: <6}\n{4: <18} | #{5: <6}\n",
-                    "I am Node".to_string(), self.id,
-                    "My Predecessor is".to_string(), pre_string,
-                    "My Successor is".to_string(), self.get_successor().id
-            );
-
-        string_to_print.push_str("\n\nMy successor list is:\n");
-        string_to_print.push_str(&format!("{0: <2} | {1: <6}\n", "i".to_string(), "Node #".to_string()));
-        string_to_print.push_str("---------------\n");
-        for i in 0..self.successor_list.len() {
-            let succ = &self.successor_list[i];
-            let node_string = format!("{0: <2} | {1: <6}\n", i, succ.get_id());
-
-            string_to_print.push_str(&node_string);
-        }
-
-        info!("{}", string_to_print);
-    }
-
     fn closest_preceding_node(&self, id: BigInt) -> OtherNode {
         // TODO better bounding
         let mut min_abs: BigInt = 999999999.to_bigint().unwrap();
@@ -425,7 +399,7 @@ impl Node {
 
         self.finger_table.put(index, finger_id, successor);
         if index == chord::FINGERTABLE_SIZE - 1 {
-            self.finger_table.print(self.id.clone());
+            //self.finger_table.print(self.id.clone());
         }
     }
 

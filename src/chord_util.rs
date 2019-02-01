@@ -10,6 +10,7 @@ use super::protocols::*;
 use super::chord;
 use super::node::*;
 use super::finger::*;
+use super::node_util::*;
 
 
 pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
@@ -31,7 +32,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
         drop(node);
 
         if node_clone.joined {
-            node_clone.print_current_state();
+            print_current_node_state(&node_clone);
 
             let mut ring_is_alive = false;
             for succ in node_clone.successor_list.clone() {

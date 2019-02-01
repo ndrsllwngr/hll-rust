@@ -5,7 +5,7 @@ use super::util::*;
 
 #[derive(Clone)]
 pub struct Storage {
-    data: HashMap<BigInt, String>,
+    pub data: HashMap<BigInt, String>,
 }
 
 impl Storage {
