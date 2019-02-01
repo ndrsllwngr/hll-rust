@@ -14,7 +14,7 @@ pub enum Message {
     ResponseMessage {
         sender: OtherNode,
         response: Response,
-    }
+    },
 }
 
 
@@ -29,9 +29,18 @@ pub enum Request {
     },
     FindSuccessorFinger {
         index: usize,
-        finger_id: BigInt
+        finger_id: BigInt,
     },
-    GetSuccessorList
+    GetSuccessorList,
+    DHTStoreKey {
+        data: (BigInt, String)
+    },
+    DHTFindKey {
+        key: BigInt
+    },
+    DHTDeleteKey {
+        key: BigInt
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -49,15 +58,33 @@ pub enum Response {
     FoundSuccessorFinger {
         index: usize,
         finger_id: BigInt,
-        successor: OtherNode
+        successor: OtherNode,
     },
     AskFurtherFinger {
         index: usize,
         finger_id: BigInt,
-        next_node: OtherNode
+        next_node: OtherNode,
     },
     GetSuccessorListResponse {
         successor_list: Vec<OtherNode>
-    }
-
+    },
+    DHTStoredKey,
+    DHTFoundKey {
+        data: (BigInt, Option<String>)
+    },
+    DHTDeletedKey {
+        key_existed: bool
+    },
+    DHTAskFurtherStore {
+        next_node: OtherNode,
+        data: (BigInt, String),
+    },
+    DHTAskFurtherFind {
+        next_node: OtherNode,
+        key: BigInt,
+    },
+    DHTAskFurtherDelete {
+        next_node: OtherNode,
+        key: BigInt,
+    },
 }
