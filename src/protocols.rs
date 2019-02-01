@@ -101,6 +101,9 @@ pub enum DHTInteractionRequest {
     },
     InitialFind {
         key: String
+    },
+    InitialDelete {
+        key: String
     }
 }
 

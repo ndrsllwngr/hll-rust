@@ -97,6 +97,10 @@ fn main() {
         .parse::<SocketAddr>()
         .unwrap();
 
+    let req = protocols::DHTInteractionRequest::InitialStore {key: "Timo".to_string(), value: "015202794092".to_string()};
+    let msg = protocols::Message::DHTInteraction{ request: req };
+    let msg_string = serde_json::to_string(&msg).unwrap();
+    print!("{}", msg_string);
 
     if let Some(join_ip) = join_ip_option {
         //Join existing node

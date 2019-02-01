@@ -265,6 +265,13 @@ impl Node {
 
                 network_util::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
             }
+            DHTInteractionRequest::InitialDelete { key } => {
+                let hashed_key = create_id(&key);
+                let req = Request::DHTDeleteKey { key: hashed_key };
+                let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
+
+                network_util::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+            }
         }
     }
 
