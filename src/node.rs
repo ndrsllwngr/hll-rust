@@ -14,8 +14,8 @@ use super::util::*;
 /// Simple representation of an external node in the network
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct OtherNode {
-    id: BigInt,
-    ip_addr: SocketAddr,
+    pub id: BigInt,
+    pub ip_addr: SocketAddr,
 }
 
 impl OtherNode {

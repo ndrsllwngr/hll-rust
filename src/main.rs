@@ -12,19 +12,23 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate signal_hook;
 extern crate tokio;
 
-use std::thread;
 use std::env;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use std::thread::JoinHandle;
+use std::{error::Error};
+use signal_hook::{iterator::Signals, SIGINT};
 
 use getopts::Options;
 
 mod chord;
 mod chord_util;
 mod finger;
+mod interaction;
 mod network_util;
 mod node;
 mod node_util;
@@ -39,7 +43,7 @@ mod util;
     example: cargo run -- -j 210.0.0.41:6666 -p 10001
 */
 
-fn main() {
+fn main() -> Result<(), Box<Error>> {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
 
@@ -63,7 +67,7 @@ fn main() {
 
     if matches.opt_present("h") {
         print!("\n{}", opts.usage("Usage: cargo run -- [options]"));
-        return;
+        // return;
     }
 
     let ip_address_option = matches.opt_str("i");
@@ -99,6 +103,14 @@ fn main() {
         .parse::<SocketAddr>()
         .unwrap();
 
+    let signals = Signals::new(&[SIGINT])?;
+    thread::Builder::new().name("Interaction".to_string()).spawn(move || {
+        for sig in signals.forever() {
+            interaction::user_input(node::OtherNode{id: util::create_id(&listen_ip.clone().to_string()), ip_addr: listen_ip.clone()});
+            println!("Received signal {:?}", sig);
+        }
+    });
+
     if let Some(join_ip) = join_ip_option {
         //Join existing node
         let node_handle = spawn_node(listen_ip, Some(join_ip.parse::<SocketAddr>().unwrap()));
@@ -108,6 +120,8 @@ fn main() {
         let first_node_handle = spawn_node(listen_ip, None);
         first_node_handle.join().expect("first_node_handle.join() failed");
     }
+
+    Ok(())
 }
 
 fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
@@ -140,7 +154,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
 
             if let Some(entry_node_addr) = entry_node_addr {
                 thread::sleep(chord::NODE_INIT_SLEEP_INTERVAL);
-                chord_util::join(id.clone(),other_node,entry_node_addr);
+                chord_util::join(id.clone(),other_node.clone(),entry_node_addr);
             }
 
             let arc_clone2 = arc.clone();
