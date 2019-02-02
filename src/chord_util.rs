@@ -125,12 +125,12 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
     let other_node = node.to_other_node().clone();
     drop(node);
 
+    // Catch ctrl + c signal
     let signals = Signals::new(&[SIGINT])?;
     thread::Builder::new().name("Interaction".to_string()).spawn(move || {
         for sig in signals.forever() {
             i_clone.store(true, Ordering::SeqCst);
-            println!("Received signal {:?}", sig);
-            user_input(other_node.clone());
+            perform_user_interaction(other_node.clone());
             i_clone.store(false, Ordering::SeqCst);
         }
     });
