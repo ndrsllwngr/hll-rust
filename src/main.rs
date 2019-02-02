@@ -21,7 +21,6 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 use std::{error::Error};
-use signal_hook::{iterator::Signals, SIGINT};
 
 use getopts::Options;
 

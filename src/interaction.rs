@@ -1,5 +1,4 @@
 use std::io::stdin;
-use signal_hook::{iterator::Signals, SIGSTOP};
 use std::{error::Error, thread};
 use std::process;
 

@@ -135,10 +135,10 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
         }
     });
     loop {
-        if !interaction_in_progress.load(Ordering::SeqCst) {
-            let node = arc.lock().unwrap();
-            let node_clone = node.clone();
-            drop(node);
+        let node = arc.lock().unwrap();
+        let node_clone = node.clone();
+        drop(node);
+        if node_clone.joined && !interaction_in_progress.load(Ordering::SeqCst) {
             print_current_node_state(&node_clone)
         }
         thread::sleep(chord::NODE_PRINT_INTERVAL);
