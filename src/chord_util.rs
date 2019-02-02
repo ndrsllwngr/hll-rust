@@ -6,9 +6,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::io::stdin;
 
-use crossterm_input::input;
-
-
 use num_bigint::BigInt;
 //use signal_hook::{iterator::Signals, SIGINT};
 
