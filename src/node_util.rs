@@ -60,5 +60,11 @@ pub fn print_current_node_state(node: &Node) {
     state_table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
     // state_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
 
-    info!("\n\n{}", state_table);
+    let mut storage_logs_table = table!(
+                    ["> Storage logs ".black().on_white()],
+                    [""],
+                    [node.storage.get_last_log_entry()]);
+    storage_logs_table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
+
+    info!("\n\n{}{}", state_table, storage_logs_table);
 }

@@ -397,23 +397,28 @@ impl Node {
         self.successor_list = new_successor_list;
     }
 
-    fn handle_dht_stored_key_response(&self) {
-        info!("Key stored");
+    fn handle_dht_stored_key_response(&mut self) {
+        self.storage.write_log_entry("Key stored".to_string());
+        debug!("Key stored");
     }
 
-    fn handle_dht_found_key_response(&self, data: (BigInt, Option<DHTEntry>)) {
+    fn handle_dht_found_key_response(&mut self, data: (BigInt, Option<DHTEntry>)) {
         if let Some(dht_entry) = data.1.clone() {
-            info!("Value for key {} (id: {}) is {}", dht_entry.key, data.0, dht_entry.value);
+            self.storage.write_log_entry(format!("Value for key {} (id: {}) is {}", dht_entry.key, data.0, dht_entry.value));
+            debug!("Value for key {} (id: {}) is {}", dht_entry.key, data.0, dht_entry.value);
         } else {
-            info!("No value for key_id {} found in the network", data.0)
+            self.storage.write_log_entry(format!("No value for key_id {} found in the network", data.0));
+            debug!("No value for key_id {} found in the network", data.0)
         }
     }
 
-    fn handle_dht_deleted_key_response(&self, key_existed: bool) {
+    fn handle_dht_deleted_key_response(&mut self, key_existed: bool) {
         if key_existed {
+            self.storage.write_log_entry("Key deleted".to_string());
             info!("Key deleted");
         } else {
-            info!("Tried to delete key but the key was not present in the network");
+            self.storage.write_log_entry("Tried to delete key but the key was not present in the network".to_string());
+            debug!("Tried to delete key but the key was not present in the network");
         }
     }
 
