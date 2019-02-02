@@ -20,7 +20,6 @@ use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
-use std::{error::Error};
 
 use getopts::Options;
 
@@ -114,7 +113,7 @@ fn main() {
 }
 
 fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
-    if let Some(entry_node_addr) = entry_node_addr {
+    if entry_node_addr.is_some() {
         info!("Spawn node and join.");
     } else {
         info!("Spawn master node.");
@@ -122,10 +121,10 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
     let builder = thread::Builder::new().name("Node".to_string());
     builder
         .spawn(move || {
-            let node = if let Some(entry_node_addr) = entry_node_addr {
-                node::Node::new(node_ip_addr.clone())
+            let node = if entry_node_addr.is_some() {
+                node::Node::new(node_ip_addr)
             } else {
-                node::Node::new_first(node_ip_addr.clone())
+                node::Node::new_first(node_ip_addr)
             };
             // let mut node = node::Node::new(node_ip_addr.clone());
             let id = node.id.clone();

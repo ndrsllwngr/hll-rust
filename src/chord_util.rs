@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 use std::thread::JoinHandle;
-use std::{thread, time};
+use std::thread;
 use std::sync::{Arc, Mutex};
 use num_bigint::BigInt;
 use std::process;
@@ -20,8 +20,8 @@ use super::interaction::*;
 
 pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
     info!("Starting joining process");
-    let req = Request::FindSuccessor { id: id };
-    let msg = Message::RequestMessage { sender: sender, request: req };
+    let req = Request::FindSuccessor { id };
+    let msg = Message::RequestMessage { sender, request: req };
     network_util::send_string_to_socket(join_ip, serde_json::to_string(&msg).unwrap());
     //self.send_message_to_socket(self.successor.ip_addr, req);
 }
@@ -41,10 +41,10 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
 
             let mut ring_is_alive = false;
             for succ in node_clone.successor_list.clone() {
-                if network_util::check_alive(succ.get_ip_addr().clone(), node_clone.to_other_node().clone()) {
+                if network_util::check_alive(*succ.get_ip_addr(), node_clone.to_other_node().clone()) {
                     let req = Request::GetPredecessor;
                     let msg = Message::RequestMessage { sender: node_clone.to_other_node().clone(), request: req };
-                    network_util::send_string_to_socket(succ.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+                    network_util::send_string_to_socket(*succ.get_ip_addr(), serde_json::to_string(&msg).unwrap());
 
                     // after async operation check alive lock again.
                     arc.lock().unwrap().update_successor_and_successor_list(succ);
@@ -74,9 +74,9 @@ pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
         if node.joined {
             let finger_id = get_finger_id(&node.id, next);
 
-            let req = Request::FindSuccessorFinger { index: next, finger_id: finger_id };
+            let req = Request::FindSuccessorFinger { index: next, finger_id };
             let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
-            network_util::send_string_to_socket(node.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+            network_util::send_string_to_socket(*node.get_successor().get_ip_addr(), serde_json::to_string(&msg).unwrap());
 
             next = if next < chord::FINGERTABLE_SIZE - 1 {
                 next + 1
@@ -101,7 +101,7 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
 
         if node_clone.joined {
             if let Some(predecessor) = node_clone.predecessor.clone() {
-                if !network_util::check_alive(predecessor.get_ip_addr().clone(), node_clone.to_other_node().clone()) {
+                if !network_util::check_alive(*predecessor.get_ip_addr(), node_clone.to_other_node().clone()) {
                     debug!("Node #{} is dead", predecessor.get_id());
 
                     // after async operation check alive lock again.
@@ -128,7 +128,7 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
     // Catch ctrl + c signal
     let signals = Signals::new(&[SIGINT])?;
     thread::Builder::new().name("Interaction".to_string()).spawn(move || {
-        for sig in signals.forever() {
+        for _sig in signals.forever() {
             i_clone.store(true, Ordering::SeqCst);
             perform_user_interaction(other_node.clone());
             i_clone.store(false, Ordering::SeqCst);

@@ -1,5 +1,5 @@
 use super::node::*;
-use prettytable::{Table, Row, Cell, format, color, Attr};
+use prettytable::format;
 use colored::*;
 
 
@@ -16,7 +16,7 @@ pub fn print_current_node_state(node: &Node) {
 
     //Node Info
     let mut node_info_table = table!(["Descr.".italic().yellow(), "ID".italic().yellow(), "SocketAddr".italic().yellow()],["", "", ""],
-                    ["Self", &node.id.clone().to_string(), &node.ip_addr.clone().to_string()],
+                    ["Self", &node.id.clone().to_string(), &node.ip_addr.to_string()],
                     ["Predecessor", &pre_id_string, &pre_ip_string],
                     ["Successor",  &succ_id_string, &succ_ip_string]);
     // node_info_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use num::bigint::{BigInt, Sign, ToBigInt};
+use num::bigint::BigInt;
 
 use super::util::*;
 

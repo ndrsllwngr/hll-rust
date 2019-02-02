@@ -1,5 +1,5 @@
 use std::io::{BufWriter, Write};
-use std::io::{BufReader, Read};
+use std::io::{BufReader};
 use std::net;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -8,8 +8,7 @@ use std::{thread, str};
 use futures::{Future, Stream};
 use num_bigint::BigInt;
 use tokio::io;
-use tokio::net::{TcpListener, TcpStream};
-use tokio::prelude::*;
+use tokio::net::{TcpListener};
 
 use super::node::*;
 use super::protocols::*;
@@ -17,7 +16,7 @@ use super::protocols::*;
 pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
     let builder = thread::Builder::new().name("Send".to_string());
     let handle = builder.spawn(move || {
-        match net::TcpStream::connect(addr.clone()) {
+        match net::TcpStream::connect(addr) {
             Ok(stream) => {
                 let mut writer = BufWriter::new(stream);
                 writer.write_all(msg.as_bytes()).unwrap();
@@ -34,7 +33,7 @@ pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
 }
 
 pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {
-    match net::TcpStream::connect(addr.clone()) {
+    match net::TcpStream::connect(addr) {
         Ok(stream) => {
             let msg = serde_json::to_string(&Message::Ping { sender }).unwrap();
             let mut writer = BufWriter::new(stream);
@@ -66,7 +65,6 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
 
         let connection = io::read_until(buf_reader, b'\n', buf)
             .and_then(move |(socket, buf)| {
-                let stream = socket.into_inner();
                 let msg_string = str::from_utf8(&buf).unwrap();
                 let message = serde_json::from_str(msg_string).unwrap();
                 let mut node = arc_clone.lock().unwrap();
@@ -80,7 +78,7 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
                         let response = node.process_incoming_request(request);
                         let msg = Message::ResponseMessage { sender: node.to_other_node(), response };
                         drop(node);
-                        send_string_to_socket(sender.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+                        send_string_to_socket(*sender.get_ip_addr(), serde_json::to_string(&msg).unwrap());
                         Ok(())
                     }
                     Message::ResponseMessage { sender, response } => {

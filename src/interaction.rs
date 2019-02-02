@@ -1,12 +1,12 @@
 use std::io::stdin;
-use std::{error::Error, thread};
+use std::{error::Error};
 use std::process;
 
 use super::network_util;
 use super::protocols::*;
 use super::util::*;
 use super::node::OtherNode;
-use super::storage::DHTEntry;
+use super::storage;
 
 
 pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Error>> {
@@ -130,8 +130,7 @@ fn delete(node_as_other: OtherNode) -> Result<(), Box<Error>> {
 
 fn store_key_value(key: String, value: String, node_as_other: OtherNode) {
     println!("store!");
-    let key_id = create_id(&key);
-    let req = Request::DHTStoreKey { data: (key_id, DHTEntry { key, value }) };
+    let req = Request::DHTStoreKey { data:  storage::make_hashed_key_value_pair(key, value)};
     info!("Trying to store data {:?}", req.clone());
     send_req(node_as_other, req);
 }
@@ -152,5 +151,5 @@ fn delete_key(key: String, node_as_other: OtherNode) {
 
 fn send_req(node_as_other: OtherNode, req: Request) {
     let msg = Message::RequestMessage { sender: node_as_other.clone(), request: req };
-    network_util::send_string_to_socket(node_as_other.get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+    network_util::send_string_to_socket(*node_as_other.get_ip_addr(), serde_json::to_string(&msg).unwrap());
 }
