@@ -20,3 +20,5 @@ pub const NODE_FIX_FINGERS_INTERVAL: time::Duration = time::Duration::from_milli
 pub const NODE_CHECK_PREDECESSOR_INTERVAL: time::Duration = time::Duration::from_millis(2000);
 
 pub const NODE_INIT_SLEEP_INTERVAL: time::Duration = time::Duration::from_millis(2000);
+
+pub const NODE_PRINT_INTERVAL: time::Duration = time::Duration::from_millis(2000);

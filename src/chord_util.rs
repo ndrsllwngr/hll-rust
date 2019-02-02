@@ -4,6 +4,10 @@ use std::{thread, time};
 use std::sync::{Arc, Mutex};
 use num_bigint::BigInt;
 use std::process;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use std::{error::Error};
+use signal_hook::{iterator::Signals, SIGINT};
 
 use super::network_util;
 use super::protocols::*;
@@ -11,6 +15,7 @@ use super::chord;
 use super::node::*;
 use super::finger::*;
 use super::node_util::*;
+use super::interaction::*;
 
 
 pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
@@ -32,7 +37,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
         drop(node);
 
         if node_clone.joined {
-            print_current_node_state(&node_clone);
+            //print_current_node_state(&node_clone);
 
             let mut ring_is_alive = false;
             for succ in node_clone.successor_list.clone() {
@@ -110,4 +115,33 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
         //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
         thread::sleep(chord::NODE_CHECK_PREDECESSOR_INTERVAL);
     }
+}
+
+pub fn print_and_interact(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
+    let interaction_in_progress = Arc::new(AtomicBool::new(false));
+    let i_clone = interaction_in_progress.clone();
+
+    let node = arc.lock().unwrap();
+    let other_node = node.to_other_node().clone();
+    drop(node);
+
+    let signals = Signals::new(&[SIGINT])?;
+    thread::Builder::new().name("Interaction".to_string()).spawn(move || {
+        for sig in signals.forever() {
+            i_clone.store(true, Ordering::SeqCst);
+            println!("Received signal {:?}", sig);
+            user_input(other_node.clone());
+            i_clone.store(false, Ordering::SeqCst);
+        }
+    });
+    loop {
+        if !interaction_in_progress.load(Ordering::SeqCst) {
+            let node = arc.lock().unwrap();
+            let node_clone = node.clone();
+            drop(node);
+            print_current_node_state(&node_clone)
+        }
+        thread::sleep(chord::NODE_PRINT_INTERVAL);
+    }
+    Ok(())
 }

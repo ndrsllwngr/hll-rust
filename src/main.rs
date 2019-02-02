@@ -43,7 +43,7 @@ mod util;
     example: cargo run -- -j 210.0.0.41:6666 -p 10001
 */
 
-fn main() -> Result<(), Box<Error>> {
+fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
 
@@ -103,14 +103,6 @@ fn main() -> Result<(), Box<Error>> {
         .parse::<SocketAddr>()
         .unwrap();
 
-    let signals = Signals::new(&[SIGINT])?;
-    thread::Builder::new().name("Interaction".to_string()).spawn(move || {
-        for sig in signals.forever() {
-            interaction::user_input(node::OtherNode{id: util::create_id(&listen_ip.clone().to_string()), ip_addr: listen_ip.clone()});
-            println!("Received signal {:?}", sig);
-        }
-    });
-
     if let Some(join_ip) = join_ip_option {
         //Join existing node
         let node_handle = spawn_node(listen_ip, Some(join_ip.parse::<SocketAddr>().unwrap()));
@@ -120,8 +112,6 @@ fn main() -> Result<(), Box<Error>> {
         let first_node_handle = spawn_node(listen_ip, None);
         first_node_handle.join().expect("first_node_handle.join() failed");
     }
-
-    Ok(())
 }
 
 fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
@@ -175,10 +165,18 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
                     chord_util::check_predecessor(arc_clone4);
                 }).unwrap();
 
+            let arc_clone5 = arc.clone();
+            let handle5 = thread::Builder::new().name("Print_Interact".to_string())
+                .spawn(move || {
+                    chord_util::print_and_interact(arc_clone5);
+                }).unwrap();
+
             handle1.join().expect("handle1 failed");
             handle2.join().expect("handle2 failed");
             handle3.join().expect("handle3 failed");
             handle4.join().expect("handle4 failed");
+            handle5.join().expect("handle5 failed");
+
 
         })
         .unwrap()
