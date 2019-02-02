@@ -3,21 +3,24 @@ use num::bigint::BigInt;
 
 use super::util::*;
 
-#[derive(Clone)]
-pub struct Storage {
-    pub data: HashMap<BigInt, DHTEntry>,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DHTEntry {
     pub key: String,
     pub value: String,
 }
 
+#[derive(Clone)]
+pub struct Storage {
+    pub data: HashMap<BigInt, DHTEntry>,
+    logs: Vec<String>,
+    
+}
+
 impl Storage {
     pub fn new() -> Storage {
         Storage {
             data: HashMap::new(),
+            logs: Vec::new(),
         }
     }
 
@@ -31,6 +34,22 @@ impl Storage {
 
     pub fn delete(&mut self, key_id: &BigInt) -> Option<DHTEntry> {
         self.data.remove(key_id)
+    }
+
+    pub fn write_log_entry(&mut self, str: String){
+        self.logs.push(str);
+    }
+
+    pub fn get_all_log_entries(&self) -> Vec<String> {
+        self.logs.clone()
+    }
+
+    pub fn get_last_log_entry(&self) -> String {
+        if self.logs.len() > 0 {
+            self.logs[self.logs.len()-1].clone()
+        } else {
+            "No log entry found".to_string()
+        }
     }
 }
 
