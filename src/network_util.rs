@@ -89,12 +89,6 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
                         drop(node);
                         Ok(())
                     }
-                    Message::DHTInteraction { request } => {
-                        info!("[Node #{}] Got dht interaction: {:?}", node.id.clone(), request.clone());
-                        node.process_incoming_dht_interaction_request(request);
-                        drop(node);
-                        Ok(())
-                    }
                 }
             })
             .then(|_| Ok(())); // Just discard the socket and buffer

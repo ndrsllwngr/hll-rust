@@ -15,11 +15,7 @@ pub enum Message {
     ResponseMessage {
         sender: OtherNode,
         response: Response,
-    },
-    DHTInteraction {
-        request: DHTInteractionRequest
     }
-
 }
 
 
@@ -92,19 +88,5 @@ pub enum Response {
         next_node: OtherNode,
         key_id: BigInt,
     },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum DHTInteractionRequest {
-    InitialStore {
-        key: String,
-        value: String
-    },
-    InitialFind {
-        key: String
-    },
-    InitialDelete {
-        key: String
-    }
 }
 

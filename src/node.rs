@@ -223,33 +223,6 @@ impl Node {
         }
     }
 
-    pub fn process_incoming_dht_interaction_request(&self, request: DHTInteractionRequest) {
-        match request {
-            DHTInteractionRequest::InitialStore { key, value } => {
-                let key_id = create_id(&key);
-                let req = Request::DHTStoreKey { data: (key_id, DHTEntry { key, value }) };
-                info!("Trying to store data {:?}", req.clone());
-                let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-
-                network_util::send_string_to_socket(self.ip_addr.clone(), serde_json::to_string(&msg).unwrap());
-            }
-            DHTInteractionRequest::InitialFind { key } => {
-                let key_id = create_id(&key);
-                let req = Request::DHTFindKey { key_id };
-                let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-
-                network_util::send_string_to_socket(self.ip_addr.clone(), serde_json::to_string(&msg).unwrap());
-            }
-            DHTInteractionRequest::InitialDelete { key } => {
-                let key_id = create_id(&key);
-                let req = Request::DHTDeleteKey { key_id };
-                let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-
-                network_util::send_string_to_socket(self.ip_addr.clone(), serde_json::to_string(&msg).unwrap());
-            }
-        }
-    }
-
     // REQUESTS
 
     fn handle_find_successor_request(&self, id: BigInt) -> Response {
