@@ -166,7 +166,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
             let arc_clone5 = arc.clone();
             let handle5 = thread::Builder::new().name("Print_Interact".to_string())
                 .spawn(move || {
-                    chord_util::print_and_interact(arc_clone5);
+                    chord_util::print_and_interact(arc_clone5);//.expect("print_and_interact failed");
                 }).unwrap();
 
             handle1.join().expect("handle1 failed");

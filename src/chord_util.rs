@@ -1,22 +1,20 @@
-use std::net::SocketAddr;
-use std::thread::JoinHandle;
-use std::thread;
-use std::sync::{Arc, Mutex};
-use num_bigint::BigInt;
-use std::process;
-use std::sync::atomic::{AtomicBool, Ordering};
-
 use std::{error::Error};
+use std::net::SocketAddr;
+use std::process;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+
+use num_bigint::BigInt;
 use signal_hook::{iterator::Signals, SIGINT};
 
-use super::network_util;
-use super::protocols::*;
 use super::chord;
-use super::node::*;
 use super::finger::*;
-use super::node_util::*;
 use super::interaction::*;
-
+use super::network_util;
+use super::node::*;
+use super::node_util::*;
+use super::protocols::*;
 
 pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
     info!("Starting joining process");
@@ -117,7 +115,7 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
     }
 }
 
-pub fn print_and_interact(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
+pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
     let interaction_in_progress = Arc::new(AtomicBool::new(false));
     let i_clone = interaction_in_progress.clone();
 
@@ -126,14 +124,14 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
     drop(node);
 
     // Catch ctrl + c signal
-    let signals = Signals::new(&[SIGINT])?;
-    thread::Builder::new().name("Interaction".to_string()).spawn(move || {
+    let signals = Signals::new(&[SIGINT]).unwrap();
+    let _handle = thread::Builder::new().name("Interaction".to_string()).spawn(move || {
         for _sig in signals.forever() {
             i_clone.store(true, Ordering::SeqCst);
-            perform_user_interaction(other_node.clone());
+            perform_user_interaction(other_node.clone()).expect("perform_user_interaction failed");
             i_clone.store(false, Ordering::SeqCst);
         }
-    });
+    }).unwrap();
     loop {
         let node = arc.lock().unwrap();
         let node_clone = node.clone();
@@ -143,5 +141,4 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
         }
         thread::sleep(chord::NODE_PRINT_INTERVAL);
     }
-    Ok(())
 }

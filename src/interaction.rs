@@ -25,15 +25,15 @@ pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Erro
         stdin().read_line(buffer).unwrap();
         match buffer.trim_right() {
             "1" => {
-                store(node_as_other.clone());
+                store(node_as_other.clone()).expect("store failed");
                 break;
             }
             "2" => {
-                find(node_as_other.clone());
+                find(node_as_other.clone()).expect("find failed");
                 break;
             }
             "3" => {
-                delete(node_as_other.clone());
+                delete(node_as_other.clone()).expect("delete failed");
                 break;
             }
             "4" => {
@@ -52,8 +52,8 @@ pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Erro
 }
 
 fn store(node_as_other: OtherNode) -> Result<(), Box<Error>> {
-    let mut key = "".to_owned();
-    let mut value = "".to_owned();
+    let mut key;
+    let mut value;
     loop {
         println!("Enter the string that should be used as a KEY\n\
         (p.e.: A name):");
@@ -89,7 +89,7 @@ fn store(node_as_other: OtherNode) -> Result<(), Box<Error>> {
 }
 
 fn find(node_as_other: OtherNode) -> Result<(), Box<Error>> {
-    let mut key = "".to_owned();
+    let mut key;
     loop {
         println!("Enter a Key to look for in the network:");
         let buffer = &mut String::new();
@@ -109,7 +109,7 @@ fn find(node_as_other: OtherNode) -> Result<(), Box<Error>> {
 }
 
 fn delete(node_as_other: OtherNode) -> Result<(), Box<Error>> {
-    let mut key = "".to_owned();
+    let mut key;
     loop {
         println!("Enter a Key to look for in the network:");
         let buffer = &mut String::new();
@@ -129,21 +129,18 @@ fn delete(node_as_other: OtherNode) -> Result<(), Box<Error>> {
 }
 
 fn store_key_value(key: String, value: String, node_as_other: OtherNode) {
-    println!("store!");
     let req = Request::DHTStoreKey { data:  storage::make_hashed_key_value_pair(key, value)};
     info!("Trying to store data {:?}", req.clone());
     send_req(node_as_other, req);
 }
 
 fn find_key(key: String, node_as_other: OtherNode) {
-    println!("find!");
     let key_id = create_id(&key);
     let req = Request::DHTFindKey { key_id };
     send_req(node_as_other, req);
 }
 
 fn delete_key(key: String, node_as_other: OtherNode) {
-    println!("delete!");
     let key_id = create_id(&key);
     let req = Request::DHTDeleteKey { key_id };
     send_req(node_as_other, req);
