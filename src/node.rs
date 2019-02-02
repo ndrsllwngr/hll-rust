@@ -389,10 +389,10 @@ impl Node {
 
     fn handle_get_successor_list_response(&mut self, successor_list: Vec<OtherNode>) {
         let mut new_successor_list = vec![self.get_successor().clone()];
-        if self.successor_list.len() < chord::SUCCESSORLIST_SIZE {
-            new_successor_list.append(&mut successor_list.clone())
-        } else {
+        if successor_list.len() == chord::SUCCESSORLIST_SIZE {
             new_successor_list.append(&mut successor_list.clone()[..(successor_list.len() - 1)].to_owned())
+        } else {
+            new_successor_list.append(&mut successor_list.clone())
         };
         self.successor_list = new_successor_list;
     }

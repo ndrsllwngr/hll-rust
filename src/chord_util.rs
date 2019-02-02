@@ -50,6 +50,8 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
 
                     ring_is_alive = true;
                     break;
+                } else {
+                    error!("Node is dead: {:?}", succ);
                 }
             }
             if !ring_is_alive {
