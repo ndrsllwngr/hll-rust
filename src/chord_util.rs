@@ -4,9 +4,13 @@ use std::process;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
+use std::io::stdin;
+
+use crossterm_input::input;
+
 
 use num_bigint::BigInt;
-use signal_hook::{iterator::Signals, SIGINT};
+//use signal_hook::{iterator::Signals, SIGINT};
 
 use super::chord;
 use super::finger::*;
@@ -124,13 +128,23 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
     drop(node);
 
     // Catch ctrl + c signal
-    let signals = Signals::new(&[SIGINT]).unwrap();
+    //let signals = Signals::new(&[SIGINT]).unwrap();
     let _handle = thread::Builder::new().name("Interaction".to_string()).spawn(move || {
-        for _sig in signals.forever() {
-            i_clone.store(true, Ordering::SeqCst);
-            perform_user_interaction(other_node.clone()).expect("perform_user_interaction failed");
-            i_clone.store(false, Ordering::SeqCst);
+        loop {
+            let buffer = &mut String::new();
+            stdin().read_line(buffer).unwrap();
+            match buffer.trim_right() {
+                "m" => {
+                    i_clone.store(true, Ordering::SeqCst);
+                    perform_user_interaction(other_node.clone()).expect("perform_user_interaction failed");
+                    i_clone.store(false, Ordering::SeqCst);
+                }
+                _ => {
+                }
+            };
         }
+     //   for _sig in signals.forever() {
+
     }).unwrap();
     loop {
         let node = arc.lock().unwrap();
