@@ -1,7 +1,6 @@
 use crypto::digest::Digest;
 use crypto::sha1::Sha1;
 use num::bigint::{BigInt, Sign, ToBigInt};
-use num::traits::pow;
 use std::net::SocketAddr;
 
 use super::chord;

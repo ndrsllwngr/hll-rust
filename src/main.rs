@@ -12,12 +12,13 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate signal_hook;
 extern crate tokio;
 
-use std::thread;
 use std::env;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use std::thread::JoinHandle;
 
 use getopts::Options;
@@ -25,6 +26,7 @@ use getopts::Options;
 mod chord;
 mod chord_util;
 mod finger;
+mod interaction;
 mod network_util;
 mod node;
 mod node_util;
@@ -63,7 +65,7 @@ fn main() {
 
     if matches.opt_present("h") {
         print!("\n{}", opts.usage("Usage: cargo run -- [options]"));
-        return;
+        // return;
     }
 
     let ip_address_option = matches.opt_str("i");
@@ -111,7 +113,7 @@ fn main() {
 }
 
 fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
-    if let Some(entry_node_addr) = entry_node_addr {
+    if entry_node_addr.is_some() {
         info!("Spawn node and join.");
     } else {
         info!("Spawn master node.");
@@ -119,10 +121,10 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
     let builder = thread::Builder::new().name("Node".to_string());
     builder
         .spawn(move || {
-            let node = if let Some(entry_node_addr) = entry_node_addr {
-                node::Node::new(node_ip_addr.clone())
+            let node = if entry_node_addr.is_some() {
+                node::Node::new(node_ip_addr)
             } else {
-                node::Node::new_first(node_ip_addr.clone())
+                node::Node::new_first(node_ip_addr)
             };
             // let mut node = node::Node::new(node_ip_addr.clone());
             let id = node.id.clone();
@@ -140,7 +142,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
 
             if let Some(entry_node_addr) = entry_node_addr {
                 thread::sleep(chord::NODE_INIT_SLEEP_INTERVAL);
-                chord_util::join(id.clone(),other_node,entry_node_addr);
+                chord_util::join(id.clone(),other_node.clone(),entry_node_addr);
             }
 
             let arc_clone2 = arc.clone();
@@ -161,10 +163,18 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
                     chord_util::check_predecessor(arc_clone4);
                 }).unwrap();
 
+            let arc_clone5 = arc.clone();
+            let handle5 = thread::Builder::new().name("Print_Interact".to_string())
+                .spawn(move || {
+                    chord_util::print_and_interact(arc_clone5);//.expect("print_and_interact failed");
+                }).unwrap();
+
             handle1.join().expect("handle1 failed");
             handle2.join().expect("handle2 failed");
             handle3.join().expect("handle3 failed");
             handle4.join().expect("handle4 failed");
+            handle5.join().expect("handle5 failed");
+
 
         })
         .unwrap()
