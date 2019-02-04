@@ -12,6 +12,7 @@ use tokio::net::{TcpListener};
 
 use super::node::*;
 use super::protocols::*;
+use super::chord;
 
 pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
     let builder = thread::Builder::new().name("Send".to_string());
@@ -50,11 +51,16 @@ pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {
 // nc 127.0.0.1 34254
 // can be killed by sending "Kill" (with apostrophes)
 // afterwards every message will be echoed in the console by handle_request
-pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, id: BigInt) -> Result<(), Box<std::error::Error>> {
-    let listener = TcpListener::bind(&addr).unwrap();
+pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port:i32, id: BigInt) -> Result<(), Box<std::error::Error>> {
+
+    let listen_ip = format!("{}:{}", chord::LISTENING_ADDRESS, port)
+        .parse::<SocketAddr>()
+        .unwrap();
+
+    let listener = TcpListener::bind(&listen_ip).unwrap();
 
     //TODO figure out if extensive cloning is working
-    debug!("[Node #{}] Starting to listen on socket: {}", id.clone(), addr);
+    debug!("[Node #{}] Starting to listen on socket: {}", id.clone(), listen_ip);
 
     let server = listener.incoming().for_each(move |socket| {
         //debug!("[Node #{}] accepted socket; addr={:?}", id, socket.peer_addr()?);

@@ -103,16 +103,16 @@ fn main() {
 
     if let Some(join_ip) = join_ip_option {
         //Join existing node
-        let node_handle = spawn_node(listen_ip, Some(join_ip.parse::<SocketAddr>().unwrap()));
+        let node_handle = spawn_node(listen_ip, port, Some(join_ip.parse::<SocketAddr>().unwrap()));
         node_handle.join().expect("node_handle.join() failed");
     } else {
         //Create new ring
-        let first_node_handle = spawn_node(listen_ip, None);
+        let first_node_handle = spawn_node(listen_ip, port, None);
         first_node_handle.join().expect("first_node_handle.join() failed");
     }
 }
 
-fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
+fn spawn_node(node_ip_addr: SocketAddr, port:i32, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
     if entry_node_addr.is_some() {
         info!("Spawn node and join.");
     } else {
@@ -137,7 +137,7 @@ fn spawn_node(node_ip_addr: SocketAddr, entry_node_addr: Option<SocketAddr>) -> 
             
             let handle1 = thread::Builder::new().name("Listen".to_string())
                 .spawn(move || {
-                    network_util::start_listening_on_socket(arc_clone, node_ip_addr, id_clone).expect("network_util::start_listening_on_socket failed");
+                    network_util::start_listening_on_socket(arc_clone, port, id_clone).expect("network_util::start_listening_on_socket failed");
                 }).unwrap();
 
             if let Some(entry_node_addr) = entry_node_addr {
