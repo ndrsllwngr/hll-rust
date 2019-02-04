@@ -5,6 +5,7 @@ use super::storage::DHTEntry;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Message {
+    Kill,
     Ping {
         sender: OtherNode
     },

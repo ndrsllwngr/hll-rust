@@ -3,7 +3,7 @@ use std::io::{BufReader};
 use std::net;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use std::{thread, str};
+use std::{thread, str, process};
 
 use futures::{Future, Stream};
 use num_bigint::BigInt;
@@ -48,6 +48,7 @@ pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {
 
 // HINT: this can be tested by connecting via bash terminal (preinstalled on Mac/Linux) by executing:
 // nc 127.0.0.1 34254
+// can be killed by sending "Kill" (with apostrophes)
 // afterwards every message will be echoed in the console by handle_request
 pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, id: BigInt) -> Result<(), Box<std::error::Error>> {
     let listener = TcpListener::bind(&addr).unwrap();
@@ -67,8 +68,14 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, addr: SocketAddr, i
             .and_then(move |(socket, buf)| {
                 let msg_string = str::from_utf8(&buf).unwrap();
                 let message = serde_json::from_str(msg_string).unwrap();
+                //info!("Look at me: {:?}",serde_json::to_string(&Message::Kill{}).unwrap());
                 let mut node = arc_clone.lock().unwrap();
                 match message {
+                    Message::Kill => {
+                        info!("Got kill message, shutting down...");
+                        process::exit(0);
+                        Ok(())
+                    }
                     Message::Ping { sender } => {
                         debug!("Got pinged from Node #{}", sender.get_id());
                         Ok(())
