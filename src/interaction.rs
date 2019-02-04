@@ -1,6 +1,7 @@
 use std::io::stdin;
 use std::{error::Error};
 use std::process;
+use std::net::SocketAddr;
 
 use super::network_util;
 use super::protocols::*;
@@ -15,9 +16,10 @@ pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Erro
         1 - Store a key/value pair in the Chord network\n\
         2 - Find the value for a given key in the Chord network\n\
         3 - Delete a key/value pair from the Chord network\n\n\
-        4 - Cancel interaction\n\
-        5 - Terminate Node\n\n\
-        Choose 1, 2, 3, 4 or 5 and press Enter!";
+        4 - Kill a Chord network peer\n\n\
+        5 - Cancel interaction\n\
+        6 - Terminate Node\n\n\
+        Choose 1, 2, 3, 4, 5 or 6 and press Enter!";
     info!("{}", info);
 
     loop {
@@ -37,9 +39,13 @@ pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Erro
                 break;
             }
             "4" => {
+                kill().expect("kill failed");
                 break;
             }
             "5" => {
+                break;
+            }
+            "6" => {
                 process::exit(1);
             }
             _ => {
@@ -126,6 +132,32 @@ fn delete(node_as_other: OtherNode) -> Result<(), Box<Error>> {
         }
     };
     Ok(())
+}
+
+fn kill() -> Result<(), Box<Error>> {
+    let mut key;
+    loop {
+        println!("Enter <IP>:<Port> (i.e. 127.0.0.1:10000) of a to be killed chord network peer:");
+        let buffer = &mut String::new();
+        stdin().read_line(buffer)?;
+        match buffer.trim_right() {
+            "" => {
+                println!("Please enter a valid SocketAddr.");
+            }
+            k => {
+                key = k.to_string();
+                kill_node(key);
+                break;
+            }
+        }
+    };
+    Ok(())
+}
+
+fn kill_node(key: String){
+    let target_ip = key.parse::<SocketAddr>().unwrap();
+    let msg = Message::Kill;
+    network_util::send_string_to_socket(target_ip, serde_json::to_string(&msg).unwrap());
 }
 
 fn store_key_value(key: String, value: String, node_as_other: OtherNode) {
