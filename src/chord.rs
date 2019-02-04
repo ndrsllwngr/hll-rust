@@ -6,6 +6,10 @@ use std::time;
 
 pub const CHORD_CIRCLE_BITS: usize = 16;
 
+//Used for length reduction on id creation
+//The nth root of the initially created id will be calculated in order to reduce size
+pub const ID_ROOT: u32 = 12;
+
 pub const FINGERTABLE_SIZE: usize = CHORD_CIRCLE_BITS;
 
 pub const SUCCESSORLIST_SIZE: usize = CHORD_CIRCLE_BITS;
