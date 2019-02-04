@@ -4,7 +4,6 @@
 # run this as follows:
 # sh ./test_macOS.sh IP_ADDRESS NUMBER_OF_NODES
 #
-
 PROJECT_BUILD="/target/debug/hll-rust"
 TEST_IP=$1
 NUMBER_OF_NODES=$2
@@ -15,7 +14,6 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 nohup   .${PROJECT_BUILD} -i ${TEST_IP} -p 10001 > /dev/null 2>&1 &
 for i in `seq 2 ${NUMBER_OF_NODES}`
 do
-    let port = 1
     sleep .5
     if (($i == $NUMBER_OF_NODES))
     then
