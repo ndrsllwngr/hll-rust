@@ -125,6 +125,14 @@ impl Node {
                 return_node = entry.node.clone()
             }
         }
+        for i in 0..self.successor_list.len() {
+            let entry = &self.successor_list[i];
+            let finger_abs = chord_abs(entry.get_id(), &id);
+            if finger_abs < min_abs {
+                min_abs = finger_abs;
+                return_node = entry.clone()
+            }
+        }
         return_node
     }
 
@@ -151,15 +159,15 @@ impl Node {
                 self.handle_get_successor_list_request()
             }
             Request::DHTStoreKey { data } => {
-                debug!("[Node #{}] Request::StoreKey", self.clone().id);
+                info!("[Node #{}] Request::StoreKey", self.clone().id);
                 self.handle_dht_store_key_request(data)
             }
             Request::DHTFindKey { key_id } => {
-                debug!("[Node #{}] Request::FindKey", self.clone().id);
+                info!("[Node #{}] Request::FindKey", self.clone().id);
                 self.handle_dht_find_key_request(key_id)
             }
             Request::DHTDeleteKey { key_id } => {
-                debug!("[Node #{}] Request::DeleteKey", self.clone().id);
+                info!("[Node #{}] Request::DeleteKey", self.clone().id);
                 self.handle_dht_delete_key_request(key_id)
             }
         }
@@ -208,15 +216,15 @@ impl Node {
                 self.handle_dht_deleted_key_response(key_existed)
             }
             Response::DHTAskFurtherStore { next_node, data } => {
-                debug!("[Node #{}] Response::DHTAskFurtherStore", self.clone().id);
+                info!("[Node #{}] Response::DHTAskFurtherStore(next_node: {}, data: {:?})", self.clone().id, next_node.get_id().clone(), data);
                 self.handle_dht_ask_further_store_response(next_node, data)
             }
             Response::DHTAskFurtherFind { next_node, key_id } => {
-                debug!("[Node #{}] Response::DHTAskFurtherFind", self.clone().id);
+                info!("[Node #{}] Response::DHTAskFurtherFind", self.clone().id);
                 self.handle_dht_ask_further_find_response(next_node, key_id)
             }
             Response::DHTAskFurtherDelete { next_node, key_id } => {
-                debug!("[Node #{}] Response::DHTAskFurtherDelete", self.clone().id);
+                info!("[Node #{}] Response::DHTAskFurtherDelete", self.clone().id);
                 self.handle_dht_ask_further_delete_response(next_node, key_id)
             }
         }
@@ -270,18 +278,10 @@ impl Node {
 
     fn handle_dht_store_key_request(&mut self,
                                     data: (BigInt, DHTEntry)) -> Response {
-        if let Some(predecessor) = self.predecessor.clone() {
-            // I am responsible for the key
-            if self.id == data.0 ||
-                (&data.0 != predecessor.get_id() && is_in_interval(predecessor.get_id(), &self.id, &data.0)) {
-                self.storage.put(data);
-                Response::DHTStoredKey
-            } else {
-                Response::DHTAskFurtherStore {
-                    next_node: self.closest_preceding_node(data.0.clone()),
-                    data,
-                }
-            }
+        // I am responsible for the key
+        if is_in_interval(&self.id, self.get_successor().get_id(), &data.0) {
+            self.storage.put(data);
+            Response::DHTStoredKey
         } else {
             Response::DHTAskFurtherStore {
                 next_node: self.closest_preceding_node(data.0.clone()),
@@ -291,18 +291,10 @@ impl Node {
     }
 
     fn handle_dht_find_key_request(&self, key_id: BigInt) -> Response {
-        if let Some(predecessor) = self.predecessor.clone() {
-            // I am responsible for the key
-            if self.id == key_id ||
-                (&key_id != predecessor.get_id() && is_in_interval(predecessor.get_id(), &self.id, &key_id)) {
-                let value_option = self.storage.get(&key_id);
-                Response::DHTFoundKey { data: (key_id, value_option.cloned()) }
-            } else {
-                Response::DHTAskFurtherFind {
-                    next_node: self.closest_preceding_node(key_id.clone()),
-                    key_id,
-                }
-            }
+        // I am responsible for the key
+        if is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
+            let value_option = self.storage.get(&key_id);
+            Response::DHTFoundKey { data: (key_id, value_option.cloned()) }
         } else {
             Response::DHTAskFurtherFind {
                 next_node: self.closest_preceding_node(key_id.clone()),
@@ -312,18 +304,10 @@ impl Node {
     }
 
     fn handle_dht_delete_key_request(&mut self, key_id: BigInt) -> Response {
-        if let Some(predecessor) = self.predecessor.clone() {
-            // I am responsible for the key
-            if self.id == key_id ||
-                (&key_id != predecessor.get_id() && is_in_interval(predecessor.get_id(), &self.id, &key_id)) {
-                let key_existed = self.storage.delete(&key_id).is_some();
-                Response::DHTDeletedKey { key_existed }
-            } else {
-                Response::DHTAskFurtherDelete {
-                    next_node: self.closest_preceding_node(key_id.clone()),
-                    key_id,
-                }
-            }
+        // I am responsible for the key
+        if is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
+            let key_existed = self.storage.delete(&key_id).is_some();
+            Response::DHTDeletedKey { key_existed }
         } else {
             Response::DHTAskFurtherDelete {
                 next_node: self.closest_preceding_node(key_id.clone()),
