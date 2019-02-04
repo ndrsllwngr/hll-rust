@@ -1,21 +1,26 @@
 #!/bin/sh
-cargo build
+
+#
+# run this as follows:
+# sh ./test_macOS.sh IP_ADDRESS NUMBER_OF_NODES
+#
+
 PROJECT_BUILD="/target/debug/hll-rust"
-TEST_IP="10.0.1.2"
+TEST_IP=$1
+NUMBER_OF_NODES=$2
+
+cargo build
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 11111                   > /dev/null 2>&1 &
-sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 22222 -j $TEST_IP:11111 > /dev/null 2>&1 &
-sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 33333 -j $TEST_IP:11111 > /dev/null 2>&1 &
-sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 44444 -j $TEST_IP:11111 > /dev/null 2>&1 &
-sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 10000 -j $TEST_IP:11111 > /dev/null 2>&1 &
-sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 20000 -j $TEST_IP:10000 > /dev/null 2>&1 &
-sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 30000 -j $TEST_IP:10000 > /dev/null 2>&1 &
-sleep .5
-        .$PROJECT_BUILD -i $TEST_IP -p 10010 -j $TEST_IP:11111 && fg
+nohup   .${PROJECT_BUILD} -i ${TEST_IP} -p 10001 > /dev/null 2>&1 &
+for i in `seq 2 ${NUMBER_OF_NODES}`
+do
+    let port = 1
+    sleep .5
+    if (($i == $NUMBER_OF_NODES))
+    then
+        .${PROJECT_BUILD} -i ${TEST_IP} -p $((10000+$i)) -j ${TEST_IP}:10001 && fg
+    else
+        nohup   .${PROJECT_BUILD} -i ${TEST_IP} -p $((10000+$i)) -j ${TEST_IP}:10001 > /dev/null 2>&1 &
+    fi
+done
