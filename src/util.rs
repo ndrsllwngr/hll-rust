@@ -2,23 +2,20 @@ use crypto::digest::Digest;
 use crypto::sha1::Sha1;
 use num::bigint::{BigInt, Sign, ToBigInt};
 use std::net::SocketAddr;
-use num::traits::pow;
 
 use super::chord;
 
 pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
     let hash = create_hash(&ip_addr.to_string());
     let byte_vec = hash.as_bytes().to_vec();
-    let id = pow(BigInt::from_bytes_be(Sign::Plus, &byte_vec),
-                   1);
+    let id = BigInt::from_bytes_be(Sign::Plus, &byte_vec);
     id.nth_root(chord::ID_ROOT)
 }
 
 pub fn create_id(string: &str) -> BigInt {
     let hash = create_hash(string);
     let byte_vec = hash.as_bytes().to_vec();
-    let id = pow(BigInt::from_bytes_be(Sign::Plus, &byte_vec),
-                   1);
+    let id = BigInt::from_bytes_be(Sign::Plus, &byte_vec);
     id.nth_root(chord::ID_ROOT)
 }
 
