@@ -1,6 +1,9 @@
 #!/bin/sh
 # macOS only flush routing table
+PROJECT_BUILD="/target/debug/hll-rust"
+TEST_IP="10.0.1.2"
 INTERFACE="en0"
+
 sudo ifconfig $INTERFACE down
 echo "Interface down"
 sleep 1
@@ -12,22 +15,20 @@ echo "Interface up"
 sleep 2
 
 cargo build
-PROJECT_BUILD="/target/debug/hll-rust"
-TEST_IP="10.0.1.2"
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 11111                   > /dev/null 2>&1 &
+nohup   .$PROJECT_BUILD -i $TEST_IP -p 8080                   > /dev/null 2>&1 &
 sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 22222 -j $TEST_IP:11111 > /dev/null 2>&1 &
+nohup   .$PROJECT_BUILD -i $TEST_IP -p 9090 -j $TEST_IP:8080 > /dev/null 2>&1 &
 sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 33333 -j $TEST_IP:11111 > /dev/null 2>&1 &
+nohup   .$PROJECT_BUILD -i $TEST_IP -p 10010 -j $TEST_IP:8080 > /dev/null 2>&1 &
 sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 44444 -j $TEST_IP:11111 > /dev/null 2>&1 &
+nohup   .$PROJECT_BUILD -i $TEST_IP -p 10020 -j $TEST_IP:8080 > /dev/null 2>&1 &
 sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 10000 -j $TEST_IP:11111 > /dev/null 2>&1 &
+nohup   .$PROJECT_BUILD -i $TEST_IP -p 10030 -j $TEST_IP:8080 > /dev/null 2>&1 &
 sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 20000 -j $TEST_IP:10000 > /dev/null 2>&1 &
+nohup   .$PROJECT_BUILD -i $TEST_IP -p 10040 -j $TEST_IP:8080 > /dev/null 2>&1 &
 sleep .5
-nohup   .$PROJECT_BUILD -i $TEST_IP -p 30000 -j $TEST_IP:10000 > /dev/null 2>&1 &
+nohup   .$PROJECT_BUILD -i $TEST_IP -p 10050 -j $TEST_IP:8080 > /dev/null 2>&1 &
 sleep .5
-        .$PROJECT_BUILD -i $TEST_IP -p 10010 -j $TEST_IP:11111 && fg
+        .$PROJECT_BUILD -i $TEST_IP -p 10060 -j $TEST_IP:8080 && fg
