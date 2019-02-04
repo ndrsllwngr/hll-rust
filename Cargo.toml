@@ -13,8 +13,8 @@ log4rs =  {version = "0.8.1", features = ["file"]}
 num = "0.2.0"
 num-bigint = {version = "0.2.2", features = ["serde"]}
 rust-crypto = "0.2.36"
-serde = "1.0.85"
-serde_derive = "1.0.85"
+serde = "1.0.87"
+serde_derive = "1.0.87"
 serde_json = "1.0.38"
 get_if_addrs = "0.5.3"
 getopts = "0.2.18"
