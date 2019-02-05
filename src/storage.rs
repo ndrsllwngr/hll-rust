@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use num::bigint::BigInt;
+use chrono::{DateTime, Local};
+use colored::*;
 
 use super::util::*;
 
@@ -37,19 +39,25 @@ impl Storage {
     }
 
     pub fn write_log_entry(&mut self, str: String){
-        self.logs.push(str);
+        let local: DateTime<Local> = Local::now();
+        self.logs.push(format!("{} {}",local.format("%H:%M:%S").to_string().yellow(), str));
     }
 
-    pub fn get_all_log_entries(&self) -> Vec<String> {
-        self.logs.clone()
-    }
-
-    pub fn get_last_log_entry(&self) -> String {
-        if self.logs.len() > 0 {
-            self.logs[self.logs.len()-1].clone()
+    pub fn get_last_three_log_entries(&self) -> Vec<String> {
+        let mut last_three_entries = Vec::new();
+        if self.logs.len() >= 3 {
+            last_three_entries.push(self.logs[self.logs.len()-3].clone());
+            last_three_entries.push(self.logs[self.logs.len()-2].clone());
+            last_three_entries.push(self.logs[self.logs.len()-1].clone());
+        } else if self.logs.len() == 2 {
+            last_three_entries.push(self.logs[self.logs.len()-2].clone());
+            last_three_entries.push(self.logs[self.logs.len()-1].clone());
+        } else if self.logs.len() == 1 {
+            last_three_entries.push(self.logs[self.logs.len()-1].clone());
         } else {
-            "No log entry found".to_string()
+            last_three_entries.push("No log entry found".italic().yellow().to_string())
         }
+        last_three_entries.clone()
     }
 }
 

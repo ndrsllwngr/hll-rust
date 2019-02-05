@@ -14,6 +14,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate signal_hook;
 extern crate tokio;
+extern crate chrono;
 
 use std::env;
 use std::net::SocketAddr;
