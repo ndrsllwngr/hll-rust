@@ -1,5 +1,4 @@
 use std::time;
-use std::{error::Error};
 use std::net::SocketAddr;
 use std::process;
 use std::sync::{Arc, Mutex};
@@ -165,14 +164,10 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
         loop {
             let buffer = &mut String::new();
             stdin().read_line(buffer).unwrap();
-            match buffer.trim_right() {
-                "m" => {
+            if let "m" = buffer.trim_right() {
                     i_clone.store(true, Ordering::SeqCst);
                     perform_user_interaction(other_node.clone()).expect("perform_user_interaction failed");
                     i_clone.store(false, Ordering::SeqCst);
-                }
-                _ => {
-                }
             };
         }
      //   for _sig in signals.forever() {

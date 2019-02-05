@@ -17,9 +17,10 @@ pub struct OtherNode {
 }
 
 impl OtherNode {
-    pub fn new(id: BigInt, ip: SocketAddr) -> OtherNode {
-        OtherNode { id, ip_addr: ip }
-    }
+    // TODO unused, should that be the case?
+    // pub fn new(id: BigInt, ip: SocketAddr) -> OtherNode {
+    //     OtherNode { id, ip_addr: ip }
+    // }
 
     pub fn get_id(&self) -> &BigInt {
         &self.id

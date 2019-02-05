@@ -64,9 +64,8 @@ pub fn print_current_node_state(node: &Node) {
                     [""]
                     );
     let copy_logs = node.storage.get_last_three_log_entries();
-    for i in 0..copy_logs.len() {
-        let entry = &copy_logs[i];
-        storage_logs_table.add_row(row![&entry.clone().to_string()]);
+    for item in &copy_logs {
+        storage_logs_table.add_row(row![item.clone().to_string()]);
     }
     storage_logs_table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
 
