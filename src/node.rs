@@ -4,11 +4,10 @@ use std::net::SocketAddr;
 use num_bigint::{BigInt, ToBigInt};
 
 use super::chord;
-use super::finger::FingerTable;
-use super::network_util;
+use super::fingertable::FingerTable;
+use super::network;
 use super::protocols::*;
 use super::storage::{Storage, DHTEntry};
-use super::util::*;
 
 /// Simple representation of an external node in the network
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -65,7 +64,7 @@ impl Node {
         //let next_finger = 0; // Always start at first entry of finger_table
         //let finger_table = FingerTable::new(successor.clone(), &id);
         //let storage = Storage::new();
-        let id = create_node_id(node_ip_addr);
+        let id = chord::create_node_id(node_ip_addr);
 
         Node {
             id: id.clone(),
@@ -79,7 +78,7 @@ impl Node {
     }
 
     pub fn new_first(node_ip_addr: SocketAddr) -> Node {
-        let id = create_node_id(node_ip_addr);
+        let id = chord::create_node_id(node_ip_addr);
         let successor = OtherNode { id: id.clone(), ip_addr: node_ip_addr };
         Node {
             id: id.clone(),
@@ -109,7 +108,7 @@ impl Node {
         self.finger_table.set_successor(successor.clone());
         let req = Request::GetSuccessorList;
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network_util::send_string_to_socket(*successor.get_ip_addr(), serde_json::to_string(&msg).unwrap());
+        network::send_string_to_socket(*successor.get_ip_addr(), serde_json::to_string(&msg).unwrap());
         //}
     }
 
@@ -119,7 +118,7 @@ impl Node {
         let mut return_node: OtherNode = self.to_other_node();
         for i in 0..self.finger_table.length() {
             let entry = self.finger_table.get(i);
-            let finger_abs = chord_abs(&entry.node.id, &id);
+            let finger_abs = chord::chord_abs(&entry.node.id, &id);
             if finger_abs < min_abs {
                 min_abs = finger_abs;
                 return_node = entry.node.clone()
@@ -127,7 +126,7 @@ impl Node {
         }
         for i in 0..self.successor_list.len() {
             let entry = &self.successor_list[i];
-            let finger_abs = chord_abs(entry.get_id(), &id);
+            let finger_abs = chord::chord_abs(entry.get_id(), &id);
             if finger_abs < min_abs {
                 min_abs = finger_abs;
                 return_node = entry.clone()
@@ -233,7 +232,7 @@ impl Node {
     // REQUESTS
 
     fn handle_find_successor_request(&self, id: BigInt) -> Response {
-        if is_in_interval(&self.id, self.get_successor().get_id(), &id) {
+        if chord::is_in_interval(&self.id, self.get_successor().get_id(), &id) {
             Response::FoundSuccessor { successor: self.get_successor().clone() }
         } else {
             Response::AskFurther { next_node: self.closest_preceding_node(id) }
@@ -254,7 +253,7 @@ impl Node {
             }
             Some(pre) => {
                 debug!("[Node #{}] Notify: Current Pre: {}, possible new Pre: {}. Successor is: {}", self.id, pre.id, node.id, self.get_successor().id);
-                if pre.id != node.id && is_in_interval(pre.get_id(), &self.id, node.get_id()) {
+                if pre.id != node.id && chord::is_in_interval(pre.get_id(), &self.id, node.get_id()) {
                     self.predecessor = Some(node);
                     debug!("[Node #{}] Took new Pre: {}", self.id, self.predecessor.clone().unwrap().id);
                 }
@@ -265,7 +264,7 @@ impl Node {
     }
 
     fn handle_find_successor_finger_request(&self, index: usize, finger_id: BigInt) -> Response {
-        if is_in_interval(&self.id, self.get_successor().get_id(), &finger_id) {
+        if chord::is_in_interval(&self.id, self.get_successor().get_id(), &finger_id) {
             Response::FoundSuccessorFinger { index, finger_id, successor: self.get_successor().clone() }
         } else {
             Response::AskFurtherFinger { index, finger_id, next_node: self.get_successor() }
@@ -279,7 +278,7 @@ impl Node {
     fn handle_dht_store_key_request(&mut self,
                                     data: (BigInt, DHTEntry)) -> Response {
         // I am responsible for the key
-        if is_in_interval(&self.id, self.get_successor().get_id(), &data.0) {
+        if chord::is_in_interval(&self.id, self.get_successor().get_id(), &data.0) {
             self.storage.put(data);
             Response::DHTStoredKey
         } else {
@@ -292,7 +291,7 @@ impl Node {
 
     fn handle_dht_find_key_request(&self, key_id: BigInt) -> Response {
         // I am responsible for the key
-        if is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
+        if chord::is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
             let value_option = self.storage.get(&key_id);
             Response::DHTFoundKey { data: (key_id, value_option.cloned()) }
         } else {
@@ -305,7 +304,7 @@ impl Node {
 
     fn handle_dht_delete_key_request(&mut self, key_id: BigInt) -> Response {
         // I am responsible for the key
-        if is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
+        if chord::is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
             let key_existed = self.storage.delete(&key_id).is_some();
             Response::DHTDeletedKey { key_existed }
         } else {
@@ -334,14 +333,14 @@ impl Node {
         let req = Request::FindSuccessor { id: self.id.clone() };
 
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
     }
 
     fn handle_get_predecessor_response(&mut self, predecessor: Option<OtherNode>) {
         if let Some(predecessor) = predecessor {
             // maybe update my successor:
             if predecessor.get_id() != &self.id &&
-                is_in_interval(&self.id, self.get_successor().get_id(), predecessor.get_id()) {
+                chord::is_in_interval(&self.id, self.get_successor().get_id(), predecessor.get_id()) {
                 debug!("[Node #{}] GetPreResp: Had succ #{}, got pre #{}, new succ: #{}", self.id.clone(), self.get_successor().id.clone(), predecessor.id.clone(), predecessor.id.clone());
                 self.update_successor_and_successor_list(predecessor);
             }
@@ -349,7 +348,7 @@ impl Node {
         let req = Request::Notify { node: self.to_other_node() };
 
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network_util::send_string_to_socket(self.get_successor().ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_string_to_socket(self.get_successor().ip_addr, serde_json::to_string(&msg).unwrap());
     }
 
     fn handle_notify_response(&self) {}
@@ -368,7 +367,7 @@ impl Node {
         let req = Request::FindSuccessorFinger { index, finger_id };
 
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
     }
 
     fn handle_get_successor_list_response(&mut self, successor_list: Vec<OtherNode>) {
@@ -413,7 +412,7 @@ impl Node {
         let req = Request::DHTStoreKey { data };
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
-        network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
     }
 
     fn handle_dht_ask_further_find_response(&self,
@@ -423,7 +422,7 @@ impl Node {
         let req = Request::DHTFindKey { key_id };
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
-        network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
     }
 
     fn handle_dht_ask_further_delete_response(&self,
@@ -433,6 +432,6 @@ impl Node {
         let req = Request::DHTDeleteKey { key_id };
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
 
-        network_util::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
     }
 }

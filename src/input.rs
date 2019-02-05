@@ -3,9 +3,9 @@ use std::{error::Error};
 use std::process;
 use std::net::SocketAddr;
 
-use super::network_util;
+use super::network;
+use super::chord;
 use super::protocols::*;
-use super::util::*;
 use super::node::OtherNode;
 use super::storage;
 
@@ -157,7 +157,7 @@ fn kill() -> Result<(), Box<Error>> {
 fn kill_node(key: String){
     let target_ip = key.parse::<SocketAddr>().unwrap();
     let msg = Message::Kill;
-    network_util::send_string_to_socket(target_ip, serde_json::to_string(&msg).unwrap());
+    network::send_string_to_socket(target_ip, serde_json::to_string(&msg).unwrap());
 }
 
 fn store_key_value(key: String, value: String, node_as_other: OtherNode) {
@@ -167,18 +167,18 @@ fn store_key_value(key: String, value: String, node_as_other: OtherNode) {
 }
 
 fn find_key(key: String, node_as_other: OtherNode) {
-    let key_id = create_id(&key);
+    let key_id = chord::create_id(&key);
     let req = Request::DHTFindKey { key_id };
     send_req(node_as_other, req);
 }
 
 fn delete_key(key: String, node_as_other: OtherNode) {
-    let key_id = create_id(&key);
+    let key_id = chord::create_id(&key);
     let req = Request::DHTDeleteKey { key_id };
     send_req(node_as_other, req);
 }
 
 fn send_req(node_as_other: OtherNode, req: Request) {
     let msg = Message::RequestMessage { sender: node_as_other.clone(), request: req };
-    network_util::send_string_to_socket(*node_as_other.get_ip_addr(), serde_json::to_string(&msg).unwrap());
+    network::send_string_to_socket(*node_as_other.get_ip_addr(), serde_json::to_string(&msg).unwrap());
 }
