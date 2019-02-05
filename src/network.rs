@@ -42,6 +42,7 @@ pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {
             true
         }
         Err(e) => {
+            error!("{:?}", e);
             false
         }
     }
@@ -71,7 +72,7 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port:i32, id: BigIn
         let arc_clone = node_arc.clone();
 
         let connection = io::read_until(buf_reader, b'\n', buf)
-            .and_then(move |(socket, buf)| {
+            .and_then(move |(_socket, buf)| {
                 let msg_string = str::from_utf8(&buf).unwrap();
                 let message = serde_json::from_str(msg_string).unwrap();
                 //info!("Look at me: {:?}",serde_json::to_string(&Message::Kill{}).unwrap());
@@ -80,7 +81,6 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port:i32, id: BigIn
                     Message::Kill => {
                         info!("Got kill message, shutting down...");
                         process::exit(0);
-                        Ok(())
                     }
                     Message::Ping { sender } => {
                         debug!("Got pinged from Node #{}", sender.get_id());

@@ -3,7 +3,7 @@ use num::bigint::BigInt;
 use chrono::{DateTime, Local};
 use colored::*;
 
-use super::util::*;
+use super::chord;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DHTEntry {
@@ -62,6 +62,6 @@ impl Storage {
 }
 
 pub fn make_hashed_key_value_pair(key: String, value: String) -> (BigInt, DHTEntry) {
-    let id = create_id(&key);
+    let id = chord::create_id(&key);
     (id, DHTEntry{key, value})
 }
