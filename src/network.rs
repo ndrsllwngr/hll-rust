@@ -1,18 +1,18 @@
+use std::{process, str, thread};
 use std::io::{BufWriter, Write};
-use std::io::{BufReader};
+use std::io::BufReader;
 use std::net;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use std::{thread, str, process};
 
 use futures::{Future, Stream};
 use num_bigint::BigInt;
 use tokio::io;
-use tokio::net::{TcpListener};
+use tokio::net::TcpListener;
 
+use super::chord;
 use super::node::*;
 use super::protocols::*;
-use super::chord;
 
 pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
     let builder = thread::Builder::new().name("Send".to_string());

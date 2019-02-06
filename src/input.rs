@@ -1,14 +1,13 @@
-use std::io::stdin;
 use std::{error::Error};
-use std::process;
+use std::io::stdin;
 use std::net::SocketAddr;
+use std::process;
 
-use super::network;
 use super::chord;
-use super::protocols::*;
+use super::network;
 use super::node::OtherNode;
+use super::protocols::*;
 use super::storage;
-
 
 pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Error>> {
     let info =

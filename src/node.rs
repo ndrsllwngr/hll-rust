@@ -1,5 +1,5 @@
-use std::str;
 use std::net::SocketAddr;
+use std::str;
 
 use num_bigint::{BigInt, ToBigInt};
 
@@ -7,7 +7,7 @@ use super::chord;
 use super::fingertable::FingerTable;
 use super::network;
 use super::protocols::*;
-use super::storage::{Storage, DHTEntry};
+use super::storage::{DHTEntry, Storage};
 
 /// Simple representation of an external node in the network
 #[derive(Clone, Serialize, Deserialize, Debug)]

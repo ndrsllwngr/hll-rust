@@ -22,7 +22,7 @@ impl FingerTable {
     pub fn new(parent_node_id: BigInt) -> FingerTable {
         FingerTable { parent_node_id, entries: Vec::with_capacity(chord::FINGERTABLE_SIZE) }
     }
-    // TODO maybe use hashing function with smaller bit range for testing. (Bitsize = entries in finger_table)
+
     pub fn new_first(parent_node_id: BigInt, successor: OtherNode) -> FingerTable {
         let mut entries: Vec<FingerEntry> = Vec::with_capacity(chord::FINGERTABLE_SIZE);
         entries.push(FingerEntry {
@@ -72,14 +72,3 @@ pub fn get_finger_id(n: &BigInt, exponent: usize) -> BigInt {
     n + offset
 }
 
-/*
-// m = size of finger table
-pub fn new_finger_table<'a>(node: &'a OtherNode, m: usize) -> FingerTable<'a>  {
-    let mut ft: Vec<FingerEntry> = Vec::new();
-    for i in 0..m {
-        let id = finger_id(&node.config.id, i as usize, m).clone();
-        ft.push(new_finger_entry(id , node));
-    }
-    return ft;
-}
-*/

@@ -1,7 +1,7 @@
-use super::node::*;
-use prettytable::format;
 use colored::*;
+use prettytable::format;
 
+use super::node::*;
 
 pub fn print_current_node_state(node: &Node) {
     let mut pre_id_string = "None".to_string();

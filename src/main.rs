@@ -1,3 +1,4 @@
+extern crate chrono;
 extern crate crypto;
 extern crate futures;
 extern crate get_if_addrs;
@@ -12,9 +13,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-extern crate signal_hook;
 extern crate tokio;
-extern crate chrono;
 
 use std::env;
 use std::net::SocketAddr;
