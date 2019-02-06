@@ -12,15 +12,14 @@ use super::storage::{DHTEntry, Storage};
 /// Simple representation of an external node in the network
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct OtherNode {
-    pub id: BigInt,
-    pub ip_addr: SocketAddr,
+    id: BigInt,
+    ip_addr: SocketAddr,
 }
 
 impl OtherNode {
-    // TODO unused, should that be the case?
-    // pub fn new(id: BigInt, ip: SocketAddr) -> OtherNode {
-    //     OtherNode { id, ip_addr: ip }
-    // }
+    pub fn new(id: BigInt, ip: SocketAddr) -> OtherNode {
+        OtherNode { id, ip_addr: ip }
+    }
 
     pub fn get_id(&self) -> &BigInt {
         &self.id
@@ -80,12 +79,12 @@ impl Node {
 
     pub fn new_first(node_ip_addr: SocketAddr) -> Node {
         let id = chord::create_node_id(node_ip_addr);
-        let successor = OtherNode { id: id.clone(), ip_addr: node_ip_addr };
+        let successor = OtherNode::new(id.clone(), node_ip_addr);
         Node {
             id: id.clone(),
             ip_addr: node_ip_addr,
             finger_table: FingerTable::new_first(id.clone(), successor.clone()),
-            predecessor: Some(OtherNode { id, ip_addr: node_ip_addr }),
+            predecessor: Some(OtherNode::new(id, node_ip_addr)),
             successor_list: vec![successor],
             storage: Storage::new(),
             joined: true,
@@ -94,10 +93,7 @@ impl Node {
 
     /// Converts internal representation of node to the simpler representation OtherNode
     pub fn to_other_node(&self) -> OtherNode {
-        OtherNode {
-            id: self.id.clone(),
-            ip_addr: self.ip_addr,
-        }
+        OtherNode::new(self.id.clone(), self.ip_addr)
     }
 
     pub fn get_successor(&self) -> OtherNode {
@@ -119,10 +115,10 @@ impl Node {
         let mut return_node: OtherNode = self.to_other_node();
         for i in 0..self.finger_table.length() {
             let entry = self.finger_table.get(i);
-            let finger_abs = chord::chord_abs(&entry.node.id, &id);
+            let finger_abs = chord::chord_abs(entry.get_node().get_id(), &id);
             if finger_abs < min_abs {
                 min_abs = finger_abs;
-                return_node = entry.node.clone()
+                return_node = entry.get_node().clone()
             }
         }
         for i in 0..self.successor_list.len() {
@@ -280,7 +276,7 @@ impl Node {
                                     data: (BigInt, DHTEntry)) -> Response {
         // I am responsible for the key
         if chord::is_in_interval(&self.id, self.get_successor().get_id(), &data.0) {
-            self.storage.put(data);
+            self.storage.store_key(data);
             Response::DHTStoredKey
         } else {
             Response::DHTAskFurtherStore {
@@ -293,7 +289,7 @@ impl Node {
     fn handle_dht_find_key_request(&self, key_id: BigInt) -> Response {
         // I am responsible for the key
         if chord::is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
-            let value_option = self.storage.get(&key_id);
+            let value_option = self.storage.get_key(&key_id);
             Response::DHTFoundKey { data: (key_id, value_option.cloned()) }
         } else {
             Response::DHTAskFurtherFind {
@@ -306,7 +302,7 @@ impl Node {
     fn handle_dht_delete_key_request(&mut self, key_id: BigInt) -> Response {
         // I am responsible for the key
         if chord::is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
-            let key_existed = self.storage.delete(&key_id).is_some();
+            let key_existed = self.storage.delete_key(&key_id).is_some();
             Response::DHTDeletedKey { key_existed }
         } else {
             Response::DHTAskFurtherDelete {
@@ -388,8 +384,8 @@ impl Node {
 
     fn handle_dht_found_key_response(&mut self, data: (BigInt, Option<DHTEntry>)) {
         if let Some(dht_entry) = data.1.clone() {
-            self.storage.write_log_entry(format!("Value for key {} (id: {}) is {}", dht_entry.key, data.0, dht_entry.value));
-            debug!("Value for key {} (id: {}) is {}", dht_entry.key, data.0, dht_entry.value);
+            self.storage.write_log_entry(format!("Value for key {} (id: {}) is {}", dht_entry.get_key(), data.0, dht_entry.get_value()));
+            debug!("Value for key {} (id: {}) is {}", dht_entry.get_key(), data.0, dht_entry.get_value());
         } else {
             self.storage.write_log_entry(format!("No value for key_id {} found in the network", data.0));
             debug!("No value for key_id {} found in the network", data.0)

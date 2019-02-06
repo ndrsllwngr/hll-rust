@@ -52,8 +52,7 @@ pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {
 // nc 127.0.0.1 34254
 // can be killed by sending "Kill" (with apostrophes)
 // afterwards every message will be echoed in the console by handle_request
-pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port:i32, id: BigInt) -> Result<(), Box<std::error::Error>> {
-
+pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port: i32, id: BigInt) -> Result<(), Box<std::error::Error>> {
     let listen_ip = format!("{}:{}", chord::LISTENING_ADDRESS, port)
         .parse::<SocketAddr>()
         .unwrap();

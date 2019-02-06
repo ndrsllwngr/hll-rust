@@ -16,7 +16,7 @@ pub enum Message {
     ResponseMessage {
         sender: OtherNode,
         response: Response,
-    }
+    },
 }
 
 

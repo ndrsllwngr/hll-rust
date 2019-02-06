@@ -8,7 +8,8 @@ extern crate log;
 extern crate log4rs;
 extern crate num;
 extern crate num_bigint;
-#[macro_use] extern crate prettytable;
+#[macro_use]
+extern crate prettytable;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;

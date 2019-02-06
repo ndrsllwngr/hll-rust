@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+use std::collections::hash_map::Iter;
 use chrono::{DateTime, Local};
 use colored::*;
 use num::bigint::BigInt;
@@ -8,15 +8,29 @@ use super::chord;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DHTEntry {
-    pub key: String,
-    pub value: String,
+    key: String,
+    value: String,
+}
+
+impl DHTEntry {
+    pub fn new(key: String, value: String) -> DHTEntry {
+        DHTEntry { key, value }
+    }
+
+    pub fn get_key(&self) -> &String {
+        &self.key
+    }
+
+    pub fn get_value(&self) -> &String {
+        &self.value
+    }
 }
 
 #[derive(Clone)]
 pub struct Storage {
-    pub data: HashMap<BigInt, DHTEntry>,
+    data: HashMap<BigInt, DHTEntry>,
     logs: Vec<String>,
-    
+
 }
 
 impl Storage {
@@ -27,34 +41,38 @@ impl Storage {
         }
     }
 
-    pub fn put(&mut self, data: (BigInt, DHTEntry)) {
+    pub fn get_data_as_iter(&self) -> Iter<BigInt, DHTEntry> {
+        self.data.iter()
+    }
+
+    pub fn store_key(&mut self, data: (BigInt, DHTEntry)) {
         self.data.insert(data.0, data.1);
     }
 
-    pub fn get(&self, key_id: &BigInt) -> Option<&DHTEntry> {
+    pub fn get_key(&self, key_id: &BigInt) -> Option<&DHTEntry> {
         self.data.get(key_id)
     }
 
-    pub fn delete(&mut self, key_id: &BigInt) -> Option<DHTEntry> {
+    pub fn delete_key(&mut self, key_id: &BigInt) -> Option<DHTEntry> {
         self.data.remove(key_id)
     }
 
-    pub fn write_log_entry(&mut self, str: String){
+    pub fn write_log_entry(&mut self, str: String) {
         let local: DateTime<Local> = Local::now();
-        self.logs.push(format!("{} {}",local.format("%H:%M:%S").to_string().yellow(), str));
+        self.logs.push(format!("{} {}", local.format("%H:%M:%S").to_string().yellow(), str));
     }
 
     pub fn get_last_three_log_entries(&self) -> Vec<String> {
         let mut last_three_entries = Vec::new();
         if self.logs.len() >= 3 {
-            last_three_entries.push(self.logs[self.logs.len()-3].clone());
-            last_three_entries.push(self.logs[self.logs.len()-2].clone());
-            last_three_entries.push(self.logs[self.logs.len()-1].clone());
+            last_three_entries.push(self.logs[self.logs.len() - 3].clone());
+            last_three_entries.push(self.logs[self.logs.len() - 2].clone());
+            last_three_entries.push(self.logs[self.logs.len() - 1].clone());
         } else if self.logs.len() == 2 {
-            last_three_entries.push(self.logs[self.logs.len()-2].clone());
-            last_three_entries.push(self.logs[self.logs.len()-1].clone());
+            last_three_entries.push(self.logs[self.logs.len() - 2].clone());
+            last_three_entries.push(self.logs[self.logs.len() - 1].clone());
         } else if self.logs.len() == 1 {
-            last_three_entries.push(self.logs[self.logs.len()-1].clone());
+            last_three_entries.push(self.logs[self.logs.len() - 1].clone());
         } else {
             last_three_entries.push("No log entry found".italic().yellow().to_string())
         }
@@ -64,5 +82,5 @@ impl Storage {
 
 pub fn make_hashed_key_value_pair(key: String, value: String) -> (BigInt, DHTEntry) {
     let id = chord::create_id(&key);
-    (id, DHTEntry{key, value})
+    (id, DHTEntry::new(key, value))
 }

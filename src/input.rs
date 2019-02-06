@@ -153,14 +153,14 @@ fn kill() -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn kill_node(key: String){
+fn kill_node(key: String) {
     let target_ip = key.parse::<SocketAddr>().unwrap();
     let msg = Message::Kill;
     network::send_string_to_socket(target_ip, serde_json::to_string(&msg).unwrap());
 }
 
 fn store_key_value(key: String, value: String, node_as_other: OtherNode) {
-    let req = Request::DHTStoreKey { data:  storage::make_hashed_key_value_pair(key, value)};
+    let req = Request::DHTStoreKey { data: storage::make_hashed_key_value_pair(key, value) };
     info!("Trying to store data {:?}", req.clone());
     send_req(node_as_other, req);
 }

@@ -162,9 +162,9 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
             let buffer = &mut String::new();
             stdin().read_line(buffer).unwrap();
             if let "m" = buffer.trim_right() {
-                    i_clone.store(true, Ordering::SeqCst);
-                    perform_user_interaction(other_node.clone()).expect("perform_user_interaction failed");
-                    i_clone.store(false, Ordering::SeqCst);
+                i_clone.store(true, Ordering::SeqCst);
+                perform_user_interaction(other_node.clone()).expect("perform_user_interaction failed");
+                i_clone.store(false, Ordering::SeqCst);
             };
         }
     }).unwrap();
@@ -230,7 +230,7 @@ fn x_modulo_ring_size(x: BigInt) -> BigInt {
     BigInt::modpow(&x, one, chord_ring_size)
 }
 
-pub fn spawn_node(node_ip_addr: SocketAddr, port:i32, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
+pub fn spawn_node(node_ip_addr: SocketAddr, port: i32, entry_node_addr: Option<SocketAddr>) -> JoinHandle<()> {
     if entry_node_addr.is_some() {
         info!("Spawn node and join.");
     } else {
@@ -260,7 +260,7 @@ pub fn spawn_node(node_ip_addr: SocketAddr, port:i32, entry_node_addr: Option<So
 
             if let Some(entry_node_addr) = entry_node_addr {
                 thread::sleep(chord::NODE_INIT_SLEEP_INTERVAL);
-                chord::join(id.clone(),other_node.clone(),entry_node_addr);
+                chord::join(id.clone(), other_node.clone(), entry_node_addr);
             }
 
             let arc_clone2 = arc.clone();
@@ -292,8 +292,6 @@ pub fn spawn_node(node_ip_addr: SocketAddr, port:i32, entry_node_addr: Option<So
             handle3.join().expect("handle3 failed");
             handle4.join().expect("handle4 failed");
             handle5.join().expect("handle5 failed");
-
-
         })
         .unwrap()
 }

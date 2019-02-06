@@ -35,9 +35,9 @@ pub fn print_current_node_state(node: &Node) {
 
     // Finger Table
     let mut finger_table_table = table!(["#".italic().yellow(), "Finger".italic().yellow(), "Node".italic().yellow()],["", "", ""]);
-    for i in 0..node.finger_table.entries.len() {
-        let entry = &node.finger_table.entries[i];
-        finger_table_table.add_row(row![r -> &i.to_string(), &entry.id.clone().to_string(), &entry.node.get_id().to_string()]);
+    for i in 0..node.finger_table.length() {
+        let entry = node.finger_table.get(i);
+        finger_table_table.add_row(row![r -> &i.to_string(), entry.get_id().to_string(), entry.get_node().get_id().to_string()]);
     }
     // finger_table_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
     finger_table_table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
@@ -47,8 +47,8 @@ pub fn print_current_node_state(node: &Node) {
         ["ID ".italic().yellow(), "Key".italic().yellow(), "Value".italic().yellow()],
         ["", "", ""]
         );
-    for (key_id, dht_entry) in node.storage.data.iter() {
-        storage_table.add_row(row![&key_id.clone().to_string(), &dht_entry.key, &dht_entry.value]);
+    for (key_id, dht_entry) in node.storage.get_data_as_iter() {
+        storage_table.add_row(row![&key_id.clone().to_string(), dht_entry.get_key(), dht_entry.get_value()]);
     }
     storage_table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
 

@@ -7,15 +7,29 @@ use super::node::OtherNode;
 // Represents a single finger table entry
 #[derive(Clone)]
 pub struct FingerEntry {
-    pub id: BigInt,
+    id: BigInt,
     // ID hash of (n + 2^i) mod (2^m)
-    pub node: OtherNode,
+    node: OtherNode,
+}
+
+impl FingerEntry {
+    pub fn new(id: BigInt, node: OtherNode) -> FingerEntry {
+        FingerEntry { id, node }
+    }
+
+    pub fn get_id(&self) -> &BigInt {
+        &self.id
+    }
+
+    pub fn get_node(&self) -> &OtherNode {
+        &self.node
+    }
 }
 
 #[derive(Clone)]
 pub struct FingerTable {
     parent_node_id: BigInt,
-    pub entries: Vec<FingerEntry>,
+    entries: Vec<FingerEntry>,
 }
 
 impl FingerTable {
@@ -25,15 +39,15 @@ impl FingerTable {
 
     pub fn new_first(parent_node_id: BigInt, successor: OtherNode) -> FingerTable {
         let mut entries: Vec<FingerEntry> = Vec::with_capacity(chord::FINGERTABLE_SIZE);
-        entries.push(FingerEntry {
-            id: get_finger_id(&parent_node_id, 0),
-            node: successor,
-        });
+        entries.push(FingerEntry::new(
+            get_finger_id(&parent_node_id, 0),
+            successor,
+        ));
         FingerTable { parent_node_id, entries }
     }
 
     pub fn put(&mut self, index: usize, finger_id: BigInt, node: OtherNode) {
-        let finger_entry = FingerEntry {id: finger_id, node};
+        let finger_entry = FingerEntry::new(finger_id, node);
         if self.entries.len() > index {
             self.entries[index] = finger_entry;
         } else {
@@ -47,7 +61,10 @@ impl FingerTable {
 
     pub fn set_successor(&mut self, successor: OtherNode) {
         if self.entries.is_empty() {
-            self.entries.push(FingerEntry{id: get_finger_id(&self.parent_node_id, 0), node: successor});
+            self.entries.push(FingerEntry::new(
+                get_finger_id(&self.parent_node_id, 0),
+                successor,
+            ));
         } else {
             self.entries[0].node = successor;
         }
@@ -60,7 +77,6 @@ impl FingerTable {
     pub fn length(&self) -> usize {
         self.entries.len()
     }
-
 }
 
 pub fn get_finger_id(n: &BigInt, exponent: usize) -> BigInt {
