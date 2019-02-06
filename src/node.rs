@@ -163,7 +163,7 @@ impl Node {
                 self.handle_dht_find_key_request(key_id)
             }
             Request::DHTDeleteKey { key_id } => {
-                info!("[Node #{}] Request::DeleteKey(key_id {})", self.clone().id), key_id.clone();
+                info!("[Node #{}] Request::DeleteKey(key_id {})", self.clone().id, key_id.clone());
                 self.handle_dht_delete_key_request(key_id)
             }
         }
