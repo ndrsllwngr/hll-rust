@@ -135,7 +135,7 @@ impl Node {
     pub fn process_incoming_request(&mut self, request: Request) -> Response {
         match request {
             Request::FindSuccessor { id } => {
-                debug!("[Node #{}] Request::FindSuccessor({})", self.clone().id, id.clone());
+                debug!("[Node #{}] Request::FindSuccessor(id: {})", self.clone().id, id.clone());
                 self.handle_find_successor_request(id)
             }
             Request::GetPredecessor => {
@@ -147,7 +147,7 @@ impl Node {
                 self.handle_notify_request(node)
             }
             Request::FindSuccessorFinger { index, finger_id } => {
-                debug!("[Node #{}] Request::FindSuccessorFinger({})", self.clone().id, finger_id.clone());
+                debug!("[Node #{}] Request::FindSuccessorFinger(index: {} finger_id: {})", self.clone().id, index, finger_id.clone());
                 self.handle_find_successor_finger_request(index, finger_id)
             }
             Request::GetSuccessorList => {
@@ -155,15 +155,15 @@ impl Node {
                 self.handle_get_successor_list_request()
             }
             Request::DHTStoreKey { data } => {
-                info!("[Node #{}] Request::StoreKey", self.clone().id);
+                info!("[Node #{}] Request::StoreKey(data: {:?})", self.clone().id, data.clone());
                 self.handle_dht_store_key_request(data)
             }
             Request::DHTFindKey { key_id } => {
-                info!("[Node #{}] Request::FindKey", self.clone().id);
+                info!("[Node #{}] Request::FindKey(key_id: {})", self.clone().id, key_id.clone());
                 self.handle_dht_find_key_request(key_id)
             }
             Request::DHTDeleteKey { key_id } => {
-                info!("[Node #{}] Request::DeleteKey", self.clone().id);
+                info!("[Node #{}] Request::DeleteKey(key_id {})", self.clone().id), key_id.clone();
                 self.handle_dht_delete_key_request(key_id)
             }
         }
@@ -184,11 +184,12 @@ impl Node {
                 self.handle_get_predecessor_response(predecessor)
             }
             Response::NotifyResponse => {
-                //debug!("Response::NotifyResponse");
+                debug!("Response::NotifyResponse");
                 self.handle_notify_response()
             }
             Response::FoundSuccessorFinger { index, finger_id, successor } => {
-                debug!("[Node #{}] Response::FoundSuccessorFinger(successor: {})", self.clone().id, successor.id.clone());
+                debug!("[Node #{}] Response::FoundSuccessorFinger(index: {}, finger_id: {}, successor: {})",
+                       self.clone().id, index, finger_id.clone(), successor.id.clone());
                 self.handle_found_successor_finger_response(index, finger_id, successor)
             }
             Response::AskFurtherFinger { index, finger_id, next_node } => {
@@ -196,7 +197,8 @@ impl Node {
                 self.handle_ask_further_finger_response(index, finger_id, next_node)
             }
             Response::GetSuccessorListResponse { successor_list } => {
-                debug!("[Node #{}] Response::GetSuccessorListResponse(successor_list: {:?}", self.clone().id, successor_list.clone());
+                debug!("[Node #{}] Response::GetSuccessorListResponse(successor_list: {:?}",
+                       self.clone().id, successor_list.clone());
                 self.handle_get_successor_list_response(successor_list)
             }
             Response::DHTStoredKey => {
@@ -204,23 +206,26 @@ impl Node {
                 self.handle_dht_stored_key_response()
             }
             Response::DHTFoundKey { data } => {
-                debug!("[Node #{}] Response::DHTFoundKey", self.clone().id);
+                debug!("[Node #{}] Response::DHTFoundKey(data: {:?})", self.clone().id, data.clone());
                 self.handle_dht_found_key_response(data)
             }
             Response::DHTDeletedKey { key_existed } => {
-                debug!("[Node #{}] Response::DHTDeletedKey", self.clone().id);
+                debug!("[Node #{}] Response::DHTDeletedKey(key_existed: {})", self.clone().id, key_existed);
                 self.handle_dht_deleted_key_response(key_existed)
             }
             Response::DHTAskFurtherStore { next_node, data } => {
-                info!("[Node #{}] Response::DHTAskFurtherStore(next_node: {}, data: {:?})", self.clone().id, next_node.get_id().clone(), data);
+                info!("[Node #{}] Response::DHTAskFurtherStore(next_node: {}, data: {:?})",
+                      self.clone().id, next_node.get_id().clone(), data);
                 self.handle_dht_ask_further_store_response(next_node, data)
             }
             Response::DHTAskFurtherFind { next_node, key_id } => {
-                info!("[Node #{}] Response::DHTAskFurtherFind", self.clone().id);
+                info!("[Node #{}] Response::DHTAskFurtherFind(next_node: {}, key_id: {})",
+                      self.clone().id, next_node.get_id().clone(), key_id.clone());
                 self.handle_dht_ask_further_find_response(next_node, key_id)
             }
             Response::DHTAskFurtherDelete { next_node, key_id } => {
-                info!("[Node #{}] Response::DHTAskFurtherDelete", self.clone().id);
+                info!("[Node #{}] Response::DHTAskFurtherDelete(next_node: {}, key_id: {})",
+                      self.clone().id, next_node.get_id().clone(), key_id.clone());
                 self.handle_dht_ask_further_delete_response(next_node, key_id)
             }
         }
