@@ -23,15 +23,14 @@ use super::protocols::*;
 /// `m` (e.g.) 20 is the digest size of sha1
 // pub const HASH_DIGEST_LENGTH: usize = 20;
 
-pub const CHORD_CIRCLE_BITS: usize = 16;
+pub const CHORD_CIRCLE_BITS: usize = 32;
 
 //Used for length reduction on id creation
 //The nth root of the initially created id will be calculated in order to reduce size
-pub const ID_ROOT: u32 = 12;
 
-pub const FINGERTABLE_SIZE: usize = CHORD_CIRCLE_BITS;
+pub const FINGERTABLE_SIZE: usize = 16;
 
-pub const SUCCESSORLIST_SIZE: usize = CHORD_CIRCLE_BITS;
+pub const SUCCESSORLIST_SIZE: usize = 16;
 
 /// At most a number of `2^m` nodes are allowed in the Chord Circle (Bit Shift left)
 pub const CHORD_RING_SIZE: usize = 1 << CHORD_CIRCLE_BITS;
@@ -184,14 +183,14 @@ pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
     let hash = create_hash(&ip_addr.to_string());
     let byte_vec = hash.as_bytes().to_vec();
     let id = BigInt::from_bytes_be(Sign::Plus, &byte_vec);
-    id.nth_root(chord::ID_ROOT)
+    x_modulo_ring_size(id)
 }
 
 pub fn create_id(string: &str) -> BigInt {
     let hash = create_hash(string);
     let byte_vec = hash.as_bytes().to_vec();
     let id = BigInt::from_bytes_be(Sign::Plus, &byte_vec);
-    id.nth_root(chord::ID_ROOT)
+    x_modulo_ring_size(id)
 }
 
 /**
