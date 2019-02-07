@@ -110,7 +110,7 @@ impl Node {
     }
 
     fn closest_preceding_node(&self, id: BigInt) -> OtherNode {
-        let mut min_abs: BigInt = BigInt::new(Sign::Plus, vec![u32::max_value(); chord::CHORD_RING_SIZE]);
+        let mut min_abs: BigInt = BigInt::new(Sign::Plus, vec![u32::max_value(); 5]);
         let mut return_node: OtherNode = self.to_other_node();
         for i in 0..self.finger_table.length() {
             let entry = self.finger_table.get(i);
@@ -122,10 +122,14 @@ impl Node {
         }
         for i in 0..self.successor_list.len() {
             let entry = &self.successor_list[i];
-            let finger_abs = chord::chord_abs(entry.get_id(), &id);
-            if finger_abs < min_abs {
-                min_abs = finger_abs;
-                return_node = entry.clone()
+            if entry.id == self.id {
+                break;
+            } else {
+                let finger_abs = chord::chord_abs(entry.get_id(), &id);
+                if finger_abs < min_abs {
+                    min_abs = finger_abs;
+                    return_node = entry.clone()
+                }
             }
         }
         return_node
