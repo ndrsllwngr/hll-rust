@@ -41,14 +41,13 @@ impl OtherNode {
 /// * `storage`        - DHT storage inside the node
 #[derive(Clone)]
 pub struct Node {
-    //TODO not pup
-    pub id: BigInt,
-    pub ip_addr: SocketAddr,
-    pub finger_table: FingerTable,
-    pub predecessor: Option<OtherNode>,
-    pub successor_list: Vec<OtherNode>,
-    pub storage: Storage,
-    pub joined: bool,
+    id: BigInt,
+    ip_addr: SocketAddr,
+    finger_table: FingerTable,
+    predecessor: Option<OtherNode>,
+    successor_list: Vec<OtherNode>,
+    storage: Storage,
+    joined: bool,
 }
 
 /// `Node` implementation
@@ -61,11 +60,7 @@ impl Node {
     /// * `ip_addr`     - Ip address and port of the node
     /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
     pub fn new(node_ip_addr: SocketAddr) -> Node {
-        //let next_finger = 0; // Always start at first entry of finger_table
-        //let finger_table = FingerTable::new(successor.clone(), &id);
-        //let storage = Storage::new();
         let id = chord::create_node_id(node_ip_addr);
-
         Node {
             id: id.clone(),
             ip_addr: node_ip_addr,
@@ -91,13 +86,44 @@ impl Node {
         }
     }
 
-    /// Converts internal representation of node to the simpler representation OtherNode
-    pub fn to_other_node(&self) -> OtherNode {
-        OtherNode::new(self.id.clone(), self.ip_addr)
+    pub fn get_id(&self) -> &BigInt {
+        &self.id
+    }
+    pub fn get_ip_addr(&self) -> &SocketAddr {
+        &self.ip_addr
+    }
+
+    pub fn get_finger_table(&self) -> &FingerTable {
+        &self.finger_table
     }
 
     pub fn get_successor(&self) -> OtherNode {
         self.finger_table.get_successor()
+    }
+
+    pub fn get_predecessor(&self) -> &Option<OtherNode> {
+        &self.predecessor
+    }
+
+    pub fn set_predecessor(&mut self, predecessor: Option<OtherNode>) {
+        self.predecessor = predecessor
+    }
+
+    pub fn get_successor_list(&self) -> &Vec<OtherNode> {
+        &self.successor_list
+    }
+
+    pub fn get_storage(&self) -> &Storage {
+        &self.storage
+    }
+
+    pub fn is_joined(&self) -> bool {
+        self.joined
+    }
+
+    /// Converts internal representation of node to the simpler representation OtherNode
+    pub fn to_other_node(&self) -> OtherNode {
+        OtherNode::new(self.id.clone(), self.ip_addr)
     }
 
     pub fn update_successor_and_successor_list(&mut self, successor: OtherNode) {
@@ -284,7 +310,7 @@ impl Node {
                                     data: (BigInt, DHTEntry)) -> Response {
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if  chord::is_my_key(&self.id, predecessor.get_id(), &data.0) {
+            if chord::is_my_key(&self.id, predecessor.get_id(), &data.0) {
                 self.storage.store_key(data);
                 Response::DHTStoredKey
             } else {

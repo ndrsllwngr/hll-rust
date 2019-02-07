@@ -7,7 +7,7 @@ pub fn print_current_node_state(node: &Node) {
     let mut pre_id_string = "None".to_string();
     let mut pre_ip_string = "None".to_string();
 
-    if let Some(pre) = node.predecessor.clone() {
+    if let Some(pre) = node.get_predecessor().clone() {
         pre_id_string = pre.get_id().to_string();
         pre_ip_string = pre.get_ip_addr().to_string();
     }
@@ -17,7 +17,7 @@ pub fn print_current_node_state(node: &Node) {
     //Node Info
     let mut node_info_table = table!(["Descr.".italic().yellow(), "ID".italic().yellow(), "SocketAddr".italic().yellow()],["", "", ""],
                     ["Predecessor", &pre_id_string, &pre_ip_string],
-                    ["Self".green(), &node.id.clone().to_string().green(), &node.ip_addr.to_string().green()],
+                    ["Self".green(), node.get_id().clone().to_string().green(), node.get_ip_addr().to_string().green()],
                     ["Successor",  &succ_id_string, &succ_ip_string]);
     // node_info_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
     node_info_table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
@@ -25,8 +25,8 @@ pub fn print_current_node_state(node: &Node) {
 
     // Successor List
     let mut successor_list_table = table!(["#".italic().yellow(), "ID".italic().yellow(), "SocketAddr".italic().yellow()],["", "", ""]);
-    for i in 0..node.successor_list.len() {
-        let succ = &node.successor_list[i];
+    for i in 0..node.get_successor_list().len() {
+        let succ = &node.get_successor_list()[i];
         successor_list_table.add_row(row![r -> &i.to_string(), &succ.get_id().clone().to_string(), &succ.get_ip_addr().clone().to_string()]);
     }
     // successor_list_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
@@ -35,8 +35,8 @@ pub fn print_current_node_state(node: &Node) {
 
     // Finger Table
     let mut finger_table_table = table!(["#".italic().yellow(), "Finger".italic().yellow(), "Node".italic().yellow()],["", "", ""]);
-    for i in 0..node.finger_table.length() {
-        let entry = node.finger_table.get(i);
+    for i in 0..node.get_finger_table().length() {
+        let entry = node.get_finger_table().get(i);
         finger_table_table.add_row(row![r -> &i.to_string(), entry.get_id().to_string(), entry.get_node().get_id().to_string()]);
     }
     // finger_table_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
@@ -47,7 +47,7 @@ pub fn print_current_node_state(node: &Node) {
         ["ID ".italic().yellow(), "Key".italic().yellow(), "Value".italic().yellow()],
         ["", "", ""]
         );
-    for (key_id, dht_entry) in node.storage.get_data_as_iter() {
+    for (key_id, dht_entry) in node.get_storage().get_data_as_iter() {
         storage_table.add_row(row![&key_id.clone().to_string(), dht_entry.get_key(), dht_entry.get_value()]);
     }
     storage_table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
@@ -63,7 +63,7 @@ pub fn print_current_node_state(node: &Node) {
                     ["> Storage logs ".black().on_white()],
                     [""]
                     );
-    let copy_logs = node.storage.get_last_three_log_entries();
+    let copy_logs = node.get_storage().get_last_three_log_entries();
     for item in &copy_logs {
         storage_logs_table.add_row(row![item.clone().to_string()]);
     }

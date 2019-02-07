@@ -86,7 +86,7 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port: i32, id: BigI
                         Ok(())
                     }
                     Message::RequestMessage { sender, request } => {
-                        debug!("[Node #{}] Got request from Node #{}: {:?}", node.id.clone(), sender.get_id(), request.clone());
+                        debug!("[Node #{}] Got request from Node #{}: {:?}", node.get_id().clone(), sender.get_id(), request.clone());
                         let response = node.process_incoming_request(request);
                         let msg = Message::ResponseMessage { sender: node.to_other_node(), response };
                         drop(node);
@@ -94,7 +94,7 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port: i32, id: BigI
                         Ok(())
                     }
                     Message::ResponseMessage { sender, response } => {
-                        debug!("[Node #{}] Got response from Node #{}: {:?}", node.id.clone(), sender.get_id(), response.clone());
+                        debug!("[Node #{}] Got response from Node #{}: {:?}", node.get_id().clone(), sender.get_id(), response.clone());
                         node.process_incoming_response(response);
                         drop(node);
                         Ok(())

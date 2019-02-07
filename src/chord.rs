@@ -66,11 +66,11 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
         let node_clone = node.clone();
         drop(node);
 
-        if node_clone.joined {
+        if node_clone.is_joined() {
             //print_current_node_state(&node_clone);
 
             let mut ring_is_alive = false;
-            for succ in node_clone.successor_list.clone() {
+            for succ in node_clone.get_successor_list().clone() {
                 if network::check_alive(*succ.get_ip_addr(), node_clone.to_other_node().clone()) {
                     let req = Request::GetPredecessor;
                     let msg = Message::RequestMessage { sender: node_clone.to_other_node().clone(), request: req };
@@ -103,8 +103,8 @@ pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
     let mut next = 1;
     loop {
         let node = arc.lock().unwrap();
-        if node.joined {
-            let finger_id = get_finger_id(&node.id, next);
+        if node.is_joined() {
+            let finger_id = get_finger_id(node.get_id(), next);
 
             let req = Request::FindSuccessorFinger { index: next, finger_id };
             let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
@@ -131,13 +131,13 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
         let node_clone = node.clone();
         drop(node);
 
-        if node_clone.joined {
-            if let Some(predecessor) = node_clone.predecessor.clone() {
+        if node_clone.is_joined() {
+            if let Some(predecessor) = node_clone.get_predecessor().clone() {
                 if !network::check_alive(*predecessor.get_ip_addr(), node_clone.to_other_node().clone()) {
                     debug!("Node #{} is dead", predecessor.get_id());
 
                     // after async operation check alive lock again.
-                    arc.lock().unwrap().predecessor = None;
+                    arc.lock().unwrap().set_predecessor(None);
                 } else {
                     debug!("Node #{} is alive", predecessor.get_id());
                 }
@@ -173,7 +173,7 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
         let node = arc.lock().unwrap();
         let node_clone = node.clone();
         drop(node);
-        if node_clone.joined && !interaction_in_progress.load(Ordering::SeqCst) {
+        if node_clone.is_joined() && !interaction_in_progress.load(Ordering::SeqCst) {
             print::print_current_node_state(&node_clone)
         }
         thread::sleep(chord::NODE_PRINT_INTERVAL);
@@ -249,7 +249,7 @@ pub fn spawn_node(node_ip_addr: SocketAddr, port: i32, entry_node_addr: Option<S
                 Node::new_first(node_ip_addr)
             };
             // let mut node = node::Node::new(node_ip_addr.clone());
-            let id = node.id.clone();
+            let id = node.get_id().clone();
             let id_clone = id.clone();
 
             let other_node = node.to_other_node();
