@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::str;
 
-use num_bigint::{BigInt, Sign, ToBigInt};
+use num_bigint::{BigInt, Sign};
 
 use super::chord;
 use super::fingertable::FingerTable;
@@ -110,8 +110,7 @@ impl Node {
     }
 
     fn closest_preceding_node(&self, id: BigInt) -> OtherNode {
-        // TODO better bounding
-        let mut min_abs: BigInt = BigInt::new(Sign::Plus, vec![u32::max_value(), u32::max_value(), u32::max_value(), u32::max_value(), u32::max_value()]);
+        let mut min_abs: BigInt = BigInt::new(Sign::Plus, vec![u32::max_value(); chord::CHORD_RING_SIZE]);
         let mut return_node: OtherNode = self.to_other_node();
         for i in 0..self.finger_table.length() {
             let entry = self.finger_table.get(i);
