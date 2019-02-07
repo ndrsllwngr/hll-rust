@@ -68,6 +68,6 @@ pub fn print_current_node_state(node: &Node) {
         storage_logs_table.add_row(row![item.clone().to_string()]);
     }
     storage_logs_table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
-
+    print!("{}[2J", 27 as char);
     info!("\n\n{}{}", state_table, storage_logs_table);
 }

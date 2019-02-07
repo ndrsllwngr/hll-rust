@@ -9,6 +9,7 @@ edition = "2018"
 
 [dependencies]
 chrono = "0.4.6"
+clap = "2.32.0"
 colored = "1.7.0"
 futures = "0.1.25"
 get_if_addrs = "0.5.3"
