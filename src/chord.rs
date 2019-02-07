@@ -67,7 +67,6 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
         drop(node);
 
         if node_clone.is_joined() {
-            //print_current_node_state(&node_clone);
 
             let mut ring_is_alive = false;
             for succ in node_clone.get_successor_list().clone() {
@@ -76,7 +75,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
                     let msg = Message::RequestMessage { sender: node_clone.to_other_node().clone(), request: req };
                     network::send_string_to_socket(*succ.get_ip_addr(), serde_json::to_string(&msg).unwrap());
 
-                    // after async operation check alive lock again.
+                    // after async operation check_alive() lock again.
                     arc.lock().unwrap().update_successor_and_successor_list(succ);
 
                     ring_is_alive = true;
@@ -102,23 +101,25 @@ pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
     debug!("Starting fix_fingers...");
     let mut next = 1;
     loop {
+        // make a copy of node and instantly drop it
         let node = arc.lock().unwrap();
-        if node.is_joined() {
-            let finger_id = get_finger_id(node.get_id(), next);
+        let node_clone = node.clone();
+        drop(node);
+
+        if node_clone.is_joined() {
+            let finger_id = get_finger_id(node_clone.get_id(), next);
 
             let req = Request::FindSuccessorFinger { index: next, finger_id };
-            let msg = Message::RequestMessage { sender: node.to_other_node(), request: req };
-            network::send_string_to_socket(*node.get_successor().get_ip_addr(), serde_json::to_string(&msg).unwrap());
+            let msg = Message::RequestMessage { sender: node_clone.to_other_node(), request: req };
+            network::send_string_to_socket(*node_clone.get_successor().get_ip_addr(), serde_json::to_string(&msg).unwrap());
 
             next = if next < chord::FINGERTABLE_SIZE - 1 {
                 next + 1
             } else {
                 1
             };
-        } else { info!("Not joined jet going to sleep again") }
-        //this is super important, because otherwise the lock would persist endlessly due to the loop
-        drop(node);
-        //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
+        } else { info!("Not joined yet going to sleep again") }
+
         thread::sleep(chord::NODE_FIX_FINGERS_INTERVAL);
     }
 }
@@ -136,15 +137,14 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
                 if !network::check_alive(*predecessor.get_ip_addr(), node_clone.to_other_node().clone()) {
                     debug!("Node #{} is dead", predecessor.get_id());
 
-                    // after async operation check alive lock again.
+                    // after async operation check_alive() lock again.
                     arc.lock().unwrap().set_predecessor(None);
                 } else {
                     debug!("Node #{} is alive", predecessor.get_id());
                 }
             }
-        } else { info!("Not joined jet going to sleep again") }
-        //this is super important, because otherwise the lock would persist endlessly due to the loop
-        //node_clone.send_message_to_socket(node_clone.successor.ip_addr, req);
+        } else { info!("Not joined yet going to sleep again") }
+
         thread::sleep(chord::NODE_CHECK_PREDECESSOR_INTERVAL);
     }
 }
