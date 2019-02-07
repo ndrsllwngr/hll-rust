@@ -121,14 +121,14 @@ impl Node {
                 return_node = entry.get_node().clone()
             }
         }
-        /*for i in 0..self.successor_list.len() {
+        for i in 0..self.successor_list.len() {
             let entry = &self.successor_list[i];
             let finger_abs = chord::chord_abs(entry.get_id(), &id);
             if finger_abs < min_abs {
                 min_abs = finger_abs;
                 return_node = entry.clone()
             }
-        }*/
+        }
         return_node
     }
 

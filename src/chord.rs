@@ -205,10 +205,10 @@ pub fn is_in_interval(first: &BigInt, second: &BigInt, id: &BigInt) -> bool {
 }
 
 pub fn chord_abs(a: &BigInt, b: &BigInt) -> BigInt {
-    if b < a {
-        chord::CHORD_RING_SIZE - a + b
+    if b > a {
+        chord::CHORD_RING_SIZE - b + a
     } else {
-        b - a
+        a - b
     }
 }
 
