@@ -3,7 +3,6 @@ extern crate clap;
 extern crate crypto;
 extern crate futures;
 extern crate get_if_addrs;
-extern crate getopts;
 #[macro_use]
 extern crate log;
 extern crate log4rs;

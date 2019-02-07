@@ -13,7 +13,6 @@ clap = "2.32.0"
 colored = "1.7.0"
 futures = "0.1.25"
 get_if_addrs = "0.5.3"
-getopts = "0.2.18"
 log = "0.4.6"
 log4rs =  {version = "0.8.1", features = ["file"]}
 num = "0.2.0"
