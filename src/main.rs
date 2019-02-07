@@ -98,7 +98,7 @@ fn main() {
         Err(f) => panic!(f.to_string()),
     };
     debug!("listening_ip: {}", ip4_addr);
-    
+
     // Join existing chord ring, or create new one
     if matches.is_present("entry_point") {
         let entry_point = match matches
@@ -110,8 +110,15 @@ fn main() {
             Err(f) => panic!(f.to_string()),
         };
         debug!("entry_point: {}", ip4_addr);
-        let node_handle = chord::spawn_node(listening_ip, port, Some(entry_point));
-        node_handle.join().expect("node_handle.join() failed");
+        if listening_ip != entry_point {
+            let node_handle = chord::spawn_node(listening_ip, port, Some(entry_point));
+            node_handle.join().expect("node_handle.join() failed");
+        } else {
+            panic!(
+                "listening_ip != entry_point = {}",
+                listening_ip != entry_point
+            );
+        }
     } else {
         let first_node_handle = chord::spawn_node(listening_ip, port, None);
         first_node_handle
