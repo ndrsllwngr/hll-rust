@@ -1,4 +1,5 @@
 extern crate chrono;
+extern crate clap;
 extern crate crypto;
 extern crate futures;
 extern crate get_if_addrs;
@@ -16,97 +17,106 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate tokio;
 
-use std::env;
-use std::net::SocketAddr;
+use std::net::{Ipv4Addr, SocketAddr};
 
-use getopts::Options;
+use clap::{App, Arg};
 
 mod input;
 mod print;
 
 mod chord;
-mod node;
 mod fingertable;
+mod node;
 mod storage;
 
 mod network;
 mod protocols;
 
-
-/*
-    run this with or without -p flag to start a new chord circle
-
-    run this with -p & -j to join an existing chord circle
-    example: cargo run -- -j 210.0.0.41:6666 -p 10001
-*/
-
 fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
+    let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
+    let interface_option = interfaces
+        .into_iter()
+        .find(|i| i.name == "lo0" && i.addr.ip().is_ipv4());
+    let local_ip4addr = if let Some(interface) = interface_option {
+        interface.addr.ip().to_string()
+    } else {
+        "<lo0 not found>".to_string()
+    };
+    let ip4addr_help = format!("Sets the ip address to use (e.g. {})", local_ip4addr);
+    let ip4addr_help_slice = &ip4addr_help[..];
+    debug!("lo0 interface IP4ADDR is: {}", local_ip4addr);
 
+    let matches = App::new("hll_rust_chord")
+        .version("1.0")
+        .author("Andreas Ellwanger, Timo Erdelt and Andreas Griesbeck")
+        .about("High level languages: Rust - Group project (2018/2019)")
+        .arg(
+            Arg::with_name("ip4_addr")
+                .short("i")
+                .long("ipaddr")
+                .value_name("IP4ADDR")
+                .help(ip4addr_help_slice)
+                .takes_value(true)
+                .required(true)
+                .index(1),
+        )
+        .arg(
+            Arg::with_name("port")
+                .short("p")
+                .long("port")
+                .value_name("PORT")
+                .help("Sets the port to use")
+                .takes_value(true)
+                .required(true)
+                .index(2),
+        )
+        .arg(
+            Arg::with_name("entry_point")
+                .short("j")
+                .long("join")
+                .value_name("IP4ADDR:PORT")
+                .help("Sets the node (entry point to an existing chord ring) to join")
+                .takes_value(true)
+                .required(false)
+                .index(3),
+        )
+        .get_matches();
 
-    // Command line options
-    let args: Vec<String> = env::args().collect();
-    let mut opts = Options::new();
-    opts.optopt("i", "", "Used to specify local ip_address for nodes to bind to", "127.0.0.1");
-    opts.optopt("p", "", "Used to specify the port the node listens on", "10000");
-    opts.optopt(
-        "j",
-        "",
-        "Use to join existing chord ring at a nodes ip_address:port",
-        "127.0.0.1:6666",
-    );
-    opts.optflag("h", "help", "Print help");
-    let matches = match opts.parse(&args[1..]) {
+    let ip4_addr = match matches.value_of("ip4_addr").unwrap().parse::<Ipv4Addr>() {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };
-
-    if matches.opt_present("h") {
-        print!("\n{}", opts.usage("Usage: cargo run -- [options]"));
-        // return;
-    }
-
-    let ip_address_option = matches.opt_str("i");
-    let join_ip_option = matches.opt_str("j");
-    let port_option = matches.opt_str("p");
-
-    let ip_address = if let Some(ip_address) = ip_address_option {
-        ip_address
-    } else {
-        let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
-        let interface_option = interfaces
-            .into_iter()
-            .find(|i| i.name == "en0" && i.addr.ip().is_ipv4());
-        if let Some(interface) = interface_option {
-            interface.addr.ip().to_string()
-        } else {
-            "127.0.0.1".to_string()
-        }
+    debug!("ip4_addr: {}", ip4_addr);
+    let port = match matches.value_of("port").unwrap().parse::<i32>() {
+        Ok(m) => m,
+        Err(f) => panic!(f.to_string()),
     };
-    debug!("Using {} as ip address.", ip_address);
-
-    let port = if let Some(number) = port_option {
-        match number.parse::<i32>() {
+    debug!("port: {}", ip4_addr);
+    let listening_ip = match format!("{}:{}", ip4_addr, port).parse::<SocketAddr>() {
+        Ok(m) => m,
+        Err(f) => panic!(f.to_string()),
+    };
+    debug!("listening_ip: {}", ip4_addr);
+    
+    // Join existing chord ring, or create new one
+    if matches.is_present("entry_point") {
+        let entry_point = match matches
+            .value_of("entry_point")
+            .unwrap()
+            .parse::<SocketAddr>()
+        {
             Ok(m) => m,
             Err(f) => panic!(f.to_string()),
-        }
-    } else {
-        8080 //TODO maybe randomise
-    };
-    debug!("Port is {}.", port);
-
-    let listen_ip = format!("{}:{}", ip_address.clone(), port)
-        .parse::<SocketAddr>()
-        .unwrap();
-
-    if let Some(join_ip) = join_ip_option {
-        //Join existing node
-        let node_handle = chord::spawn_node(listen_ip, port, Some(join_ip.parse::<SocketAddr>().unwrap()));
+        };
+        debug!("entry_point: {}", ip4_addr);
+        let node_handle = chord::spawn_node(listening_ip, port, Some(entry_point));
         node_handle.join().expect("node_handle.join() failed");
     } else {
-        //Create new ring
-        let first_node_handle = chord::spawn_node(listen_ip, port, None);
-        first_node_handle.join().expect("first_node_handle.join() failed");
+        let first_node_handle = chord::spawn_node(listening_ip, port, None);
+        first_node_handle
+            .join()
+            .expect("first_node_handle.join() failed");
     }
 }
