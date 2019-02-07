@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::str;
 
-use num_bigint::{BigInt, ToBigInt};
+use num_bigint::{BigInt, Sign};
 
 use super::chord;
 use super::fingertable::FingerTable;
@@ -110,8 +110,7 @@ impl Node {
     }
 
     fn closest_preceding_node(&self, id: BigInt) -> OtherNode {
-        // TODO better bounding
-        let mut min_abs: BigInt = 999_999_999.to_bigint().unwrap();
+        let mut min_abs: BigInt = BigInt::new(Sign::Plus, vec![u32::max_value(); chord::CHORD_RING_SIZE]);
         let mut return_node: OtherNode = self.to_other_node();
         for i in 0..self.finger_table.length() {
             let entry = self.finger_table.get(i);
@@ -279,10 +278,17 @@ impl Node {
 
     fn handle_dht_store_key_request(&mut self,
                                     data: (BigInt, DHTEntry)) -> Response {
-        // I am responsible for the key
-        if chord::is_in_interval(&self.id, self.get_successor().get_id(), &data.0) {
-            self.storage.store_key(data);
-            Response::DHTStoredKey
+        if let Some(predecessor) = self.predecessor.clone() {
+            // I am responsible for the key
+            if  chord::is_my_key(&self.id, predecessor.get_id(), &data.0) {
+                self.storage.store_key(data);
+                Response::DHTStoredKey
+            } else {
+                Response::DHTAskFurtherStore {
+                    next_node: self.closest_preceding_node(data.0.clone()),
+                    data,
+                }
+            }
         } else {
             Response::DHTAskFurtherStore {
                 next_node: self.closest_preceding_node(data.0.clone()),
@@ -292,10 +298,17 @@ impl Node {
     }
 
     fn handle_dht_find_key_request(&self, key_id: BigInt) -> Response {
-        // I am responsible for the key
-        if chord::is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
-            let value_option = self.storage.get_key(&key_id);
-            Response::DHTFoundKey { data: (key_id, value_option.cloned()) }
+        if let Some(predecessor) = self.predecessor.clone() {
+            // I am responsible for the key
+            if chord::is_my_key(&self.id, predecessor.get_id(), &key_id) {
+                let value_option = self.storage.get_key(&key_id);
+                Response::DHTFoundKey { data: (key_id, value_option.cloned()) }
+            } else {
+                Response::DHTAskFurtherFind {
+                    next_node: self.closest_preceding_node(key_id.clone()),
+                    key_id,
+                }
+            }
         } else {
             Response::DHTAskFurtherFind {
                 next_node: self.closest_preceding_node(key_id.clone()),
@@ -305,10 +318,17 @@ impl Node {
     }
 
     fn handle_dht_delete_key_request(&mut self, key_id: BigInt) -> Response {
-        // I am responsible for the key
-        if chord::is_in_interval(&self.id, self.get_successor().get_id(), &key_id) {
-            let key_existed = self.storage.delete_key(&key_id).is_some();
-            Response::DHTDeletedKey { key_existed }
+        if let Some(predecessor) = self.predecessor.clone() {
+            // I am responsible for the key
+            if chord::is_my_key(&self.id, predecessor.get_id(), &key_id) {
+                let key_existed = self.storage.delete_key(&key_id).is_some();
+                Response::DHTDeletedKey { key_existed }
+            } else {
+                Response::DHTAskFurtherDelete {
+                    next_node: self.closest_preceding_node(key_id.clone()),
+                    key_id,
+                }
+            }
         } else {
             Response::DHTAskFurtherDelete {
                 next_node: self.closest_preceding_node(key_id.clone()),
