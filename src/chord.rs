@@ -23,6 +23,7 @@ use super::protocols::*;
 /// `m` (e.g.) 20 is the digest size of sha1
 // pub const HASH_DIGEST_LENGTH: usize = 20;
 
+//TODO discuss best size (fingertable and succ_list should depend on this)
 pub const CHORD_CIRCLE_BITS: usize = 32;
 
 //Used for length reduction on id creation
