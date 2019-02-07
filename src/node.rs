@@ -279,11 +279,9 @@ impl Node {
 
     fn handle_dht_store_key_request(&mut self,
                                     data: (BigInt, DHTEntry)) -> Response {
-        // I am responsible for the key
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if self.id == data.0 ||
-                (&data.0 != predecessor.get_id() && chord::is_in_interval(predecessor.get_id(), &self.id, &data.0)) {
+            if  chord::is_my_key(&self.id, predecessor.get_id(), &data.0) {
                 self.storage.store_key(data);
                 Response::DHTStoredKey
             } else {
@@ -301,11 +299,9 @@ impl Node {
     }
 
     fn handle_dht_find_key_request(&self, key_id: BigInt) -> Response {
-        // I am responsible for the key
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if self.id == key_id ||
-                (&key_id != predecessor.get_id() && chord::is_in_interval(predecessor.get_id(), &self.id, &key_id)) {
+            if chord::is_my_key(&self.id, predecessor.get_id(), &key_id) {
                 let value_option = self.storage.get_key(&key_id);
                 Response::DHTFoundKey { data: (key_id, value_option.cloned()) }
             } else {
@@ -323,11 +319,9 @@ impl Node {
     }
 
     fn handle_dht_delete_key_request(&mut self, key_id: BigInt) -> Response {
-        // I am responsible for the key
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
-            if self.id == key_id ||
-                (&key_id != predecessor.get_id() && chord::is_in_interval(predecessor.get_id(), &self.id, &key_id)) {
+            if chord::is_my_key(&self.id, predecessor.get_id(), &key_id) {
                 let key_existed = self.storage.delete_key(&key_id).is_some();
                 Response::DHTDeletedKey { key_existed }
             } else {

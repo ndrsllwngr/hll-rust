@@ -212,6 +212,10 @@ pub fn chord_abs(a: &BigInt, b: &BigInt) -> BigInt {
     }
 }
 
+pub fn is_my_key(self_id: &BigInt, pre_id: &BigInt, key_id: &BigInt) -> bool {
+    self_id == key_id || (key_id != pre_id && is_in_interval(pre_id, self_id, key_id))
+}
+
 fn create_hash(string: &str) -> String {
     // create a Sha1 object
     let mut hasher = Sha1::new();
