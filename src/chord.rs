@@ -52,7 +52,7 @@ pub const PING_TIMEOUT_INTERVAL: time::Duration = time::Duration::from_millis(50
 pub const LISTENING_ADDRESS: &str = "0.0.0.0";
 
 pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
-    info!("Starting joining process");
+    info!("Trying to join...");
     let req = Request::FindSuccessor { id };
     network::send_request(sender, join_ip, req);
 }
