@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use num_bigint::BigInt;
 
 use super::node::OtherNode;
@@ -43,6 +45,9 @@ pub enum Request {
     DHTDeleteKey {
         key_id: BigInt
     },
+    DHTTakeOverKeys {
+        data: HashMap<BigInt, DHTEntry>
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

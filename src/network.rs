@@ -87,10 +87,12 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port: i32, id: BigI
                     }
                     Message::RequestMessage { sender, request } => {
                         debug!("[Node #{}] Got request from Node #{}: {:?}", node.get_id().clone(), sender.get_id(), request.clone());
-                        let response = node.process_incoming_request(request);
-                        let msg = Message::ResponseMessage { sender: node.to_other_node(), response };
-                        drop(node);
-                        send_string_to_socket(*sender.get_ip_addr(), serde_json::to_string(&msg).unwrap());
+                        let response_option = node.process_incoming_request(request);
+                        if let Some(response) = response_option {
+                            let msg = Message::ResponseMessage { sender: node.to_other_node(), response };
+                            drop(node);
+                            send_string_to_socket(*sender.get_ip_addr(), serde_json::to_string(&msg).unwrap());
+                        }
                         Ok(())
                     }
                     Message::ResponseMessage { sender, response } => {

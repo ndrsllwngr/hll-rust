@@ -159,17 +159,15 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>)  -> Result<(), Box<Error>> {
     let other_node = node.to_other_node().clone();
     drop(node);
 
-    let signals = Signals::new(&[SIGINT])?;
     let _handle = thread::Builder::new().name("Interaction".to_string()).spawn(move || {
-        //loop {
-        for sig in signals.forever() {
-            //let buffer = &mut String::new();
-            //stdin().read_line(buffer).unwrap();
-            //if let "m" = buffer.trim_right() {
+        loop {
+            let buffer = &mut String::new();
+            stdin().read_line(buffer).unwrap();
+            if let "m" = buffer.trim_right() {
                 i_clone.store(true, Ordering::SeqCst);
                 perform_user_interaction(other_node.clone()).expect("perform_user_interaction failed");
                 i_clone.store(false, Ordering::SeqCst);
-            //};
+            };
         }
     }).unwrap();
 
@@ -182,6 +180,21 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>)  -> Result<(), Box<Error>> {
         }
         thread::sleep(chord::NODE_PRINT_INTERVAL);
     }
+}
+
+pub fn listen_for_kill_signal(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
+    let signals = Signals::new(&[SIGINT])?;
+    let _handle = thread::Builder::new().name("Interaction".to_string()).spawn(move || {
+        for sig in signals.forever() {
+            if sig == SIGINT {
+                info!("Got SIGINT, shutting down...");
+                arc.lock().unwrap().move_all_keys_on_shutdown();
+                process::exit(0);
+            }
+        }
+    }).unwrap();
+
+    Ok(())
 }
 
 pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {

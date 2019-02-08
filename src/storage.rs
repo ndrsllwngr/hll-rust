@@ -42,6 +42,9 @@ impl Storage {
         }
     }
 
+    pub fn get_data(&self) -> &HashMap<BigInt, DHTEntry> {
+        &self.data
+    }
     pub fn get_data_as_iter(&self) -> Iter<BigInt, DHTEntry> {
         self.data.iter()
     }

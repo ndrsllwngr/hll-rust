@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str;
 
@@ -142,6 +143,12 @@ impl Node {
         //}
     }
 
+    pub fn move_all_keys_on_shutdown(&self) {
+        let req = Request::DHTTakeOverKeys { data: self.storage.get_data().clone() };
+        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
+        network::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+    }
+
     fn check_redistribute_dht_keys(&mut self, pre_id: &BigInt) {
         for (key,value) in self.storage.clone().get_data_as_iter() {
             if !chord::is_my_key(&self.id, pre_id, key) {
@@ -179,39 +186,44 @@ impl Node {
         return_node
     }
 
-    pub fn process_incoming_request(&mut self, request: Request) -> Response {
+    pub fn process_incoming_request(&mut self, request: Request) -> Option<Response> {
         match request {
             Request::FindSuccessor { id } => {
                 debug!("[Node #{}] Request::FindSuccessor(id: {})", self.clone().id, id.clone());
-                self.handle_find_successor_request(id)
+                Some(self.handle_find_successor_request(id))
             }
             Request::GetPredecessor => {
                 debug!("[Node #{}] Request::GetPredecessor", self.clone().id);
-                self.handle_get_predecessor_request()
+                Some(self.handle_get_predecessor_request())
             }
             Request::Notify { node } => {
                 debug!("[Node #{}] Request::Notify(node: {})", self.clone().id, node.id.clone());
-                self.handle_notify_request(node)
+                Some(self.handle_notify_request(node))
             }
             Request::FindSuccessorFinger { index, finger_id } => {
                 debug!("[Node #{}] Request::FindSuccessorFinger(index: {} finger_id: {})", self.clone().id, index, finger_id.clone());
-                self.handle_find_successor_finger_request(index, finger_id)
+                Some(self.handle_find_successor_finger_request(index, finger_id))
             }
             Request::GetSuccessorList => {
                 debug!("[Node #{}] Request::GetSuccessorList", self.clone().id);
-                self.handle_get_successor_list_request()
+                Some(self.handle_get_successor_list_request())
             }
             Request::DHTStoreKey { data } => {
                 info!("[Node #{}] Request::StoreKey(data: {:?})", self.clone().id, data.clone());
-                self.handle_dht_store_key_request(data)
+                Some(self.handle_dht_store_key_request(data))
             }
             Request::DHTFindKey { key_id } => {
                 info!("[Node #{}] Request::FindKey(key_id: {})", self.clone().id, key_id.clone());
-                self.handle_dht_find_key_request(key_id)
+                Some(self.handle_dht_find_key_request(key_id))
             }
             Request::DHTDeleteKey { key_id } => {
                 info!("[Node #{}] Request::DeleteKey(key_id {})", self.clone().id, key_id.clone());
-                self.handle_dht_delete_key_request(key_id)
+                Some(self.handle_dht_delete_key_request(key_id))
+            }
+            Request::DHTTakeOverKeys { data } => {
+                info!("[Node #{}] Request::DHTTakeOverKey(data {:?})", self.clone().id, data.clone());
+                self.handle_dht_take_over_keys(data);
+                None
             }
         }
     }
@@ -382,6 +394,12 @@ impl Node {
                 next_node: self.closest_preceding_node(key_id.clone()),
                 key_id,
             }
+        }
+    }
+
+    fn handle_dht_take_over_keys(&mut self, data: HashMap<BigInt, DHTEntry>) {
+        for entry in data.into_iter() {
+            self.storage.store_key(entry);
         }
     }
 
