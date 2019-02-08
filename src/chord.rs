@@ -55,9 +55,7 @@ pub const LISTENING_ADDRESS: &str = "0.0.0.0";
 pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
     info!("Starting joining process");
     let req = Request::FindSuccessor { id };
-    let msg = Message::RequestMessage { sender, request: req };
-    network::send_string_to_socket(join_ip, serde_json::to_string(&msg).unwrap());
-    //self.send_message_to_socket(self.successor.ip_addr, req);
+    network::send_request(sender, join_ip, req);
 }
 
 //TODO pass internal name & othernode as parameters
@@ -71,14 +69,11 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
         drop(node);
 
         if node_clone.is_joined() {
-
             let mut ring_is_alive = false;
             for succ in node_clone.get_successor_list().clone() {
                 if network::check_alive(*succ.get_ip_addr(), node_clone.to_other_node().clone()) {
                     let req = Request::GetPredecessor;
-                    let msg = Message::RequestMessage { sender: node_clone.to_other_node().clone(), request: req };
-                    network::send_string_to_socket(*succ.get_ip_addr(), serde_json::to_string(&msg).unwrap());
-
+                    network::send_request(node_clone.to_other_node(), *succ.get_ip_addr(), req);
                     // after async operation check_alive() lock again.
                     arc.lock().unwrap().update_successor_and_successor_list(succ);
 
@@ -114,8 +109,7 @@ pub fn fix_fingers(arc: Arc<Mutex<Node>>) {
             let finger_id = get_finger_id(node_clone.get_id(), next);
 
             let req = Request::FindSuccessorFinger { index: next, finger_id };
-            let msg = Message::RequestMessage { sender: node_clone.to_other_node(), request: req };
-            network::send_string_to_socket(*node_clone.get_successor().get_ip_addr(), serde_json::to_string(&msg).unwrap());
+            network::send_request(node_clone.to_other_node(), *node_clone.get_successor().get_ip_addr(), req);
 
             next = if next < chord::FINGERTABLE_SIZE - 1 {
                 next + 1

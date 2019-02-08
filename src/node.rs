@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str;
 
@@ -136,17 +135,14 @@ impl Node {
         //if self.finger_table.length() == 0  || &self.get_successor().id != &successor.id {
         self.finger_table.set_successor(successor.clone());
         let req = Request::GetSuccessorList;
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network::send_string_to_socket(*successor.get_ip_addr(), serde_json::to_string(&msg).unwrap());
-        //}
+        network::send_request(self.to_other_node(),*successor.get_ip_addr(),req);
     }
 
     pub fn graceful_shutdown(&self) {
         if self.joined && self.storage.is_data_empty() {
             info!("Initializing shutdown, moving keys...");
             let req = Request::DHTTakeOverKeys { data: self.storage.get_data_as_vec().clone() };
-            let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-            network::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+            network::send_request(self.to_other_node(), self.get_successor().get_ip_addr().clone(), req);
             info!("Shutting down.");
         }
     }
@@ -155,8 +151,7 @@ impl Node {
         for (key, value) in self.storage.clone().get_data_as_iter() {
             if !chord::is_my_key(&self.id, pre_id, key) {
                 let req = Request::DHTStoreKey { data: (key.clone(), value.clone()) };
-                let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-                network::send_string_to_socket(self.ip_addr, serde_json::to_string(&msg).unwrap());
+                network::send_request(self.to_other_node(), self.ip_addr, req);
                 self.storage.delete_key(key);
             }
         }
@@ -427,9 +422,7 @@ impl Node {
     fn handle_ask_further_response(&mut self, next_node: OtherNode) {
         debug!("Did not get successor yet, asking node #{} now...", next_node.id);
         let req = Request::FindSuccessor { id: self.id.clone() };
-
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_request(self.to_other_node(),next_node.ip_addr, req);
     }
 
     fn handle_get_predecessor_response(&mut self, predecessor: Option<OtherNode>) {
@@ -442,9 +435,7 @@ impl Node {
             }
         }
         let req = Request::Notify { node: self.to_other_node() };
-
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network::send_string_to_socket(self.get_successor().ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_request(self.to_other_node(), self.get_successor().ip_addr, req);
     }
 
     fn handle_notify_response(&self) {}
@@ -462,8 +453,7 @@ impl Node {
         debug!("Did not get entry for finger {} (#{}) yet, asking node #{} now...", finger_id.clone(), index, next_node.id);
         let req = Request::FindSuccessorFinger { index, finger_id };
 
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_request(self.to_other_node(),next_node.ip_addr, req);
     }
 
     fn handle_get_successor_list_response(&mut self, successor_list: Vec<OtherNode>) {
@@ -506,9 +496,7 @@ impl Node {
                                              data: (BigInt, DHTEntry)) {
         debug!("Did not store data {:?} yet, asking node #{} now...", data, next_node.id);
         let req = Request::DHTStoreKey { data };
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-
-        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_request(self.to_other_node(),next_node.ip_addr,req);
     }
 
     fn handle_dht_ask_further_find_response(&self,
@@ -516,9 +504,7 @@ impl Node {
                                             key_id: BigInt) {
         debug!("Did not find key {} yet, asking node #{} now...", key_id, next_node.id);
         let req = Request::DHTFindKey { key_id };
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-
-        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_request(self.to_other_node(), next_node.ip_addr, req);
     }
 
     fn handle_dht_ask_further_delete_response(&self,
@@ -526,8 +512,6 @@ impl Node {
                                               key_id: BigInt) {
         debug!("Did not find key {} yet, asking node #{} now...", key_id, next_node.id);
         let req = Request::DHTDeleteKey { key_id };
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-
-        network::send_string_to_socket(next_node.ip_addr, serde_json::to_string(&msg).unwrap());
+        network::send_request(self.to_other_node(), next_node.ip_addr, req);
     }
 }

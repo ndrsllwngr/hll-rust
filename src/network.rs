@@ -14,7 +14,23 @@ use super::chord;
 use super::node::*;
 use super::protocols::*;
 
-pub fn send_string_to_socket(addr: SocketAddr, msg: String) {
+
+pub fn send_kill(target: SocketAddr){
+    let msg = Message::Kill;
+    send_string_to_socket(target, serde_json::to_string(&msg).unwrap());
+}
+
+pub fn send_response(sender: OtherNode, target:SocketAddr, response: Response){
+    let msg = Message::ResponseMessage { sender, response };
+    send_string_to_socket(target, serde_json::to_string(&msg).unwrap());
+}
+
+pub fn send_request(sender: OtherNode, target:SocketAddr, request: Request){
+    let msg = Message::RequestMessage { sender, request };
+    send_string_to_socket(target, serde_json::to_string(&msg).unwrap());
+}
+
+fn send_string_to_socket(addr: SocketAddr, msg: String) {
     let builder = thread::Builder::new().name("Send".to_string());
     let handle = builder.spawn(move || {
         match net::TcpStream::connect(addr) {
@@ -91,10 +107,10 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port: i32, id: BigI
                     Message::RequestMessage { sender, request } => {
                         debug!("[Node #{}] Got request from Node #{}: {:?}", node.get_id().clone(), sender.get_id(), request.clone());
                         let response_option = node.process_incoming_request(request);
+                        let node_as_other_node = node.to_other_node();
+                        drop(node);
                         if let Some(response) = response_option {
-                            let msg = Message::ResponseMessage { sender: node.to_other_node(), response };
-                            drop(node);
-                            send_string_to_socket(*sender.get_ip_addr(), serde_json::to_string(&msg).unwrap());
+                            send_response(node_as_other_node, *sender.get_ip_addr(), response);
                         }
                         Ok(())
                     }
