@@ -8,8 +8,16 @@ PROJECT_BUILD="/target/debug/hll-rust"
 TEST_IP=$1
 NUMBER_OF_NODES=$2
 
+trap 'quit' 2 15
+
+quit()
+{
+  echo "Caught SIGINT / SIGTERM ...exiting now."
+  exit 1
+}
+
+
 cargo build
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 nohup   .${PROJECT_BUILD} ${TEST_IP} 10001 > /dev/null 2>&1 &
 for i in `seq 2 ${NUMBER_OF_NODES}`
@@ -22,4 +30,3 @@ do
         nohup   .${PROJECT_BUILD} ${TEST_IP} $((10000+$i)) ${TEST_IP}:10001 > /dev/null 2>&1 &
     fi
 done
-
