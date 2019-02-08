@@ -14,6 +14,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate signal_hook;
 extern crate tokio;
 
 use std::net::{Ipv4Addr, SocketAddr};

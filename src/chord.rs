@@ -1,5 +1,6 @@
 use std::io::stdin;
 use std::net::SocketAddr;
+use std::{error::Error};
 use std::process;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -10,6 +11,7 @@ use std::time;
 use crypto::digest::Digest;
 use crypto::sha1::Sha1;
 use num::bigint::{BigInt, Sign, ToBigInt};
+use signal_hook::{iterator::Signals, SIGINT};
 
 use super::chord;
 use super::fingertable::*;
@@ -149,7 +151,7 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
     }
 }
 
-pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
+pub fn print_and_interact(arc: Arc<Mutex<Node>>)  -> Result<(), Box<Error>> {
     let interaction_in_progress = Arc::new(AtomicBool::new(false));
     let i_clone = interaction_in_progress.clone();
 
@@ -157,15 +159,17 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
     let other_node = node.to_other_node().clone();
     drop(node);
 
+    let signals = Signals::new(&[SIGINT])?;
     let _handle = thread::Builder::new().name("Interaction".to_string()).spawn(move || {
-        loop {
-            let buffer = &mut String::new();
-            stdin().read_line(buffer).unwrap();
-            if let "m" = buffer.trim_right() {
+        //loop {
+        for sig in signals.forever() {
+            //let buffer = &mut String::new();
+            //stdin().read_line(buffer).unwrap();
+            //if let "m" = buffer.trim_right() {
                 i_clone.store(true, Ordering::SeqCst);
                 perform_user_interaction(other_node.clone()).expect("perform_user_interaction failed");
                 i_clone.store(false, Ordering::SeqCst);
-            };
+            //};
         }
     }).unwrap();
 
