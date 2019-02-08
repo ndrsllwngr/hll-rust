@@ -1,5 +1,6 @@
 use std::io::stdin;
 use std::net::SocketAddr;
+use std::{error::Error};
 use std::process;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -10,6 +11,7 @@ use std::time;
 use crypto::digest::Digest;
 use crypto::sha1::Sha1;
 use num::bigint::{BigInt, Sign, ToBigInt};
+use signal_hook::{iterator::Signals, SIGINT};
 
 use super::chord;
 use super::fingertable::*;
@@ -23,8 +25,7 @@ use super::protocols::*;
 /// `m` (e.g.) 20 is the digest size of sha1
 // pub const HASH_DIGEST_LENGTH: usize = 20;
 
-//TODO discuss best size (fingertable and succ_list should depend on this)
-pub const CHORD_CIRCLE_BITS: usize = 32;
+pub const CHORD_CIRCLE_BITS: usize = 24;
 
 //Used for length reduction on id creation
 //The nth root of the initially created id will be calculated in order to reduce size
@@ -143,7 +144,7 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
     }
 }
 
-pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
+pub fn print_and_interact(arc: Arc<Mutex<Node>>)  -> Result<(), Box<Error>> {
     let interaction_in_progress = Arc::new(AtomicBool::new(false));
     let i_clone = interaction_in_progress.clone();
 
@@ -172,6 +173,27 @@ pub fn print_and_interact(arc: Arc<Mutex<Node>>) {
         }
         thread::sleep(chord::NODE_PRINT_INTERVAL);
     }
+}
+
+pub fn listen_for_kill_signal(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
+    let signals = Signals::new(&[SIGINT])?;
+    let _handle = thread::Builder::new().name("Interaction".to_string()).spawn(move || {
+        for sig in signals.forever() {
+            if sig == SIGINT {
+                let node = arc.lock().unwrap();
+                let node_clone = node.clone();
+                drop(node);
+
+                let handle_opt = node_clone.clone().graceful_shutdown();
+                if let Some(handle) = handle_opt {
+                    handle.join().expect("handle_graceful_shutdown failed");
+                }
+                process::exit(0);
+            }
+        }
+    }).unwrap();
+
+    Ok(())
 }
 
 pub fn create_node_id(ip_addr: SocketAddr) -> BigInt {
@@ -284,6 +306,9 @@ pub fn spawn_node(node_ip_addr: SocketAddr, port: i32, entry_node_addr: Option<S
                 .spawn(move || {
                     chord::print_and_interact(arc_clone5);//.expect("print_and_interact failed");
                 }).unwrap();
+
+            let arc_clone6 = arc.clone();
+            chord::listen_for_kill_signal(arc_clone6);
 
             handle1.join().expect("handle1 failed");
             handle2.join().expect("handle2 failed");

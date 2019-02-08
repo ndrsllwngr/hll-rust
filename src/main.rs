@@ -14,6 +14,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate signal_hook;
 extern crate tokio;
 
 use std::net::{Ipv4Addr, SocketAddr};
@@ -32,8 +33,11 @@ mod network;
 mod protocols;
 
 fn main() {
+    // Init logger
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
+
+    // Find 'lo0' interface, extract Ip4Addr and add it CLI help
     let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
     let interface_option = interfaces
         .into_iter()
@@ -44,9 +48,12 @@ fn main() {
         "<lo0 not found>".to_string()
     };
     let ip4addr_help = format!("Sets the ip address to use (e.g. {})", local_ip4addr);
+
+    // CLI requires static string
     let ip4addr_help_slice = &ip4addr_help[..];
     debug!("lo0 interface IP4ADDR is: {}", local_ip4addr);
 
+    // CLI incl. required arguments
     let matches = App::new("hll_rust_chord")
         .version("1.0")
         .author("Andreas Ellwanger, Timo Erdelt and Andreas Griesbeck")
@@ -83,6 +90,7 @@ fn main() {
         )
         .get_matches();
 
+    // Validate, parse CLI arguments
     let ip4_addr = match matches.value_of("ip4_addr").unwrap().parse::<Ipv4Addr>() {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
@@ -99,7 +107,7 @@ fn main() {
     };
     debug!("listening_ip: {}", ip4_addr);
 
-    // Join existing chord ring, or create new one
+    // Join existing chord ring, or create new chord ring as first node
     if matches.is_present("entry_point") {
         let entry_point = match matches
             .value_of("entry_point")

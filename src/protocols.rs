@@ -43,6 +43,9 @@ pub enum Request {
     DHTDeleteKey {
         key_id: BigInt
     },
+    DHTTakeOverKeys {
+        data: Vec<(BigInt, DHTEntry)>
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
