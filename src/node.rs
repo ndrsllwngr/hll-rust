@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 use std::str;
+use std::thread::JoinHandle;
 
 use num_bigint::{BigInt, Sign};
 
@@ -138,12 +139,14 @@ impl Node {
         network::send_request(self.to_other_node(),*successor.get_ip_addr(),req);
     }
 
-    pub fn graceful_shutdown(&self) {
-        if self.joined && self.storage.is_data_empty() {
+    pub fn graceful_shutdown(&self) -> Option<JoinHandle<()>> {
+        if self.joined && !self.storage.is_data_empty() {
             info!("Initializing shutdown, moving keys...");
             let req = Request::DHTTakeOverKeys { data: self.storage.get_data_as_vec().clone() };
-            network::send_request(self.to_other_node(), self.get_successor().get_ip_addr().clone(), req);
             info!("Shutting down.");
+            Some(network::send_request(self.to_other_node(), self.get_successor().get_ip_addr().clone(), req))
+        } else {
+            None
         }
     }
 

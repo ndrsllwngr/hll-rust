@@ -25,8 +25,7 @@ use super::protocols::*;
 /// `m` (e.g.) 20 is the digest size of sha1
 // pub const HASH_DIGEST_LENGTH: usize = 20;
 
-//TODO discuss best size (fingertable and succ_list should depend on this)
-pub const CHORD_CIRCLE_BITS: usize = 32;
+pub const CHORD_CIRCLE_BITS: usize = 24;
 
 //Used for length reduction on id creation
 //The nth root of the initially created id will be calculated in order to reduce size
@@ -47,8 +46,6 @@ pub const NODE_CHECK_PREDECESSOR_INTERVAL: time::Duration = time::Duration::from
 pub const NODE_INIT_SLEEP_INTERVAL: time::Duration = time::Duration::from_millis(2000);
 
 pub const NODE_PRINT_INTERVAL: time::Duration = time::Duration::from_millis(2000);
-
-pub const NODE_SHUTDOWN_SLEEP: time::Duration = time::Duration::from_millis(2000);
 
 pub const LISTENING_ADDRESS: &str = "0.0.0.0";
 
@@ -186,7 +183,11 @@ pub fn listen_for_kill_signal(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
                 let node = arc.lock().unwrap();
                 let node_clone = node.clone();
                 drop(node);
-                node_clone.graceful_shutdown();
+
+                let handle_opt = node_clone.clone().graceful_shutdown();
+                if let Some(handle) = handle_opt {
+                    handle.join().expect("handle_graceful_shutdown failed");
+                }
                 process::exit(0);
             }
         }

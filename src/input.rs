@@ -45,7 +45,8 @@ pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Erro
                 break;
             }
             "6" => {
-                process::exit(1);
+                kill_node(node_as_other.get_ip_addr().clone());
+                break;
             }
             _ => {
                 println!("Please choose an valid option [1,2,3,4,5]");
@@ -141,7 +142,8 @@ fn kill() -> Result<(), Box<Error>> {
             }
             k => {
                 let ip_string = k.to_string();
-                kill_node(ip_string);
+                let target_ip = ip_string.parse::<SocketAddr>().unwrap();
+                kill_node(target_ip);
                 break;
             }
         }
@@ -149,8 +151,7 @@ fn kill() -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn kill_node(ip_string: String) {
-    let target_ip = ip_string.parse::<SocketAddr>().unwrap();
+fn kill_node(target_ip: SocketAddr) {
     network::send_kill(target_ip);
 }
 
