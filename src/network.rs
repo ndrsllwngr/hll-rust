@@ -79,6 +79,9 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port: i32, id: BigI
                 match message {
                     Message::Kill => {
                         info!("Got kill message, shutting down...");
+                        node.clone().graceful_shutdown();
+                        drop(node);
+                        thread::sleep(chord::NODE_SHUTDOWN_SLEEP);
                         process::exit(0);
                     }
                     Message::Ping { sender } => {

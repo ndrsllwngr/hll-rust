@@ -141,11 +141,13 @@ impl Node {
         //}
     }
 
-    pub fn move_all_keys_on_shutdown(&self) {
+    pub fn graceful_shutdown(&self) {
         if self.joined && self.storage.is_data_empty() {
+            info!("Initializing shutdown, moving keys...");
             let req = Request::DHTTakeOverKeys { data: self.storage.get_data_as_vec().clone() };
             let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
             network::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+            info!("Shutting down.");
         }
     }
 

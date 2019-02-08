@@ -48,6 +48,8 @@ pub const NODE_INIT_SLEEP_INTERVAL: time::Duration = time::Duration::from_millis
 
 pub const NODE_PRINT_INTERVAL: time::Duration = time::Duration::from_millis(2000);
 
+pub const NODE_SHUTDOWN_SLEEP: time::Duration = time::Duration::from_millis(2000);
+
 pub const LISTENING_ADDRESS: &str = "0.0.0.0";
 
 pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
@@ -187,11 +189,10 @@ pub fn listen_for_kill_signal(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
     let _handle = thread::Builder::new().name("Interaction".to_string()).spawn(move || {
         for sig in signals.forever() {
             if sig == SIGINT {
-                info!("Got SIGINT, shutting down...");
                 let node = arc.lock().unwrap();
                 let node_clone = node.clone();
                 drop(node);
-                node_clone.move_all_keys_on_shutdown();
+                node_clone.graceful_shutdown();
                 process::exit(0);
             }
         }
