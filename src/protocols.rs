@@ -46,7 +46,7 @@ pub enum Request {
         key_id: BigInt
     },
     DHTTakeOverKeys {
-        data: HashMap<BigInt, DHTEntry>
+        data: Vec<(BigInt, DHTEntry)>
     }
 }
 

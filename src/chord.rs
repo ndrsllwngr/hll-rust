@@ -188,7 +188,10 @@ pub fn listen_for_kill_signal(arc: Arc<Mutex<Node>>) -> Result<(), Box<Error>> {
         for sig in signals.forever() {
             if sig == SIGINT {
                 info!("Got SIGINT, shutting down...");
-                arc.lock().unwrap().move_all_keys_on_shutdown();
+                let node = arc.lock().unwrap();
+                let node_clone = node.clone();
+                drop(node);
+                node_clone.move_all_keys_on_shutdown();
                 process::exit(0);
             }
         }
@@ -307,6 +310,9 @@ pub fn spawn_node(node_ip_addr: SocketAddr, port: i32, entry_node_addr: Option<S
                 .spawn(move || {
                     chord::print_and_interact(arc_clone5);//.expect("print_and_interact failed");
                 }).unwrap();
+
+            let arc_clone6 = arc.clone();
+            chord::listen_for_kill_signal(arc_clone6);
 
             handle1.join().expect("handle1 failed");
             handle2.join().expect("handle2 failed");

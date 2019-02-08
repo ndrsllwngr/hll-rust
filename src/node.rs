@@ -107,14 +107,12 @@ impl Node {
     }
 
     pub fn set_predecessor(&mut self, predecessor: Option<OtherNode>) {
-
         self.predecessor = predecessor.clone();
 
         // Redistribute keys, that I am not responsible for anymore
         if let Some(pre) = predecessor {
             self.check_redistribute_dht_keys(&pre.id)
         }
-
     }
 
     pub fn get_successor_list(&self) -> &Vec<OtherNode> {
@@ -144,13 +142,15 @@ impl Node {
     }
 
     pub fn move_all_keys_on_shutdown(&self) {
-        let req = Request::DHTTakeOverKeys { data: self.storage.get_data().clone() };
-        let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
-        network::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+        if self.joined && self.storage.is_data_empty() {
+            let req = Request::DHTTakeOverKeys { data: self.storage.get_data_as_vec().clone() };
+            let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
+            network::send_string_to_socket(self.get_successor().get_ip_addr().clone(), serde_json::to_string(&msg).unwrap());
+        }
     }
 
     fn check_redistribute_dht_keys(&mut self, pre_id: &BigInt) {
-        for (key,value) in self.storage.clone().get_data_as_iter() {
+        for (key, value) in self.storage.clone().get_data_as_iter() {
             if !chord::is_my_key(&self.id, pre_id, key) {
                 let req = Request::DHTStoreKey { data: (key.clone(), value.clone()) };
                 let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
@@ -295,6 +295,12 @@ impl Node {
     fn handle_find_successor_request(&self, id: BigInt) -> Response {
         if chord::is_in_interval(&self.id, self.get_successor().get_id(), &id) {
             Response::FoundSuccessor { successor: self.get_successor().clone() }
+        } else if let Some(pre) = self.predecessor.clone() {
+            if chord::is_in_interval(pre.get_id(), &self.id, &id) {
+                Response::FoundSuccessor { successor: self.to_other_node() }
+            } else {
+                Response::AskFurther { next_node: self.closest_preceding_node(id) }
+            }
         } else {
             Response::AskFurther { next_node: self.closest_preceding_node(id) }
         }
@@ -397,8 +403,8 @@ impl Node {
         }
     }
 
-    fn handle_dht_take_over_keys(&mut self, data: HashMap<BigInt, DHTEntry>) {
-        for entry in data.into_iter() {
+    fn handle_dht_take_over_keys(&mut self, data: Vec<(BigInt, DHTEntry)>) {
+        for entry in data {
             self.storage.store_key(entry);
         }
     }

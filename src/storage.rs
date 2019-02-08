@@ -42,11 +42,15 @@ impl Storage {
         }
     }
 
-    pub fn get_data(&self) -> &HashMap<BigInt, DHTEntry> {
-        &self.data
+    pub fn get_data_as_vec(&self) -> Vec<(BigInt, DHTEntry)> {
+        self.data.iter().map(|(id, entry)| (id.clone(), entry.clone())).collect()
     }
     pub fn get_data_as_iter(&self) -> Iter<BigInt, DHTEntry> {
         self.data.iter()
+    }
+
+    pub fn is_data_empty(&self) -> bool {
+        self.data.is_empty()
     }
 
     pub fn store_key(&mut self, data: (BigInt, DHTEntry)) {
