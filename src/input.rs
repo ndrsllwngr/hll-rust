@@ -57,8 +57,6 @@ pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Erro
 }
 
 fn store(node_as_other: OtherNode) -> Result<(), Box<Error>> {
-    let mut key;
-    let mut value;
     loop {
         println!("Enter the string that should be used as a KEY\n\
         (p.e.: A name):");
@@ -69,7 +67,8 @@ fn store(node_as_other: OtherNode) -> Result<(), Box<Error>> {
                 println!("Please Enter a valid Key name.");
             }
             k => {
-                key = k.to_string();
+                let key = k.to_string();
+                let value;
                 loop {
                     println!("Enter the string that should be stored as value for key {} \n\
                     (p.e.: A phone number)", key.clone());
@@ -94,7 +93,6 @@ fn store(node_as_other: OtherNode) -> Result<(), Box<Error>> {
 }
 
 fn find(node_as_other: OtherNode) -> Result<(), Box<Error>> {
-    let mut key;
     loop {
         println!("Enter a Key to look for in the network:");
         let buffer = &mut String::new();
@@ -104,7 +102,7 @@ fn find(node_as_other: OtherNode) -> Result<(), Box<Error>> {
                 println!("Please Enter a valid Key name.");
             }
             k => {
-                key = k.to_string();
+                let key = k.to_string();
                 find_key(key, node_as_other);
                 break;
             }
@@ -114,7 +112,6 @@ fn find(node_as_other: OtherNode) -> Result<(), Box<Error>> {
 }
 
 fn delete(node_as_other: OtherNode) -> Result<(), Box<Error>> {
-    let mut key;
     loop {
         println!("Enter a Key to look for in the network:");
         let buffer = &mut String::new();
@@ -124,7 +121,7 @@ fn delete(node_as_other: OtherNode) -> Result<(), Box<Error>> {
                 println!("Please Enter a valid Key name.");
             }
             k => {
-                key = k.to_string();
+                let key = k.to_string();
                 delete_key(key, node_as_other);
                 break;
             }
@@ -134,7 +131,6 @@ fn delete(node_as_other: OtherNode) -> Result<(), Box<Error>> {
 }
 
 fn kill() -> Result<(), Box<Error>> {
-    let mut key;
     loop {
         println!("Enter <IP>:<Port> (i.e. 127.0.0.1:10000) of a to be killed chord network peer:");
         let buffer = &mut String::new();
@@ -144,7 +140,7 @@ fn kill() -> Result<(), Box<Error>> {
                 println!("Please enter a valid SocketAddr.");
             }
             k => {
-                ip_string = k.to_string();
+                let ip_string = k.to_string();
                 kill_node(ip_string);
                 break;
             }
