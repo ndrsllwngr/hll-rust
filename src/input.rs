@@ -1,7 +1,6 @@
 use std::{error::Error};
 use std::io::stdin;
 use std::net::SocketAddr;
-use std::process;
 
 use super::chord;
 use super::network;

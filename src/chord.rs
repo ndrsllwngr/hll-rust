@@ -47,7 +47,7 @@ pub const NODE_INIT_SLEEP_INTERVAL: time::Duration = time::Duration::from_millis
 
 pub const NODE_PRINT_INTERVAL: time::Duration = time::Duration::from_millis(2000);
 
-pub const PING_TIMEOUT_INTERVAL: time::Duration = time::Duration::from_millis(200);
+pub const PING_TIMEOUT_INTERVAL: time::Duration = time::Duration::from_millis(5000);
 
 pub const LISTENING_ADDRESS: &str = "0.0.0.0";
 
@@ -70,6 +70,9 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
         if node_clone.is_joined() {
             let mut ring_is_alive = false;
             for succ in node_clone.get_successor_list().clone() {
+                if succ.get_id() == node_clone.get_id(){
+                    break;
+                }
                 if network::check_alive(*succ.get_ip_addr(), node_clone.to_other_node().clone()) {
                     let req = Request::GetPredecessor;
                     network::send_request(node_clone.to_other_node(), *succ.get_ip_addr(), req);
@@ -79,7 +82,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
                     ring_is_alive = true;
                     break;
                 } else {
-                    error!("Node is dead: {:?}", succ);
+                    debug!("Node is dead: {:?}", succ);
                 }
             }
             if !ring_is_alive {
@@ -132,12 +135,12 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
         if node_clone.is_joined() {
             if let Some(predecessor) = node_clone.get_predecessor().clone() {
                 if !network::check_alive(*predecessor.get_ip_addr(), node_clone.to_other_node().clone()) {
-                    info!("Predecessor Node #{} is dead", predecessor.get_id());
+                    debug!("Predecessor Node #{} is dead", predecessor.get_id());
 
                     // after async operation check_alive() lock again.
                     arc.lock().unwrap().set_predecessor(None);
                 } else {
-                    info!("Predecessor Node #{} is alive", predecessor.get_id());
+                    debug!("Predecessor Node #{} is alive", predecessor.get_id());
                 }
             }
         } else { info!("Not joined yet going to sleep again") }
@@ -306,11 +309,11 @@ pub fn spawn_node(node_ip_addr: SocketAddr, port: i32, entry_node_addr: Option<S
             let arc_clone5 = arc.clone();
             let handle5 = thread::Builder::new().name("Print_Interact".to_string())
                 .spawn(move || {
-                    chord::print_and_interact(arc_clone5);//.expect("print_and_interact failed");
+                    chord::print_and_interact(arc_clone5).expect("print_and_interact failed");
                 }).unwrap();
 
             let arc_clone6 = arc.clone();
-            chord::listen_for_kill_signal(arc_clone6);
+            chord::listen_for_kill_signal(arc_clone6).expect("listen_for_kill_signal failed");
 
             handle1.join().expect("handle1 failed");
             handle2.join().expect("handle2 failed");

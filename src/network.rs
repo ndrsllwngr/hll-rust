@@ -40,7 +40,7 @@ fn send_string_to_socket(addr: SocketAddr, msg: String) -> JoinHandle<()> {
                 debug!("Sent msg: {}", msg);
             }
             Err(e) => {
-                error!("Unable to send msg to {} - Failed to connect: {}", addr, e);
+                debug!("Unable to send msg to {} - Failed to connect: {}", addr, e);
             }
         }
     }).unwrap();
@@ -56,7 +56,7 @@ pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {
             true
         }
         Err(e) => {
-            error!("{:?}", e);
+            debug!("Check alive timeouted: {:?}", e);
             false
         }
     }
