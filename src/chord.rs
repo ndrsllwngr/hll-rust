@@ -37,11 +37,11 @@ pub const SUCCESSORLIST_SIZE: usize = CHORD_CIRCLE_BITS;
 /// At most a number of `2^m` nodes are allowed in the Chord Circle (Bit Shift left)
 pub const CHORD_RING_SIZE: usize = 1 << CHORD_CIRCLE_BITS;
 
-pub const NODE_STABILIZE_INTERVAL: time::Duration = time::Duration::from_millis(4000);
+pub const NODE_STABILIZE_INTERVAL: time::Duration = time::Duration::from_millis(2000);
 
-pub const NODE_FIX_FINGERS_INTERVAL: time::Duration = time::Duration::from_millis(1000);
+pub const NODE_FIX_FINGERS_INTERVAL: time::Duration = time::Duration::from_millis(500);
 
-pub const NODE_CHECK_PREDECESSOR_INTERVAL: time::Duration = time::Duration::from_millis(4000);
+pub const NODE_CHECK_PREDECESSOR_INTERVAL: time::Duration = time::Duration::from_millis(1000);
 
 pub const NODE_INIT_SLEEP_INTERVAL: time::Duration = time::Duration::from_millis(2000);
 
@@ -130,12 +130,12 @@ pub fn check_predecessor(arc: Arc<Mutex<Node>>) {
         if node_clone.is_joined() {
             if let Some(predecessor) = node_clone.get_predecessor().clone() {
                 if !network::check_alive(*predecessor.get_ip_addr(), node_clone.to_other_node().clone()) {
-                    debug!("Node #{} is dead", predecessor.get_id());
+                    info!("Predecessor Node #{} is dead", predecessor.get_id());
 
                     // after async operation check_alive() lock again.
                     arc.lock().unwrap().set_predecessor(None);
                 } else {
-                    debug!("Node #{} is alive", predecessor.get_id());
+                    info!("Predecessor Node #{} is alive", predecessor.get_id());
                 }
             }
         } else { info!("Not joined yet going to sleep again") }
