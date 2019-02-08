@@ -69,10 +69,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
 
         if node_clone.is_joined() {
             let mut ring_is_alive = false;
-            for succ in node_clone.get_successor_list().clone() {
-                if succ.get_id() == node_clone.get_id(){
-                    break;
-                }
+            for succ in node_clone.get_successor_list().clone() { 
                 if network::check_alive(*succ.get_ip_addr(), node_clone.to_other_node().clone()) {
                     let req = Request::GetPredecessor;
                     network::send_request(node_clone.to_other_node(), *succ.get_ip_addr(), req);
