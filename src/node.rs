@@ -106,7 +106,14 @@ impl Node {
     }
 
     pub fn set_predecessor(&mut self, predecessor: Option<OtherNode>) {
-        self.predecessor = predecessor
+
+        self.predecessor = predecessor.clone();
+
+        // Redistribute keys, that I am not responsible for anymore
+        if let Some(pre) = predecessor {
+            self.check_redistribute_dht_keys(&pre.id)
+        }
+
     }
 
     pub fn get_successor_list(&self) -> &Vec<OtherNode> {
@@ -133,6 +140,17 @@ impl Node {
         let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
         network::send_string_to_socket(*successor.get_ip_addr(), serde_json::to_string(&msg).unwrap());
         //}
+    }
+
+    fn check_redistribute_dht_keys(&mut self, pre_id: &BigInt) {
+        for (key,value) in self.storage.clone().get_data_as_iter() {
+            if !chord::is_my_key(&self.id, pre_id, key) {
+                let req = Request::DHTStoreKey { data: (key.clone(), value.clone()) };
+                let msg = Message::RequestMessage { sender: self.to_other_node(), request: req };
+                network::send_string_to_socket(self.ip_addr, serde_json::to_string(&msg).unwrap());
+                self.storage.delete_key(key);
+            }
+        }
     }
 
     fn closest_preceding_node(&self, id: BigInt) -> OtherNode {
@@ -280,12 +298,12 @@ impl Node {
         match &self.predecessor {
             None => {
                 debug!("[Node #{}] Notify: Had no Pre. Pre is now: {}", self.id, node.id);
-                self.predecessor = Some(node)
+                self.set_predecessor(Some(node))
             }
             Some(pre) => {
                 debug!("[Node #{}] Notify: Current Pre: {}, possible new Pre: {}. Successor is: {}", self.id, pre.id, node.id, self.get_successor().id);
                 if pre.id != node.id && chord::is_in_interval(pre.get_id(), &self.id, node.get_id()) {
-                    self.predecessor = Some(node);
+                    self.set_predecessor(Some(node));
                     debug!("[Node #{}] Took new Pre: {}", self.id, self.predecessor.clone().unwrap().id);
                 }
             }
