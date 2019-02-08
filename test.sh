@@ -1,5 +1,8 @@
 #!/bin/bash
 #      ^^^^ - NOT /bin/sh, as this code uses arrays
+#
+# Run this script
+# bash testing.sh <IP_ADDRESS> <NUMBER_OF_NODES>
 
 PIDS=()
 
@@ -13,31 +16,10 @@ cleanup() {
 # and set that function to run before we exit, or specifically when we get a SIGTERM
 trap cleanup EXIT SIGTERM
 
-# f1/p1.py > logs/p1.txt & PIDS+=( "$!" )
-# f2/p2.sh > logs/p2.txt & PIDS+=( "$!" )
-# nodemon f3/p3.js > logs/p3.txt & PIDS+=( "$!" )
-
- # sleep until all background processes have exited, or a trap fires
-
-
-#
-# run this as follows:
-# sh ./test_macOS.sh IP_ADDRESS NUMBER_OF_NODES
-#
-
-
 PROJECT_BUILD="/target/debug/hll-rust"
+
 TEST_IP=$1
 NUMBER_OF_NODES=$2
-
-# trap 'quit' 0 2 15
-
-# quit()
-# {
-#   echo "Caught SIGINT / SIGTERM ...exiting now."
-#   trap - SIGTERM && kill -- -$$
-# }
-
 
 cargo build
 
