@@ -69,7 +69,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
 
         if node_clone.is_joined() {
             let mut ring_is_alive = false;
-            for succ in node_clone.get_successor_list().clone() { 
+            for succ in node_clone.get_successor_list().clone() {
                 if network::check_alive(*succ.get_ip_addr(), node_clone.to_other_node().clone()) {
                     let req = Request::GetPredecessor;
                     network::send_request(node_clone.to_other_node(), *succ.get_ip_addr(), req);
@@ -280,9 +280,17 @@ pub fn spawn_node(node_ip_addr: SocketAddr, port: i32, entry_node_addr: Option<S
                     network::start_listening_on_socket(arc_clone1, port, id_clone).expect("network_util::start_listening_on_socket failed");
                 }).unwrap();
 
+            let arc_join = arc.clone();
             if let Some(entry_node_addr) = entry_node_addr {
                 thread::sleep(chord::NODE_INIT_SLEEP_INTERVAL);
-                chord::join(id.clone(), other_node.clone(), entry_node_addr);
+                let mut node_join = arc_join.lock().unwrap();
+                while !node_join.is_joined() {
+                    drop(node_join);
+                    chord::join(id.clone(), other_node.clone(), entry_node_addr);
+                    thread::sleep(chord::NODE_INIT_SLEEP_INTERVAL);
+                    node_join = arc_join.lock().unwrap();
+                }
+
             }
 
             let arc_clone2 = arc.clone();

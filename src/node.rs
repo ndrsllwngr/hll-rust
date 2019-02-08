@@ -416,8 +416,6 @@ impl Node {
         debug!("Found my new successor: node #{}", successor.id.clone());
         self.update_successor_and_successor_list(successor);
         if !self.joined {
-            debug!("Starting of stabilization not yet implemented");
-            //TODO self.start_stabilisation();
             self.joined = true;
         }
     }
