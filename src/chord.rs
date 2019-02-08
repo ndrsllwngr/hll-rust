@@ -29,9 +29,9 @@ pub const CHORD_CIRCLE_BITS: usize = 32;
 //Used for length reduction on id creation
 //The nth root of the initially created id will be calculated in order to reduce size
 
-pub const FINGERTABLE_SIZE: usize = 16;
+pub const FINGERTABLE_SIZE: usize = CHORD_CIRCLE_BITS;
 
-pub const SUCCESSORLIST_SIZE: usize = 16;
+pub const SUCCESSORLIST_SIZE: usize = CHORD_CIRCLE_BITS;
 
 /// At most a number of `2^m` nodes are allowed in the Chord Circle (Bit Shift left)
 pub const CHORD_RING_SIZE: usize = 1 << CHORD_CIRCLE_BITS;
