@@ -8,12 +8,12 @@ PROJECT_BUILD="/target/debug/hll-rust"
 TEST_IP=$1
 NUMBER_OF_NODES=$2
 
-trap 'quit' 2 15
+trap 'quit' 0 2 15
 
 quit()
 {
   echo "Caught SIGINT / SIGTERM ...exiting now."
-  exit 1
+  trap - SIGTERM && kill -- -$$
 }
 
 
