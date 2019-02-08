@@ -47,6 +47,8 @@ pub const NODE_INIT_SLEEP_INTERVAL: time::Duration = time::Duration::from_millis
 
 pub const NODE_PRINT_INTERVAL: time::Duration = time::Duration::from_millis(2000);
 
+pub const PING_TIMEOUT_INTERVAL: time::Duration = time::Duration::from_millis(200);
+
 pub const LISTENING_ADDRESS: &str = "0.0.0.0";
 
 pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {

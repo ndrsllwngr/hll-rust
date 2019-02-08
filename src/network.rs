@@ -50,6 +50,7 @@ fn send_string_to_socket(addr: SocketAddr, msg: String) -> JoinHandle<()> {
 pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {
     match net::TcpStream::connect(addr) {
         Ok(stream) => {
+            stream.set_write_timeout(Some(chord::PING_TIMEOUT_INTERVAL));
             let msg = serde_json::to_string(&Message::Ping { sender }).unwrap();
             let mut writer = BufWriter::new(stream);
             writer.write_all(msg.as_bytes()).unwrap();
