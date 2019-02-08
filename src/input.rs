@@ -144,8 +144,8 @@ fn kill() -> Result<(), Box<Error>> {
                 println!("Please enter a valid SocketAddr.");
             }
             k => {
-                key = k.to_string();
-                kill_node(key);
+                ip_string = k.to_string();
+                kill_node(ip_string);
                 break;
             }
         }
@@ -153,31 +153,25 @@ fn kill() -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn kill_node(key: String) {
-    let target_ip = key.parse::<SocketAddr>().unwrap();
-    let msg = Message::Kill;
-    network::send_string_to_socket(target_ip, serde_json::to_string(&msg).unwrap());
+fn kill_node(ip_string: String) {
+    let target_ip = ip_string.parse::<SocketAddr>().unwrap();
+    network::send_kill(target_ip);
 }
 
 fn store_key_value(key: String, value: String, node_as_other: OtherNode) {
     let req = Request::DHTStoreKey { data: storage::make_hashed_key_value_pair(key, value) };
     info!("Trying to store data {:?}", req.clone());
-    send_req(node_as_other, req);
+    network::send_request(node_as_other.clone(), node_as_other.get_ip_addr().to_owned(), req);
 }
 
 fn find_key(key: String, node_as_other: OtherNode) {
     let key_id = chord::create_id(&key);
     let req = Request::DHTFindKey { key_id };
-    send_req(node_as_other, req);
+    network::send_request(node_as_other.clone(), node_as_other.get_ip_addr().to_owned(), req);
 }
 
 fn delete_key(key: String, node_as_other: OtherNode) {
     let key_id = chord::create_id(&key);
     let req = Request::DHTDeleteKey { key_id };
-    send_req(node_as_other, req);
-}
-
-fn send_req(node_as_other: OtherNode, req: Request) {
-    let msg = Message::RequestMessage { sender: node_as_other.clone(), request: req };
-    network::send_string_to_socket(*node_as_other.get_ip_addr(), serde_json::to_string(&msg).unwrap());
+    network::send_request(node_as_other.clone(), node_as_other.get_ip_addr().to_owned(), req);
 }
