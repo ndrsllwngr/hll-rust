@@ -11,29 +11,24 @@ High level languages: Rust - Group project (2018/2019)
 - [hll-rust](#hll-rust)
         - [CircleCI](#circleci)
   - [Table of Contents](#table-of-contents)
-  - [Contributors](#contributors)
-  - [Individual contributions](#individual-contributions)
-  - [Requirements](#requirements)
   - [Installation](#installation)
+    - [Requirements](#requirements)
   - [Usage](#usage)
-    - [Run a node](#run-a-node)
+    - [Run a single node](#run-a-single-node)
     - [Open menu](#open-menu)
-  - [Used crates](#used-crates)
+    - [Start a new chord ring with multiple nodes at once](#start-a-new-chord-ring-with-multiple-nodes-at-once)
+    - [Join an existing chord ring with multiple nodes at once](#join-an-existing-chord-ring-with-multiple-nodes-at-once)
+  - [Crates](#crates)
   - [Chord](#chord)
-  - [References](#references)
+    - [References](#references)
+  - [Contributors (Group E)](#contributors-group-e)
+    - [Individual contributions](#individual-contributions)
 
-## Contributors
+## Installation
 
-- Andreas Ellwanger
-- Timo Erdelt
-- Andreas Griesbeck
+Run in the project folder `cargo build`.
 
-## Individual contributions
-
-Due too the small group size of 3 it is impossible for us to properly distinguish what of our project has been done by whom. We all worked on all parts of our application, especially since we mostly did “pair-programming” (with two or often all three of us working together). So all of us were equally involved in all parts of our application, namely networking (TCP sockets, Tokio), threading, algorithm & communication protocol, user interaction through the command line interface & bash scripts.
-We would be happy to answer questions about our development process, aswell as our individual/colletive contributions at the examination.
-
-## Requirements
+### Requirements
 
 ```bash
 $ rustc --version
@@ -44,13 +39,9 @@ $ cargo --version
 cargo 1.32.0 (8610973aa 2019-01-02)
 ```
 
-## Installation
-
-Run in the project folder `cargo build`.
-
 ## Usage
 
-### Run a node
+### Run a single node
 
 To print our CLI help run  which prints
 
@@ -112,17 +103,29 @@ Choose 1, 2, 3, 4, 5 or 6 and press Enter!
 - To close the menu press `5+ENTER`.
 - To terminate the node press `6+ENTER`.
 
-## Used crates
+### Start a new chord ring with multiple nodes at once
 
-chrono, clap, colored, futures, get_if_addrs, log, log4rs, num, num-bigint, prettytable-rs, rust-crypto, serde, serde_derive, serde_json, signal-hook, tokio
+// TODO
 
-Take a look for the version numbers within [Cargo.toml](Cargo.toml).
+### Join an existing chord ring with multiple nodes at once
+
+// TODO
+
+## Crates
+
+```text
+chrono, clap, colored, futures, get_if_addrs, log, log4rs, num,
+num-bigint, prettytable-rs, rust-crypto, serde, serde_derive,
+serde_json, signal-hook, tokio
+```
+
+For more details take a look at the [Cargo.toml](Cargo.toml).
 
 ## Chord
 
 Take a look at our [chord description](CHORD.md) or our [references](#references).
 
-## References
+### References
 
 - [https://github.com/sit/dht/wiki](https://github.com/sit/dht/wiki)
 - [https://sarwiki.informatik.hu-berlin.de/Chord](https://sarwiki.informatik.hu-berlin.de/Chord)
@@ -130,3 +133,14 @@ Take a look at our [chord description](CHORD.md) or our [references](#references
 - [https://en.wikipedia.org/wiki/Chord_(peer-to-peer)](https://en.wikipedia.org/wiki/Chord_(peer-to-peer))
 - [http://nms.csail.mit.edu/papers/chord.pdf](http://nms.csail.mit.edu/papers/chord.pdf)
 - [https://pdos.csail.mit.edu/papers/ton:chord/paper-ton.pdf](https://pdos.csail.mit.edu/papers/ton:chord/paper-ton.pdf)
+
+## Contributors (Group E)
+
+- Andreas Ellwanger
+- Timo Erdelt
+- Andreas Griesbeck
+
+### Individual contributions
+
+Due too the small group size of 3 it is impossible for us to properly distinguish what of our project has been done by whom. We all worked on all parts of our application, especially since we mostly did “pair-programming” (with two or often all three of us working together). So all of us were equally involved in all parts of our application, namely networking (TCP sockets, Tokio), threading, algorithm & communication protocol, user interaction through the command line interface & bash scripts.
+We would be happy to answer questions about our development process, aswell as our individual/colletive contributions at the examination.
