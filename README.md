@@ -41,6 +41,9 @@ cargo 1.32.0 (8610973aa 2019-01-02)
 
 ## Usage
 
+Disclamer: 
+When we speak of **LocalIp4Addr** in the following parts of the readme we mean the IPV4 Address you have in your local network (e.g. eduroam), this can be found out by calling *ifconfig* in a terminal
+
 ### Run a single node
 
 To print our CLI help run  which prints
@@ -119,10 +122,9 @@ bash test.sh <LocalIp4Addr> <PortOfFirstNode> <NumberOfNodes> <IpOfJoinNode:Port
 
 #### Important notes
 
-- The menu dialog **cannot** be opened at nodes who are spawned by the shell script.
 - The script creates the nodes with ports starting at `<PortOfFirstNode>` and ending at `<PortOfFirstNode+NumberOfNodes-1>`
 - Unfortunately the menu for interacting with the chord ring (e.g story, querying, deleting from DHT) does not work with the node being rendered after the script has completed. In order to get the menu a new node has to be spawned in another terminal with one of the IP addresses of the just spawned ring as the join IP.
-- We have not tested the script big number of nodes, we usually ran it with 10-25 nodes which did produce no problems, but it should theoretically also work for a bigger amount
+- We have not tested the script big number of nodes, we usually ran it with 10 nodes which did produce no problems, but it should theoretically also work for a bigger amounts, but we sometimes ran into problems running more nodes on a single machine
 
 ## Crates
 
