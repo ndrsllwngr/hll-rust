@@ -81,7 +81,7 @@ cargo run -- <LocalIp4Addr> <LocalPort> <OtherIp4Addr:OtherPort>
 
 To open the menu while running a node type `m` and press `ENTER` which opens the following menu
 
-```bash
+```text
 Hello there! What do you want to do?
 
 1 - Store a key/value pair in the Chord network
