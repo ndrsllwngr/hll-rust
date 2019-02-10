@@ -19,20 +19,38 @@ trap cleanup EXIT SIGTERM
 PROJECT_BUILD="/target/debug/hll-rust"
 
 TEST_IP=$1
-NUMBER_OF_NODES=$2
+STARTING_PORT=$2
+NUMBER_OF_NODES=$3
+JOIN_IP=$4
 
 cargo build
 
-.${PROJECT_BUILD} ${TEST_IP} 10001 > /dev/null 2>&1 & PIDS+=( "$!" )
-for i in `seq 2 ${NUMBER_OF_NODES}`
-do
-    sleep .5
-    if (($i == $NUMBER_OF_NODES))
+if [[ -z "$JOIN_IP" ]]
     then
-        .${PROJECT_BUILD} ${TEST_IP} $((10000+$i)) ${TEST_IP}:10001 & PIDS+=( "$!" )
+        echo "Creating a new chord circle with $NUMBER_OF_NODES nodes..."
+        .${PROJECT_BUILD} ${TEST_IP} ${STARTING_PORT} > /dev/null 2>&1 & PIDS+=( "$!" )
+        for i in `seq 1 $(($NUMBER_OF_NODES-1))`
+        do
+            sleep .5
+            if (($i == $(($NUMBER_OF_NODES-1))))
+            then
+                .${PROJECT_BUILD} ${TEST_IP} $(($STARTING_PORT+$i)) ${TEST_IP}:${STARTING_PORT} & PIDS+=( "$!" )
+            else
+                .${PROJECT_BUILD} ${TEST_IP} $(($STARTING_PORT+$i)) ${TEST_IP}:${STARTING_PORT} > /dev/null 2>&1 & PIDS+=( "$!" )
+            fi
+        done
     else
-        .${PROJECT_BUILD} ${TEST_IP} $((10000+$i)) ${TEST_IP}:10001 > /dev/null 2>&1 & PIDS+=( "$!" )
+        echo "Creating $NUMBER_OF_NODES Nodes and joining them on $JOIN_IP..."
+        for i in `seq 0 $(($NUMBER_OF_NODES-1))`
+        do
+            sleep .5
+            if (($i == $(($NUMBER_OF_NODES-1))))
+            then
+                .${PROJECT_BUILD} ${TEST_IP} $(($STARTING_PORT+$i)) ${JOIN_IP} & PIDS+=( "$!" )
+            else
+                .${PROJECT_BUILD} ${TEST_IP} $(($STARTING_PORT+$i)) ${JOIN_IP} > /dev/null 2>&1 & PIDS+=( "$!" )
+            fi
+        done
     fi
-done
 
 wait
