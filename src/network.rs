@@ -32,7 +32,7 @@ pub fn send_request(sender: OtherNode, target:SocketAddr, request: Request) -> J
 
 fn send_string_to_socket(addr: SocketAddr, msg: String) -> JoinHandle<()> {
     let builder = thread::Builder::new().name("Send".to_string());
-    let handle = builder.spawn(move || {
+    builder.spawn(move || {
         match net::TcpStream::connect(addr) {
             Ok(stream) => {
                 let mut writer = BufWriter::new(stream);
@@ -43,8 +43,7 @@ fn send_string_to_socket(addr: SocketAddr, msg: String) -> JoinHandle<()> {
                 debug!("Unable to send msg to {} - Failed to connect: {}", addr, e);
             }
         }
-    }).unwrap();
-    handle
+    }).unwrap()
 }
 
 pub fn check_alive(addr: SocketAddr, sender: OtherNode) -> bool {

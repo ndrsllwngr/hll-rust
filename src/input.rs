@@ -45,7 +45,7 @@ pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Erro
                 break;
             }
             "6" => {
-                kill_node(node_as_other.get_ip_addr().clone());
+                kill_node(*node_as_other.get_ip_addr());
                 break;
             }
             _ => {

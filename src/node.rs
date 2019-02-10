@@ -144,7 +144,7 @@ impl Node {
             info!("Initializing shutdown, moving keys...");
             let req = Request::DHTTakeOverKeys { data: self.storage.get_data_as_vec().clone() };
             info!("Shutting down.");
-            Some(network::send_request(self.to_other_node(), self.get_successor().get_ip_addr().clone(), req))
+            Some(network::send_request(self.to_other_node(), *self.get_successor().get_ip_addr(), req))
         } else {
             None
         }
