@@ -73,7 +73,9 @@ pub enum Response {
     GetSuccessorListResponse {
         successor_list: Vec<OtherNode>
     },
-    DHTStoredKey,
+    DHTStoredKey{
+        key: String,
+    },
     DHTFoundKey {
         data: (BigInt, Option<DHTEntry>)
     },

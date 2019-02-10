@@ -260,9 +260,9 @@ impl Node {
                        self.clone().id, successor_list.clone());
                 self.handle_get_successor_list_response(successor_list)
             }
-            Response::DHTStoredKey => {
+            Response::DHTStoredKey{ key} => {
                 debug!("[Node #{}] Response::DHTStoredKey", self.clone().id);
-                self.handle_dht_stored_key_response()
+                self.handle_dht_stored_key_response(key)
             }
             Response::DHTFoundKey { data } => {
                 debug!("[Node #{}] Response::DHTFoundKey(data: {:?})", self.clone().id, data.clone());
@@ -347,8 +347,10 @@ impl Node {
         if let Some(predecessor) = self.predecessor.clone() {
             // I am responsible for the key
             if chord::is_my_key(&self.id, predecessor.get_id(), &data.0) {
-                self.storage.store_key(data);
-                Response::DHTStoredKey
+                self.storage.store_key(data.clone());
+                Response::DHTStoredKey{
+                    key: data.1.get_key().to_owned()
+                }
             } else {
                 Response::DHTAskFurtherStore {
                     next_node: self.closest_preceding_node(data.0.clone()),
@@ -467,9 +469,9 @@ impl Node {
         self.successor_list = new_successor_list;
     }
 
-    fn handle_dht_stored_key_response(&mut self) {
-        self.storage.write_log_entry("Key stored".to_string());
-        debug!("Key stored");
+    fn handle_dht_stored_key_response(&mut self, key: String) {
+        self.storage.write_log_entry(format!("Key '{}' stored", key));
+        debug!("Key '{}' stored", key);
     }
 
     fn handle_dht_found_key_response(&mut self, data: (BigInt, Option<DHTEntry>)) {
