@@ -477,10 +477,10 @@ impl Node {
     fn handle_dht_found_key_response(&mut self, data: (BigInt, Option<DHTEntry>)) {
         if let Some(dht_entry) = data.1.clone() {
             self.storage.write_log_entry(format!("Value for key {} (id: {}) is {}", dht_entry.get_key(), data.0, dht_entry.get_value()));
-            debug!("Value for key {} (id: {}) is {}", dht_entry.get_key(), data.0, dht_entry.get_value());
+            debug!("Value for key '{}' (id: {}) is '{}'", dht_entry.get_key(), data.0, dht_entry.get_value());
         } else {
             self.storage.write_log_entry(format!("No value for key_id {} found in the network", data.0));
-            debug!("No value for key_id {} found in the network", data.0)
+            debug!("No value for key_id '{}' found in the network", data.0)
         }
     }
 
@@ -505,7 +505,7 @@ impl Node {
     fn handle_dht_ask_further_find_response(&self,
                                             next_node: OtherNode,
                                             key_id: BigInt) {
-        debug!("Did not find key {} yet, asking node #{} now...", key_id, next_node.id);
+        debug!("Did not find key '{}' yet, asking node #{} now...", key_id, next_node.id);
         let req = Request::DHTFindKey { key_id };
         network::send_request(self.to_other_node(), next_node.ip_addr, req);
     }
@@ -513,7 +513,7 @@ impl Node {
     fn handle_dht_ask_further_delete_response(&self,
                                               next_node: OtherNode,
                                               key_id: BigInt) {
-        debug!("Did not find key {} yet, asking node #{} now...", key_id, next_node.id);
+        debug!("Did not find key '{}' yet, asking node #{} now...", key_id, next_node.id);
         let req = Request::DHTDeleteKey { key_id };
         network::send_request(self.to_other_node(), next_node.ip_addr, req);
     }
