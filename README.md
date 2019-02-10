@@ -16,8 +16,8 @@ High level languages: Rust - Group project (2018/2019)
   - [Usage](#usage)
     - [Run a single node](#run-a-single-node)
     - [Open menu](#open-menu)
-    - [Start a new chord ring with multiple nodes at once](#start-a-new-chord-ring-with-multiple-nodes-at-once)
-    - [Join an existing chord ring with multiple nodes at once](#join-an-existing-chord-ring-with-multiple-nodes-at-once)
+    - [Spawn multiple nodes at once](#spawn-multiple-nodes-at-once)
+      - [Important notes](#important-notes)
   - [Crates](#crates)
   - [Chord](#chord)
     - [References](#references)
@@ -82,8 +82,8 @@ cargo run -- <LocalIp4Addr> <LocalPort> <OtherIp4Addr:OtherPort>
 To open the menu while running a node type `m` and press `ENTER` which opens the following menu
 
 ```bash
-Hello there! What do you want to do? 
- 
+Hello there! What do you want to do?
+
 1 - Store a key/value pair in the Chord network
 2 - Find the value for a given key in the Chord network
 3 - Delete a key/value pair from the Chord network
@@ -103,13 +103,25 @@ Choose 1, 2, 3, 4, 5 or 6 and press Enter!
 - To close the menu press `5+ENTER`.
 - To terminate the node press `6+ENTER`.
 
-### Start a new chord ring with multiple nodes at once
+### Spawn multiple nodes at once
 
-// TODO
+In order to spawn a new chord ring with a given number of nodes on a system we created a bash script which can be used as follows:
 
-### Join an existing chord ring with multiple nodes at once
+```bash
+bash test.sh <LocalIp4Addr> <PortOfFirstNode> <NumberOfNodes>
+```
 
-// TODO
+In order to create a number of nodes and join them on an existing chord ring the same script can be used by applying an additional command line argument:
+
+```bash
+bash test.sh <LocalIp4Addr> <PortOfFirstNode> <NumberOfNodes> <IpOfJoinNode:Port>
+```
+
+#### Important notes
+
+- The script creates the nodes with ports starting at `<PortOfFirstNode>` and ending at `<PortOfFirstNode+NumberOfNodes-1>`
+- Unfortunately the menu for interacting with the chord ring (e.g story, querying, deleting from DHT) does not work with the node being rendered after the script has completed. In order to get the menu a new node has to be spawned in another terminal with one of the IP addresses of the just spawned ring as the join IP.
+- We have not tested the script big number of nodes, we usually ran it with 10-25 nodes which did produce no problems, but it should theoretically also work for a bigger amount
 
 ## Crates
 
