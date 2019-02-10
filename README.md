@@ -11,11 +11,12 @@ High level languages: Rust - Group project (2018/2019)
 - [hll-rust](#hll-rust)
         - [CircleCI](#circleci)
   - [Table of Contents](#table-of-contents)
+  - [Demonstration](#demonstration)
   - [Installation](#installation)
     - [Requirements](#requirements)
   - [Usage](#usage)
     - [Run a single node](#run-a-single-node)
-    - [Open menu](#open-menu)
+    - [Open menu dialog](#open-menu-dialog)
     - [Spawn multiple nodes at once](#spawn-multiple-nodes-at-once)
       - [Important notes](#important-notes)
   - [Crates](#crates)
@@ -23,6 +24,14 @@ High level languages: Rust - Group project (2018/2019)
     - [References](#references)
   - [Contributors (Group E)](#contributors-group-e)
     - [Individual contributions](#individual-contributions)
+
+## Demonstration
+
+In the following demo first `./target/debug/hll-rust 10.0.1.2 11111` was executed.
+Soon afterwards `bash test.sh 10.0.1.2 10000 10 10.0.1.2:11111` was executed in another terminal.
+Take a look the terminal of the `11111` node.
+
+[![demo](https://asciinema.org/a/226513.svg)](https://asciinema.org/a/226513?autoplay=1)
 
 ## Installation
 
