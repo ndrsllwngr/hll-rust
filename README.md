@@ -41,8 +41,8 @@ cargo 1.32.0 (8610973aa 2019-01-02)
 
 ## Usage
 
-Disclamer: 
-When we speak of **LocalIp4Addr** in the following parts of the readme we mean the IPV4 Address you have in your local network (e.g. eduroam), this can be found out by calling *ifconfig* in a terminal
+**Important Disclaimer**: 
+When we speak of **LocalIp4Addr** in the following parts of the readme we mean the IPV4 Address you have in your local network (e.g. eduroam) **not** localhost, this can be found out by calling *ifconfig* in a terminal
 
 ### Run a single node
 
