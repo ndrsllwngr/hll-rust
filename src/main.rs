@@ -37,21 +37,21 @@ fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     debug!("Booting...");
 
-    // Find 'lo0' interface, extract Ip4Addr and add it CLI help
+    // Find 'en0' interface on macOS, extract Ip4Addr and add it CLI help
     let interfaces: Vec<get_if_addrs::Interface> = get_if_addrs::get_if_addrs().unwrap();
     let interface_option = interfaces
         .into_iter()
-        .find(|i| i.name == "lo0" && i.addr.ip().is_ipv4());
+        .find(|i| i.name == "en0" && i.addr.ip().is_ipv4());
     let local_ip4addr = if let Some(interface) = interface_option {
         interface.addr.ip().to_string()
     } else {
-        "<lo0 not found>".to_string()
+        "<en0 not found>".to_string()
     };
     let ip4addr_help = format!("Sets the ip address to use (e.g. {})", local_ip4addr);
 
     // CLI requires static string
     let ip4addr_help_slice = &ip4addr_help[..];
-    debug!("lo0 interface IP4ADDR is: {}", local_ip4addr);
+    debug!("en0 interface IP4ADDR is: {}", local_ip4addr);
 
     // CLI incl. required arguments
     let matches = App::new("hll_rust_chord")
