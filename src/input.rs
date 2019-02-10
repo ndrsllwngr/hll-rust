@@ -10,7 +10,7 @@ use super::storage;
 
 pub fn perform_user_interaction(node_as_other: OtherNode) -> Result<(), Box<Error>> {
     let info =
-        "\n Hello there! What do you want to do? \n \n\
+        "\nHello there! What do you want to do? \n \n\
         1 - Store a key/value pair in the Chord network\n\
         2 - Find the value for a given key in the Chord network\n\
         3 - Delete a key/value pair from the Chord network\n\n\
