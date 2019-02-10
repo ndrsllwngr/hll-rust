@@ -65,19 +65,19 @@ ARGS:
     <IP4ADDR:PORT>    Sets the node (entry point to an existing chord ring) to join
 ```
 
-To spawn a single node which creates a new Chord ring run
+To spawn a single node which creates a new chord ring run
 
 ```bash
 cargo run -- <LocalIp4Addr> <LocalPort>
 ```
 
-To spawn a single node and join an existing Chord ring run
+To spawn a single node and join an existing chord ring run
 
 ```bash
 cargo run -- <LocalIp4Addr> <LocalPort> <OtherIp4Addr:OtherPort>
 ```
 
-### Open menu
+### Open menu dialog
 
 To open the menu while running a node type `m` and press `ENTER` which opens the following menu
 
@@ -119,6 +119,7 @@ bash test.sh <LocalIp4Addr> <PortOfFirstNode> <NumberOfNodes> <IpOfJoinNode:Port
 
 #### Important notes
 
+- The menu dialog **cannot** be opened at nodes who are spawned by the shell script.
 - The script creates the nodes with ports starting at `<PortOfFirstNode>` and ending at `<PortOfFirstNode+NumberOfNodes-1>`
 - Unfortunately the menu for interacting with the chord ring (e.g story, querying, deleting from DHT) does not work with the node being rendered after the script has completed. In order to get the menu a new node has to be spawned in another terminal with one of the IP addresses of the just spawned ring as the join IP.
 - We have not tested the script big number of nodes, we usually ran it with 10-25 nodes which did produce no problems, but it should theoretically also work for a bigger amount
