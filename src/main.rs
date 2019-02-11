@@ -100,12 +100,12 @@ fn main() {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };
-    debug!("port: {}", ip4_addr);
+    debug!("port: {}", port);
     let listening_ip = match format!("{}:{}", ip4_addr, port).parse::<SocketAddr>() {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };
-    debug!("listening_ip: {}", ip4_addr);
+    debug!("listening_ip: {}", listening_ip);
 
     // Join existing chord ring, or create new chord ring as first node
     if matches.is_present("entry_point") {
@@ -117,7 +117,7 @@ fn main() {
             Ok(m) => m,
             Err(f) => panic!(f.to_string()),
         };
-        debug!("entry_point: {}", ip4_addr);
+        debug!("entry_point: {}", entry_point);
         if listening_ip != entry_point {
             let node_handle = chord::spawn_node(listening_ip, port, Some(entry_point));
             node_handle.join().expect("node_handle.join() failed");
