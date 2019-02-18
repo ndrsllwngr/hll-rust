@@ -71,6 +71,7 @@ pub fn stabilize(arc: Arc<Mutex<Node>>) {
             let mut ring_is_alive = false;
             for succ in node_clone.get_successor_list().clone() {
                 if network::check_alive(*succ.get_ip_addr(), node_clone.to_other_node().clone()) {
+                    // better move outside of for loop, just check once within a stabilize loop
                     let req = Request::GetPredecessor;
                     network::send_request(node_clone.to_other_node(), *succ.get_ip_addr(), req);
                     // after async operation check_alive() lock again.
