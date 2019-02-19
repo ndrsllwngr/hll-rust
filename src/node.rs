@@ -32,14 +32,6 @@ impl OtherNode {
 }
 
 /// Complete representation of internal node
-///
-/// * `id`             - Identifier of node: Currently SHA1 hashed IP address
-/// * `ip_addr`        - Ip address and port of the node
-/// * `finger_table`   - Finger table of the node, which stores up to n other nodes
-/// * `next_finger`    - Used to point on the entry of the finger table, we are currently processing
-/// * `successor`      - Successor of the node 
-/// * `predecessor`    - [Optional] Predecessor of the node
-/// * `storage`        - DHT storage inside the node
 #[derive(Clone)]
 pub struct Node {
     id: BigInt,
@@ -53,12 +45,6 @@ pub struct Node {
 
 /// `Node` implementation
 impl Node {
-    /// Creates new Node
-    /// if `predecessor` is None, the node will initialize a new chord ring
-    /// if `predecessor` is Some(), the node will join an existing network and `predecessor` as its own predecessor
-    ///
-    /// * `ip_addr`     - Ip address and port of the node
-    /// * `predecessor` - (Optional) Ip address and port of a known member of an existing network
     pub fn new(node_ip_addr: SocketAddr) -> Node {
         let id = chord::create_node_id(node_ip_addr);
         Node {
