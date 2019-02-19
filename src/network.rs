@@ -72,7 +72,6 @@ pub fn start_listening_on_socket(node_arc: Arc<Mutex<Node>>, port: i32, id: BigI
 
     let listener = TcpListener::bind(&listen_ip).unwrap();
 
-    //TODO figure out if extensive cloning is working
     debug!("[Node #{}] Starting to listen on socket: {}", id.clone(), listen_ip);
 
     let server = listener.incoming().for_each(move |socket| {

@@ -57,7 +57,6 @@ pub fn join(id: BigInt, sender: OtherNode, join_ip: SocketAddr) {
     network::send_request(sender, join_ip, req);
 }
 
-//TODO pass internal name & othernode as parameters
 pub fn stabilize(arc: Arc<Mutex<Node>>) {
     info!("Starting stabilisation...");
     loop {

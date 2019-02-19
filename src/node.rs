@@ -37,7 +37,7 @@ impl OtherNode {
 /// * `ip_addr`        - Ip address and port of the node
 /// * `finger_table`   - Finger table of the node, which stores up to n other nodes
 /// * `next_finger`    - Used to point on the entry of the finger table, we are currently processing
-/// * `successor`      - Successor of the node //TODO can be found out by finger table, //TODO do we need var finger_entries (e.g. 32 or 8) -> Not really, finger_entries depend on bit_size of hashing!!
+/// * `successor`      - Successor of the node 
 /// * `predecessor`    - [Optional] Predecessor of the node
 /// * `storage`        - DHT storage inside the node
 #[derive(Clone)]
@@ -54,7 +54,6 @@ pub struct Node {
 /// `Node` implementation
 impl Node {
     /// Creates new Node
-    /// TODO fix comments
     /// if `predecessor` is None, the node will initialize a new chord ring
     /// if `predecessor` is Some(), the node will join an existing network and `predecessor` as its own predecessor
     ///
@@ -326,7 +325,7 @@ impl Node {
                 }
             }
         }
-        //TODO check if maybe a failure notification is necessary
+
         Response::NotifyResponse
     }
 
