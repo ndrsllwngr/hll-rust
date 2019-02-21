@@ -1,8 +1,10 @@
 #!/bin/bash
 #      ^^^^ - NOT /bin/sh, as this code uses arrays
 #
-# Run this script
-# bash testing.sh <IP_ADDRESS> <NUMBER_OF_NODES>
+# How to run this script:
+#
+# bash test.sh <IP_ADDRESS> <STARTING_PORT> <NUMBER_OF_NODES> [JOIN_IP:PORT]
+# (e.g.) bash test.sh 141.84.15.12 10000 5 141.84.15.12:11111
 
 PIDS=()
 
