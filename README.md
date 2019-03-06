@@ -1,6 +1,6 @@
 # hll-rust
 
-High level languages: Rust - Group project (2018/2019)
+High level languages: Rust - Group project (2018/2019): Chord is a protocol and algorithm for a peer-to-peer distributed hash table.
 
 ##### CircleCI
 
